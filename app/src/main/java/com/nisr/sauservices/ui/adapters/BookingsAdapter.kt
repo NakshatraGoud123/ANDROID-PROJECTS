@@ -3,6 +3,7 @@ package com.nisr.sauservices.ui.adapters
 import android.graphics.Color
 import android.graphics.Typeface
 import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -16,12 +17,12 @@ class BookingsAdapter(
     private val onStatusChange: (Booking) -> Unit
 ) : RecyclerView.Adapter<BookingsAdapter.BookingViewHolder>() {
 
-    class BookingViewHolder(val cardView: MaterialCardView) : RecyclerView.ViewHolder(cardView) {
-        val nameText: TextView = cardView.findViewById(1)
-        val serviceText: TextView = cardView.findViewById(2)
-        val addressText: TextView = cardView.findViewById(3)
-        val timeText: TextView = cardView.findViewById(4)
-        val statusButton: MaterialButton = cardView.findViewById(5)
+    class BookingViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val nameText: TextView = view.findViewById(NAME_ID)
+        val serviceText: TextView = view.findViewById(SERVICE_ID)
+        val addressText: TextView = view.findViewById(ADDRESS_ID)
+        val timeText: TextView = view.findViewById(TIME_ID)
+        val statusButton: MaterialButton = view.findViewById(BUTTON_ID)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BookingViewHolder {
@@ -41,12 +42,29 @@ class BookingsAdapter(
             orientation = LinearLayout.VERTICAL
         }
 
-        val nameTxt = TextView(context).apply { id = 1; textSize = 18f; setTextColor(Color.BLACK); setTypeface(null, Typeface.BOLD) }
-        val serviceTxt = TextView(context).apply { id = 2; textSize = 16f; setTextColor(Color.parseColor("#2E7D6B")) }
-        val addressTxt = TextView(context).apply { id = 3; textSize = 14f; setTextColor(Color.GRAY) }
-        val timeTxt = TextView(context).apply { id = 4; textSize = 14f; setTextColor(Color.GRAY) }
+        val nameTxt = TextView(context).apply { 
+            id = NAME_ID
+            textSize = 18f
+            setTextColor(Color.BLACK)
+            setTypeface(null, Typeface.BOLD) 
+        }
+        val serviceTxt = TextView(context).apply { 
+            id = SERVICE_ID
+            textSize = 16f
+            setTextColor(Color.parseColor("#2E7D6B")) 
+        }
+        val addressTxt = TextView(context).apply { 
+            id = ADDRESS_ID
+            textSize = 14f
+            setTextColor(Color.GRAY) 
+        }
+        val timeTxt = TextView(context).apply { 
+            id = TIME_ID
+            textSize = 14f
+            setTextColor(Color.GRAY) 
+        }
         val btn = MaterialButton(context).apply {
-            id = 5
+            id = BUTTON_ID
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
@@ -93,5 +111,13 @@ class BookingsAdapter(
     fun updateData(newBookings: List<Booking>) {
         bookings = newBookings
         notifyDataSetChanged()
+    }
+
+    companion object {
+        private const val NAME_ID = 101
+        private const val SERVICE_ID = 102
+        private const val ADDRESS_ID = 103
+        private const val TIME_ID = 104
+        private const val BUTTON_ID = 105
     }
 }

@@ -3,246 +3,238 @@ package com.nisr.sauservices.data.model
 data class HomeCategory(
     val id: String,
     val name: String,
-    val icon: Int? = null 
+    val icon: String
 )
 
-data class ProductType(
+data class HomeSubcategory(
     val id: String,
     val categoryId: String,
-    val name: String,
-    val description: String,
-    val image: Int? = null
+    val name: String
 )
 
-data class Product(
+data class HomeProduct(
     val id: String,
-    val typeId: String,
+    val subcategoryId: String,
     val name: String,
-    val price: Double,
+    val price: Int,
     val unit: String,
-    val rating: Double,
-    val description: String,
-    val image: Int? = null
+    val category: String
 )
 
 object HomeEssentialsData {
     val categories = listOf(
-        HomeCategory("vegetables", "Vegetables"),
-        HomeCategory("fruits", "Fruits"),
-        HomeCategory("grocery", "Grocery"),
-        HomeCategory("dairy", "Milk & Dairy"),
-        HomeCategory("snacks", "Snacks"),
-        HomeCategory("meat", "Meat"),
-        HomeCategory("fish", "Fish"),
-        HomeCategory("eggs", "Eggs"),
-        HomeCategory("water", "Water")
+        HomeCategory("veg", "Vegetables", "🥦"),
+        HomeCategory("fruits", "Fruits", "🍎"),
+        HomeCategory("grocery", "Grocery", "🛒"),
+        HomeCategory("dairy", "Milk & Dairy", "🥛"),
+        HomeCategory("meat", "Meat / Fish / Eggs", "🥩"),
+        HomeCategory("snacks", "Snacks", "🍿"),
+        HomeCategory("water", "Drinking Water", "💧")
     )
 
-    val productTypes = listOf(
+    val subcategories = listOf(
         // Vegetables
-        ProductType("leafy_veg", "vegetables", "Leafy Vegetables", "Spinach, Coriander, Mint, Lettuce, Fenugreek"),
-        ProductType("root_veg", "vegetables", "Root Vegetables", "Potato, Carrot, Beetroot, Radish, Sweet Potato"),
-        ProductType("bulb_veg", "vegetables", "Bulb Vegetables", "Onion, Garlic, Ginger"),
-        ProductType("reg_veg", "vegetables", "Regular Vegetables", "Tomato, Brinjal, Capsicum, Cabbage, Cauliflower"),
-        ProductType("exotic_veg", "vegetables", "Exotic Vegetables", "Broccoli, Zucchini, Bell Peppers, Cherry Tomatoes"),
+        HomeSubcategory("veg_leafy", "veg", "Leafy Vegetables"),
+        HomeSubcategory("veg_root", "veg", "Root Vegetables"),
+        HomeSubcategory("veg_fruit", "veg", "Fruit Vegetables"),
+        HomeSubcategory("veg_beans", "veg", "Beans & Peas"),
+        HomeSubcategory("veg_exotic", "veg", "Exotic Vegetables"),
+        HomeSubcategory("veg_cabbage", "veg", "Cabbage Family"),
 
         // Fruits
-        ProductType("citrus_fruits", "fruits", "Citrus Fruits", "Orange, Sweet Lime, Lemon, Grapefruit"),
-        ProductType("tropical_fruits", "fruits", "Tropical Fruits", "Banana, Mango, Pineapple, Papaya"),
-        ProductType("berries", "fruits", "Berries", "Strawberry, Blueberry, Raspberry"),
-        ProductType("pome_fruits", "fruits", "Pome Fruits", "Apple, Pear"),
-        ProductType("melons", "fruits", "Melons", "Watermelon, Muskmelon"),
-        ProductType("exotic_fruits", "fruits", "Exotic Fruits", "Kiwi, Dragon Fruit, Avocado"),
+        HomeSubcategory("fruit_citrus", "fruits", "Citrus Fruits"),
+        HomeSubcategory("fruit_tropical", "fruits", "Tropical Fruits"),
+        HomeSubcategory("fruit_berries", "fruits", "Berries"),
+        HomeSubcategory("fruit_exotic", "fruits", "Exotic Fruits"),
+        HomeSubcategory("fruit_everyday", "fruits", "Everyday Fruits"),
+        HomeSubcategory("fruit_seasonal", "fruits", "Seasonal Fruits"),
 
         // Grocery
-        ProductType("staples", "grocery", "Staples", "Rice, Wheat, Atta, Dal, Pulses"),
-        ProductType("oils", "grocery", "Oils & Ghee", "Sunflower Oil, Groundnut Oil, Olive Oil, Ghee"),
-        ProductType("spices", "grocery", "Spices", "Turmeric, Chilli Powder, Garam Masala, Pepper"),
-        ProductType("condiments", "grocery", "Condiments", "Salt, Sugar, Jaggery, Sauces, Pickles"),
-        ProductType("baking", "grocery", "Baking Essentials", "Flour, Baking Soda, Cocoa Powder, Yeast"),
-        ProductType("ready_cook", "grocery", "Ready to Cook", "Noodles, Pasta, Soup Mix, Instant Mixes"),
+        HomeSubcategory("groc_grains", "grocery", "Grains"),
+        HomeSubcategory("groc_pulses", "grocery", "Pulses"),
+        HomeSubcategory("groc_oils", "grocery", "Oils"),
+        HomeSubcategory("groc_masalas", "grocery", "Masalas"),
+        HomeSubcategory("groc_ready", "grocery", "Ready to Eat"),
 
-        // Dairy
-        ProductType("milk", "dairy", "Milk", "Toned Milk, Full Cream Milk, Skim Milk"),
-        ProductType("curd", "dairy", "Curd & Yogurt", "Curd, Greek Yogurt, Flavored Yogurt"),
-        ProductType("butter_cheese", "dairy", "Butter & Cheese", "Butter, Cheese Slices, Cheese Blocks"),
-        ProductType("paneer", "dairy", "Paneer", "Fresh Paneer, Malai Paneer"),
-        ProductType("cream", "dairy", "Cream & Dairy Drinks", "Fresh Cream, Lassi, Buttermilk"),
+        // Milk & Dairy
+        HomeSubcategory("dairy_milk", "dairy", "Milk"),
+        HomeSubcategory("dairy_butter", "dairy", "Butter & Ghee"),
+        HomeSubcategory("dairy_cheese", "dairy", "Cheese & Paneer"),
+        HomeSubcategory("dairy_yogurt", "dairy", "Curd & Yogurt"),
+        HomeSubcategory("dairy_cream", "dairy", "Cream & Drinks"),
+
+        // Meat / Fish / Eggs
+        HomeSubcategory("meat_chicken", "meat", "Chicken"),
+        HomeSubcategory("meat_mutton", "meat", "Mutton"),
+        HomeSubcategory("meat_fish", "meat", "Fish"),
+        HomeSubcategory("meat_eggs", "meat", "Eggs"),
 
         // Snacks
-        ProductType("namkeen", "snacks", "Namkeen", "Mixture, Sev, Chips, Bhujia"),
-        ProductType("biscuits", "snacks", "Biscuits", "Marie, Cream Biscuits, Digestive"),
-        ProductType("sweets", "snacks", "Sweets", "Laddoo, Barfi, Halwa"),
-        ProductType("healthy_snacks", "snacks", "Healthy Snacks", "Dry Fruits, Energy Bars, Roasted Nuts"),
-        ProductType("instant_snacks", "snacks", "Instant Snacks", "Cup Noodles, Ready Poha, Upma Mix"),
+        HomeSubcategory("snack_chips", "snacks", "Chips"),
+        HomeSubcategory("snack_biscuits", "snacks", "Biscuits"),
+        HomeSubcategory("snack_namkeen", "snacks", "Namkeen"),
+        HomeSubcategory("snack_sweets", "snacks", "Sweets"),
+        HomeSubcategory("snack_chocolates", "snacks", "Chocolates"),
 
-        // Meat
-        ProductType("chicken", "meat", "Chicken", "Curry Cut, Boneless, Wings"),
-        ProductType("mutton", "meat", "Mutton", "Curry Cut, Boneless"),
-        ProductType("ready_meat", "meat", "Ready to Cook Meat", "Marinated Chicken, Kebabs"),
-
-        // Fish
-        ProductType("fresh_water", "fish", "Fresh Water Fish", "Rohu, Katla"),
-        ProductType("sea_fish", "fish", "Sea Fish", "Pomfret, Seer Fish, Mackerel"),
-        ProductType("prawns", "fish", "Prawns", "Small Prawns, Jumbo Prawns"),
-
-        // Eggs
-        ProductType("reg_eggs", "eggs", "Regular Eggs", "White Eggs, Brown Eggs"),
-        ProductType("farm_eggs", "eggs", "Farm Eggs", "Country Eggs"),
-
-        // Water
-        ProductType("packaged_water", "water", "Packaged Water", "1L Bottles, 2L Bottles"),
-        ProductType("large_cans", "water", "Large Cans", "20L Can Water"),
-        ProductType("mineral_water", "water", "Mineral Water Brands", "Bisleri, Kinley, Aquafina")
+        // Drinking Water
+        HomeSubcategory("water_can", "water", "Can Water"),
+        HomeSubcategory("water_bottle", "water", "Bottled Water"),
+        HomeSubcategory("water_mineral", "water", "Mineral Water"),
+        HomeSubcategory("water_alkaline", "water", "Alkaline Water")
     )
 
     val products = listOf(
-        // Vegetables - Leafy
-        Product("v1", "leafy_veg", "Fresh Spinach (Palak)", 30.0, "250g", 4.5, "Farm fresh green spinach"),
-        Product("v2", "leafy_veg", "Coriander (Dhaniya)", 10.0, "100g", 4.8, "Fresh aromatic coriander leaves"),
-        Product("v3", "leafy_veg", "Mint Leaves (Pudina)", 15.0, "100g", 4.6, "Fresh mint for chutneys and tea"),
-        
-        // Vegetables - Root
-        Product("v4", "root_veg", "Potatoes (Aloo)", 40.0, "1kg", 4.3, "Fresh farm-picked potatoes"),
-        Product("v5", "root_veg", "Carrots (Gajar)", 60.0, "1kg", 4.4, "Red, crunchy and sweet carrots"),
-        Product("v6", "root_veg", "Beetroot", 45.0, "500g", 4.2, "Healthy and fresh beetroots"),
+        // VEGETABLES
+        // Leafy
+        HomeProduct("v_leafy_1", "veg_leafy", "Spinach (Palak)", 20, "1 bunch", "Vegetables"),
+        HomeProduct("v_leafy_2", "veg_leafy", "Coriander (Kothmir)", 15, "1 bunch", "Vegetables"),
+        HomeProduct("v_leafy_3", "veg_leafy", "Mint (Pudina)", 15, "1 bunch", "Vegetables"),
+        HomeProduct("v_leafy_4", "veg_leafy", "Methi Leaves", 20, "1 bunch", "Vegetables"),
+        // Root
+        HomeProduct("v_root_1", "veg_root", "Potato", 30, "1kg", "Vegetables"),
+        HomeProduct("v_root_2", "veg_root", "Onion", 35, "1kg", "Vegetables"),
+        HomeProduct("v_root_3", "veg_root", "Carrot", 40, "1kg", "Vegetables"),
+        HomeProduct("v_root_4", "veg_root", "Beetroot", 45, "1kg", "Vegetables"),
+        HomeProduct("v_root_5", "veg_root", "Ginger", 30, "250g", "Vegetables"),
+        HomeProduct("v_root_6", "veg_root", "Garlic", 35, "250g", "Vegetables"),
+        // Fruit Veg
+        HomeProduct("v_fruit_1", "veg_fruit", "Tomato", 25, "1kg", "Vegetables"),
+        HomeProduct("v_fruit_2", "veg_fruit", "Brinjal", 35, "1kg", "Vegetables"),
+        HomeProduct("v_fruit_3", "veg_fruit", "Okra (Lady Finger)", 30, "500g", "Vegetables"),
+        HomeProduct("v_fruit_4", "veg_fruit", "Capsicum", 40, "500g", "Vegetables"),
+        HomeProduct("v_fruit_5", "veg_fruit", "Pumpkin", 30, "1kg", "Vegetables"),
+        // Beans
+        HomeProduct("v_beans_1", "veg_beans", "French Beans", 35, "500g", "Vegetables"),
+        HomeProduct("v_beans_2", "veg_beans", "Green Peas", 50, "500g", "Vegetables"),
+        // Exotic
+        HomeProduct("v_exotic_1", "veg_exotic", "Broccoli", 60, "250g", "Vegetables"),
+        HomeProduct("v_exotic_2", "veg_exotic", "Mushroom", 50, "200g", "Vegetables"),
+        HomeProduct("v_exotic_3", "veg_exotic", "Lettuce", 40, "1 piece", "Vegetables"),
+        HomeProduct("v_exotic_4", "veg_exotic", "Zucchini", 70, "500g", "Vegetables"),
+        // Cabbage
+        HomeProduct("v_cabbage_1", "veg_cabbage", "Cabbage", 25, "1kg", "Vegetables"),
+        HomeProduct("v_cabbage_2", "veg_cabbage", "Cauliflower", 35, "1 piece", "Vegetables"),
 
-        // Vegetables - Bulb
-        Product("v7", "bulb_veg", "Onions", 35.0, "1kg", 4.5, "Fresh pink onions"),
-        Product("v8", "bulb_veg", "Garlic", 50.0, "250g", 4.7, "Aromatic and fresh garlic bulbs"),
+        // FRUITS
+        // Citrus
+        HomeProduct("f_citrus_1", "fruit_citrus", "Orange", 60, "1kg", "Fruits"),
+        HomeProduct("f_citrus_2", "fruit_citrus", "Mosambi", 70, "1kg", "Fruits"),
+        HomeProduct("f_citrus_3", "fruit_citrus", "Lemon", 20, "250g", "Fruits"),
+        // Tropical
+        HomeProduct("f_trop_1", "fruit_tropical", "Banana", 50, "Dozen", "Fruits"),
+        HomeProduct("f_trop_2", "fruit_tropical", "Mango", 120, "1kg", "Fruits"),
+        HomeProduct("f_trop_3", "fruit_tropical", "Papaya", 45, "1kg", "Fruits"),
+        HomeProduct("f_trop_4", "fruit_tropical", "Pineapple", 60, "1 piece", "Fruits"),
+        // Berries
+        HomeProduct("f_berry_1", "fruit_berries", "Strawberry", 80, "200g", "Fruits"),
+        HomeProduct("f_berry_2", "fruit_berries", "Grapes", 50, "500g", "Fruits"),
+        // Exotic
+        HomeProduct("f_exot_1", "fruit_exotic", "Kiwi", 100, "3 pcs", "Fruits"),
+        HomeProduct("f_exot_2", "fruit_exotic", "Dragon Fruit", 90, "1 pc", "Fruits"),
+        HomeProduct("f_exot_3", "fruit_exotic", "Avocado", 120, "1 pc", "Fruits"),
+        // Everyday
+        HomeProduct("f_every_1", "fruit_everyday", "Apple", 120, "1kg", "Fruits"),
+        HomeProduct("f_every_2", "fruit_everyday", "Pomegranate", 150, "1kg", "Fruits"),
+        HomeProduct("f_every_3", "fruit_everyday", "Watermelon", 30, "1kg", "Fruits"),
+        // Seasonal
+        HomeProduct("f_seas_1", "fruit_seasonal", "Litchi", 90, "500g", "Fruits"),
+        HomeProduct("f_seas_2", "fruit_seasonal", "Jamun", 70, "500g", "Fruits"),
 
-        // Vegetables - Regular
-        Product("v9", "reg_veg", "Red Tomatoes", 30.0, "1kg", 4.4, "Fresh and juicy red tomatoes"),
-        Product("v10", "reg_veg", "Green Capsicum", 40.0, "500g", 4.3, "Fresh and crunchy capsicums"),
+        // MILK & DAIRY
+        // Milk
+        HomeProduct("d_milk_1", "dairy_milk", "Cow Milk", 28, "500ml", "Milk & Dairy"),
+        HomeProduct("d_milk_2", "dairy_milk", "Buffalo Milk", 32, "500ml", "Milk & Dairy"),
+        HomeProduct("d_milk_3", "dairy_milk", "Toned Milk", 54, "1L", "Milk & Dairy"),
+        HomeProduct("d_milk_4", "dairy_milk", "Full Cream Milk", 60, "1L", "Milk & Dairy"),
+        HomeProduct("d_milk_5", "dairy_milk", "Organic Milk", 70, "1L", "Milk & Dairy"),
+        // Butter & Ghee
+        HomeProduct("d_butt_1", "dairy_butter", "Butter", 55, "100g", "Milk & Dairy"),
+        HomeProduct("d_butt_2", "dairy_butter", "Ghee", 320, "500ml", "Milk & Dairy"),
+        // Cheese & Paneer
+        HomeProduct("d_chee_1", "dairy_cheese", "Paneer", 90, "200g", "Milk & Dairy"),
+        HomeProduct("d_chee_2", "dairy_cheese", "Cheese Slices", 110, "pack", "Milk & Dairy"),
+        HomeProduct("d_chee_3", "dairy_cheese", "Mozzarella", 140, "200g", "Milk & Dairy"),
+        // Curd & Yogurt
+        HomeProduct("d_yog_1", "dairy_yogurt", "Curd", 40, "500g", "Milk & Dairy"),
+        HomeProduct("d_yog_2", "dairy_yogurt", "Greek Yogurt", 60, "150g", "Milk & Dairy"),
+        // Cream & Drinks
+        HomeProduct("d_crea_1", "dairy_cream", "Fresh Cream", 60, "250ml", "Milk & Dairy"),
+        HomeProduct("d_crea_2", "dairy_cream", "Buttermilk", 25, "200ml", "Milk & Dairy"),
+        HomeProduct("d_crea_3", "dairy_cream", "Lassi", 35, "200ml", "Milk & Dairy"),
 
-        // Vegetables - Exotic
-        Product("v11", "exotic_veg", "Broccoli", 120.0, "1 pc", 4.6, "Fresh green broccoli florets"),
-        Product("v12", "exotic_veg", "Zucchini (Green)", 90.0, "500g", 4.4, "Fresh green zucchini"),
+        // MEAT / FISH / EGGS
+        // Chicken
+        HomeProduct("m_chick_1", "meat_chicken", "Chicken Curry Cut", 220, "1kg", "Meat"),
+        HomeProduct("m_chick_2", "meat_chicken", "Chicken Boneless", 180, "500g", "Meat"),
+        HomeProduct("m_chick_3", "meat_chicken", "Chicken Breast", 200, "500g", "Meat"),
+        HomeProduct("m_chick_4", "meat_chicken", "Leg Pieces", 160, "500g", "Meat"),
+        HomeProduct("m_chick_5", "meat_chicken", "Wings", 140, "500g", "Meat"),
+        HomeProduct("m_chick_6", "meat_chicken", "Keema", 190, "500g", "Meat"),
+        HomeProduct("m_chick_7", "meat_chicken", "Whole Chicken", 300, "1 pc", "Meat"),
+        // Mutton
+        HomeProduct("m_mutt_1", "meat_mutton", "Mutton Curry Cut", 700, "1kg", "Meat"),
+        HomeProduct("m_mutt_2", "meat_mutton", "Mutton Boneless", 450, "500g", "Meat"),
+        HomeProduct("m_mutt_3", "meat_mutton", "Mutton Keema", 420, "500g", "Meat"),
+        HomeProduct("m_mutt_4", "meat_mutton", "Mutton Liver", 150, "250g", "Meat"),
+        HomeProduct("m_mutt_5", "meat_mutton", "Soup Bones", 120, "500g", "Meat"),
+        // Fish
+        HomeProduct("m_fish_1", "meat_fish", "Rohu", 250, "1kg", "Meat"),
+        HomeProduct("m_fish_2", "meat_fish", "Catla", 280, "1kg", "Meat"),
+        HomeProduct("m_fish_3", "meat_fish", "Seer Fish", 400, "500g", "Meat"),
+        HomeProduct("m_fish_4", "meat_fish", "Pomfret", 350, "500g", "Meat"),
+        HomeProduct("m_fish_5", "meat_fish", "Prawns", 300, "500g", "Meat"),
+        HomeProduct("m_fish_6", "meat_fish", "Crab", 350, "1kg", "Meat"),
+        HomeProduct("m_fish_7", "meat_fish", "Basa Fillet", 220, "500g", "Meat"),
+        // Eggs
+        HomeProduct("m_eggs_1", "meat_eggs", "6 Eggs", 45, "pack", "Meat"),
+        HomeProduct("m_eggs_2", "meat_eggs", "12 Eggs", 80, "pack", "Meat"),
+        HomeProduct("m_eggs_3", "meat_eggs", "Country Eggs", 70, "6 pcs", "Meat"),
 
-        // Fruits - Citrus
-        Product("f1", "citrus_fruits", "Fresh Oranges", 120.0, "1kg", 4.5, "Sweet and juicy Nagpur oranges"),
-        Product("f2", "citrus_fruits", "Sweet Lime (Mosambi)", 90.0, "1kg", 4.3, "Fresh sweet lime for juice"),
-        Product("f3", "citrus_fruits", "Lemons", 20.0, "4 pcs", 4.7, "Tangy and fresh lemons"),
+        // SNACKS
+        HomeProduct("s_chip_1", "snack_chips", "Lays", 20, "pack", "Snacks"),
+        HomeProduct("s_chip_2", "snack_chips", "Bingo", 20, "pack", "Snacks"),
+        HomeProduct("s_bisc_1", "snack_biscuits", "Good Day", 30, "pack", "Snacks"),
+        HomeProduct("s_bisc_2", "snack_biscuits", "Oreo", 40, "pack", "Snacks"),
+        HomeProduct("s_namk_1", "snack_namkeen", "Mixture", 50, "200g", "Snacks"),
+        HomeProduct("s_namk_2", "snack_namkeen", "Sev", 40, "200g", "Snacks"),
+        HomeProduct("s_swee_1", "snack_sweets", "Laddu", 150, "250g", "Snacks"),
+        HomeProduct("s_swee_2", "snack_sweets", "Barfi", 180, "250g", "Snacks"),
+        HomeProduct("s_choc_1", "snack_chocolates", "Dairy Milk", 40, "pc", "Snacks"),
+        HomeProduct("s_choc_2", "snack_chocolates", "KitKat", 30, "pc", "Snacks"),
 
-        // Fruits - Tropical
-        Product("f4", "tropical_fruits", "Banana (Robusta)", 60.0, "1 dozen", 4.4, "Fresh and ripe bananas"),
-        Product("f5", "tropical_fruits", "Alphonso Mango", 600.0, "1 dozen", 4.9, "The king of mangoes"),
+        // DRINKING WATER
+        // Can
+        HomeProduct("w_can_1", "water_can", "20L Refill", 60, "can", "Water"),
+        HomeProduct("w_can_2", "water_can", "20L New", 150, "can", "Water"),
+        // Bottle
+        HomeProduct("w_bott_1", "water_bottle", "500ml", 10, "bottle", "Water"),
+        HomeProduct("w_bott_2", "water_bottle", "1L", 20, "bottle", "Water"),
+        HomeProduct("w_bott_3", "water_bottle", "2L", 35, "bottle", "Water"),
+        // Mineral
+        HomeProduct("w_min_1", "water_mineral", "1L Mineral", 25, "bottle", "Water"),
+        HomeProduct("w_min_2", "water_mineral", "2L Mineral", 40, "bottle", "Water"),
+        // Alkaline
+        HomeProduct("w_alk_1", "water_alkaline", "1L Alkaline", 60, "bottle", "Water"),
 
-        // Fruits - Berries
-        Product("f6", "berries", "Strawberries", 80.0, "1 pack", 4.5, "Sweet and fresh strawberries"),
-        Product("f7", "berries", "Blueberries", 250.0, "1 pack", 4.6, "Fresh imported blueberries"),
-
-        // Fruits - Pome
-        Product("f8", "pome_fruits", "Washington Apple", 180.0, "1kg", 4.7, "Crispy and sweet red apples"),
-        Product("f9", "pome_fruits", "Pears", 120.0, "1kg", 4.4, "Fresh and juicy green pears"),
-
-        // Fruits - Melons
-        Product("f10", "melons", "Watermelon", 50.0, "1 pc", 4.5, "Large and sweet watermelon"),
-        Product("f11", "melons", "Muskmelon", 60.0, "1 pc", 4.3, "Sweet and aromatic muskmelon"),
-
-        // Fruits - Exotic
-        Product("f12", "exotic_fruits", "Kiwi Fruit", 100.0, "3 pcs", 4.6, "Fresh green kiwis"),
-        Product("f13", "exotic_fruits", "Avocado", 300.0, "1 pc", 4.5, "Butter-soft ripe avocados"),
-
-        // Grocery - Staples
-        Product("g1", "staples", "Premium Basmati Rice", 150.0, "1kg", 4.8, "Long grain aromatic rice"),
-        Product("g2", "staples", "Wheat Atta", 350.0, "5kg", 4.7, "100% whole wheat atta"),
-        Product("g3", "staples", "Toor Dal", 160.0, "1kg", 4.6, "Premium quality toor dal"),
-
-        // Grocery - Oils
-        Product("g4", "oils", "Sunflower Oil", 140.0, "1L", 4.5, "Healthy refined sunflower oil"),
-        Product("g5", "oils", "Pure Cow Ghee", 650.0, "500ml", 4.9, "Authentic and pure cow ghee"),
-
-        // Grocery - Spices
-        Product("g6", "spices", "Turmeric Powder", 45.0, "200g", 4.7, "Pure and organic turmeric"),
-        Product("g7", "spices", "Red Chilli Powder", 55.0, "200g", 4.6, "Spicy and vibrant red chilli"),
-
-        // Grocery - Condiments
-        Product("g8", "condiments", "Iodized Salt", 25.0, "1kg", 4.9, "Premium quality iodized salt"),
-        Product("g9", "condiments", "Refined Sugar", 50.0, "1kg", 4.6, "Pure white refined sugar"),
-
-        // Grocery - Baking
-        Product("g10", "baking", "Maida (Refined Flour)", 40.0, "1kg", 4.5, "Fine quality maida for baking"),
-        Product("g11", "baking", "Cocoa Powder", 120.0, "100g", 4.7, "Rich dark cocoa powder"),
-
-        // Grocery - Ready Cook
-        Product("g12", "ready_cook", "Instant Noodles", 15.0, "1 pack", 4.4, "Quick and tasty noodles"),
-        Product("g13", "ready_cook", "Pasta (Penne)", 80.0, "500g", 4.5, "Premium durum wheat pasta"),
-
-        // Dairy - Milk
-        Product("d1", "milk", "Full Cream Milk", 66.0, "1L", 4.7, "Pure and fresh full cream milk"),
-        Product("d2", "milk", "Toned Milk", 54.0, "1L", 4.5, "Fresh toned milk for daily use"),
-
-        // Dairy - Curd
-        Product("d3", "curd", "Fresh Thick Curd", 40.0, "500g", 4.6, "Traditional style thick curd"),
-        Product("d4", "curd", "Greek Yogurt", 80.0, "150g", 4.7, "High protein greek yogurt"),
-
-        // Dairy - Butter & Cheese
-        Product("d5", "butter_cheese", "Amul Butter", 275.0, "500g", 4.9, "The classic salted butter"),
-        Product("d6", "butter_cheese", "Cheese Slices", 150.0, "200g", 4.7, "Perfectly melted cheese slices"),
-
-        // Dairy - Paneer
-        Product("d7", "paneer", "Fresh Paneer", 100.0, "200g", 4.8, "Soft and fresh dairy paneer"),
-
-        // Dairy - Cream
-        Product("d8", "cream", "Fresh Cream", 65.0, "250ml", 4.6, "Rich and smooth fresh cream"),
-        Product("d9", "cream", "Sweet Lassi", 25.0, "200ml", 4.5, "Refreshing sweet lassi"),
-
-        // Snacks - Namkeen
-        Product("s1", "namkeen", "Aloo Bhujia", 50.0, "200g", 4.7, "Crunchy potato snacks"),
-        Product("s2", "namkeen", "Potato Chips", 20.0, "1 pack", 4.5, "Classic salted potato chips"),
-
-        // Snacks - Biscuits
-        Product("s3", "biscuits", "Marie Biscuits", 30.0, "250g", 4.4, "Crispy and light tea biscuits"),
-        Product("s4", "biscuits", "Chocolate Cookies", 50.0, "150g", 4.6, "Rich chocolate chip cookies"),
-
-        // Snacks - Sweets
-        Product("s5", "sweets", "Motichoor Laddu", 150.0, "250g", 4.8, "Traditional festive sweets"),
-        Product("s6", "sweets", "Gulab Jamun", 120.0, "250g", 4.7, "Soft and juicy gulab jamuns"),
-
-        // Snacks - Healthy
-        Product("s7", "healthy_snacks", "Mixed Dry Fruits", 450.0, "250g", 4.9, "Premium mix of nuts and raisins"),
-        Product("s8", "healthy_snacks", "Energy Bar", 40.0, "1 pc", 4.4, "Nutrition-packed energy bar"),
-
-        // Snacks - Instant
-        Product("s9", "instant_snacks", "Cup Noodles", 50.0, "1 pc", 4.3, "Just add hot water and eat"),
-
-        // Meat - Chicken
-        Product("m1", "chicken", "Chicken Curry Cut", 240.0, "1kg", 4.6, "Fresh farm chicken with bones"),
-        Product("m2", "chicken", "Boneless Breast", 320.0, "1kg", 4.7, "Fresh tender boneless chicken"),
-
-        // Meat - Mutton
-        Product("m3", "mutton", "Mutton Curry Cut", 850.0, "1kg", 4.8, "Fresh and tender goat meat"),
-
-        // Meat - Ready Meat
-        Product("m4", "ready_meat", "Marinated Chicken", 180.0, "500g", 4.5, "Ready to grill marinated chicken"),
-
-        // Fish - Fresh Water
-        Product("fi1", "fresh_water", "Rohu Fish", 220.0, "1kg", 4.5, "Fresh river water fish"),
-        Product("fi2", "fresh_water", "Katla Fish", 250.0, "1kg", 4.4, "Fresh and large Katla fish"),
-
-        // Fish - Sea Fish
-        Product("fi3", "sea_fish", "Pomfret Fish", 600.0, "1kg", 4.7, "Premium silver pomfret fish"),
-        Product("fi4", "sea_fish", "Mackerel (Bangda)", 300.0, "1kg", 4.3, "Fresh sea water mackerel"),
-
-        // Fish - Prawns
-        Product("fi5", "prawns", "Jumbo Prawns", 800.0, "1kg", 4.8, "Large sized fresh prawns"),
-
-        // Eggs - Regular
-        Product("e1", "reg_eggs", "White Eggs", 80.0, "1 dozen", 4.6, "Fresh poultry white eggs"),
-        Product("e2", "reg_eggs", "Brown Eggs", 120.0, "1 dozen", 4.7, "Nutritious farm brown eggs"),
-
-        // Eggs - Farm
-        Product("e3", "farm_eggs", "Country Eggs", 150.0, "1 dozen", 4.8, "Organic free-range country eggs"),
-
-        // Water - Packaged
-        Product("w1", "packaged_water", "Mineral Water Bottle", 20.0, "1L", 4.8, "Clean and pure drinking water"),
-        Product("w2", "packaged_water", "Water Bottle", 35.0, "2L", 4.7, "Clean drinking water 2L"),
-
-        // Water - Large Cans
-        Product("w3", "large_cans", "20L Water Can", 90.0, "20L", 4.6, "Standard 20L water can for home"),
-
-        // Water - Brands
-        Product("w4", "mineral_water", "Bisleri Water", 20.0, "1L", 4.9, "Trusted mineral water brand")
+        // GROCERY
+        // Grains
+        HomeProduct("g_grain_1", "groc_grains", "Rice", 60, "1kg", "Grocery"),
+        HomeProduct("g_grain_2", "groc_grains", "Basmati", 120, "1kg", "Grocery"),
+        HomeProduct("g_grain_3", "groc_grains", "Wheat flour", 45, "1kg", "Grocery"),
+        // Pulses
+        HomeProduct("g_pulse_1", "groc_pulses", "Toor dal", 160, "1kg", "Grocery"),
+        HomeProduct("g_pulse_2", "groc_pulses", "Moong dal", 140, "1kg", "Grocery"),
+        HomeProduct("g_pulse_3", "groc_pulses", "Rajma", 120, "1kg", "Grocery"),
+        // Oils
+        HomeProduct("g_oil_1", "groc_oils", "Sunflower oil", 150, "1L", "Grocery"),
+        HomeProduct("g_oil_2", "groc_oils", "Groundnut oil", 180, "1L", "Grocery"),
+        // Masalas
+        HomeProduct("g_masa_1", "groc_masalas", "Turmeric", 30, "100g", "Grocery"),
+        HomeProduct("g_masa_2", "groc_masalas", "Chilli powder", 40, "100g", "Grocery"),
+        HomeProduct("g_masa_3", "groc_masalas", "Garam masala", 50, "100g", "Grocery"),
+        // Ready
+        HomeProduct("g_read_1", "groc_ready", "Noodles", 15, "pack", "Grocery"),
+        HomeProduct("g_read_2", "groc_ready", "Pasta", 40, "pack", "Grocery"),
+        HomeProduct("g_read_3", "groc_ready", "Poha", 50, "1kg", "Grocery")
     )
 }

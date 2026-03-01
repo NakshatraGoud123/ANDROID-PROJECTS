@@ -28,7 +28,11 @@ data class CategoryItem(val name: String, val icon: ImageVector, val route: Stri
 fun CategoriesGrid(
     navController: NavController, 
     showAll: Boolean = false,
-    onHomeEssentialsClick: () -> Unit = {}
+    onHomeEssentialsClick: () -> Unit = {},
+    onEducationClick: () -> Unit = {},
+    onBusinessClick: () -> Unit = {},
+    onLifestyleClick: () -> Unit = {},
+    onTechClick: () -> Unit = {}
 ) {
     val allCategories = listOf(
         CategoryItem("Residential Services", Icons.Outlined.Home, Screen.ResidentialCategories.route),
@@ -45,11 +49,10 @@ fun CategoriesGrid(
         CategoryItem("More Services", Icons.Outlined.GridView, Screen.Categories.route)
     )
 
-    // Ensure we show "Home Essentials" in the first 6 if not showAll
+    // In horizontal mode (not showAll), we show first 5 + More Services
     val displayList = if (showAll) {
         allCategories.filter { it.name != "More Services" }
     } else {
-        // Take first 5 and then the last "More Services"
         allCategories.take(5) + allCategories.last()
     }
 
@@ -64,7 +67,6 @@ fun CategoriesGrid(
             )
         }
 
-        // Chunking the list into rows of 3
         displayList.chunked(3).forEach { rowItems ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -79,12 +81,19 @@ fun CategoriesGrid(
                                 "More Services" -> navController.navigate(Screen.Categories.route)
                                 "Home Essentials", "Essential Supplies" -> onHomeEssentialsClick()
                                 "Residential Services" -> navController.navigate(item.route)
+                                "Food & Beverages" -> navController.navigate("FOODS_categories")
+                                "Education Services" -> onEducationClick()
+                                "Business & Professional" -> onBusinessClick()
+                                "Home & Lifestyle" -> onLifestyleClick()
+                                "Tech Services" -> onTechClick()
+                                "Men's Grooming" -> navController.navigate(Screen.MensCategories.route)
+                                "Women's Beauty" -> navController.navigate(Screen.WomensBeautyCategories.route)
+                                "Healthcare & Pharmacy" -> navController.navigate(Screen.HealthcareCategories.route)
                                 else -> { /* Handle other categories */ }
                             }
                         }
                     )
                 }
-                // Add empty spacers if the row is not full
                 repeat(3 - rowItems.size) {
                     Spacer(Modifier.weight(1f))
                 }

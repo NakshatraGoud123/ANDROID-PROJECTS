@@ -9,11 +9,17 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.ShoppingBag
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -30,105 +36,125 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nisr.sauservices.data.model.HomeCategory
 import com.nisr.sauservices.data.model.HomeEssentialsData
-import com.nisr.sauservices.data.model.Product
-import com.nisr.sauservices.data.model.ProductType
+import com.nisr.sauservices.data.model.HomeProduct
+import com.nisr.sauservices.data.model.HomeSubcategory
 import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.theme.PinkPrimary
+import com.nisr.sauservices.ui.theme.LightPink
 import com.nisr.sauservices.ui.viewmodel.CartViewModel
 
-// --- MODAL BOTTOM SHEET CONTENT ---
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeEssentialsSheetContent(navController: NavController, onDismiss: () -> Unit) {
+    val categories = HomeEssentialsData.categories
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
             .padding(bottom = 32.dp)
     ) {
-        Text(
-            text = "Home Essentials",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Home Essentials",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = PinkPrimary
+            )
+            IconButton(onClick = onDismiss) {
+                Icon(Icons.Default.Close, contentDescription = "Close")
+            }
+        }
 
         LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.heightIn(max = 450.dp)
+            columns = GridCells.Fixed(2),
+            contentPadding = PaddingValues(20.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.fillMaxWidth()
         ) {
-            items(HomeEssentialsData.categories) { category ->
-                CategoryItemCard(category) {
-                    onDismiss()
-                    navController.navigate(Screen.ProductTypes.createRoute(category.id))
+            items(categories) { category ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            onDismiss()
+                            navController.navigate(Screen.HomeEssentialsCategory.createRoute(category.id))
+                        },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = LightPink),
+                    elevation = CardDefaults.cardElevation(0.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(20.dp)
+                            .fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(category.icon, fontSize = 32.sp)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = category.name,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = PinkPrimary,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-@Composable
-fun CategoryItemCard(category: HomeCategory, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(1f)
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8F8)),
-        elevation = CardDefaults.cardElevation(0.dp)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color.White),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.ShoppingBag,
-                    contentDescription = category.name,
-                    modifier = Modifier.size(28.dp),
-                    tint = PinkPrimary
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = category.name,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                textAlign = TextAlign.Center,
-                lineHeight = 14.sp,
-                color = Color.DarkGray
-            )
-        }
-    }
-}
-
-// --- PRODUCT TYPE SCREEN ---
+// --- LEVEL 1: MAIN SCREEN ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProductTypeScreen(navController: NavController, categoryId: String) {
-    val category = HomeEssentialsData.categories.find { it.id == categoryId }
-    val types = HomeEssentialsData.productTypes.filter { it.categoryId == categoryId }
-
+fun HomeEssentialsMainScreen(navController: NavController, cartViewModel: CartViewModel) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(category?.name ?: "Products", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.Black)
+            Column(modifier = Modifier.background(Color.White)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text("Home Essentials", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = PinkPrimary)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(14.dp))
+                            Text(" Select Location", fontSize = 12.sp, color = Color.Gray)
+                        }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-            )
+                    IconButton(onClick = { navController.navigate(Screen.HomeEssentialsCart.route) }) {
+                        BadgedBox(badge = {
+                            if (cartViewModel.homeCartItems.isNotEmpty()) {
+                                Badge(containerColor = PinkPrimary) {
+                                    Text(cartViewModel.homeCartItems.sumOf { it.quantity }.toString(), color = Color.White)
+                                }
+                            }
+                        }) {
+                            Icon(Icons.Default.ShoppingCart, contentDescription = "Cart", tint = Color.Black)
+                        }
+                    }
+                }
+                
+                OutlinedTextField(
+                    value = "",
+                    onValueChange = {},
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                    placeholder = { Text("Search groceries, meat, dairy...", fontSize = 14.sp) },
+                    leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Color(0xFFF5F5F5), focusedContainerColor = Color(0xFFF5F5F5), unfocusedBorderColor = Color.Transparent)
+                )
+            }
         },
         containerColor = Color.White
     ) { padding ->
@@ -139,9 +165,9 @@ fun ProductTypeScreen(navController: NavController, categoryId: String) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.padding(padding)
         ) {
-            items(types) { type ->
-                ProductTypeCard(type) {
-                    navController.navigate(Screen.ProductList.createRoute(type.id))
+            items(HomeEssentialsData.categories) { category ->
+                HomeCategoryCard(category) {
+                    navController.navigate(Screen.HomeEssentialsCategory.createRoute(category.id))
                 }
             }
         }
@@ -149,110 +175,132 @@ fun ProductTypeScreen(navController: NavController, categoryId: String) {
 }
 
 @Composable
-fun ProductTypeCard(type: ProductType, onClick: () -> Unit) {
+fun HomeCategoryCard(category: HomeCategory, onClick: () -> Unit) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8F8)),
-        elevation = CardDefaults.cardElevation(0.dp)
+        modifier = Modifier.fillMaxWidth().height(160.dp).clickable(onClick = onClick),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFBFBFB)),
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(
-            modifier = Modifier.padding(12.dp)
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(110.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color.White),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Default.ShoppingBag, contentDescription = null, tint = PinkPrimary.copy(alpha = 0.2f), modifier = Modifier.size(48.dp))
-            }
+            Text(category.icon, fontSize = 48.sp)
             Spacer(modifier = Modifier.height(12.dp))
-            Text(text = type.name, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.Black)
-            Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = type.description, 
-                fontSize = 11.sp, 
-                color = Color.Gray, 
-                maxLines = 2,
-                lineHeight = 14.sp
+                text = category.name,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                color = Color.Black
             )
         }
     }
 }
 
-// --- PRODUCT LIST SCREEN ---
+// --- LEVEL 2: SUBCATEGORY SCREEN ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProductListScreen(navController: NavController, typeId: String, cartViewModel: CartViewModel) {
-    val type = HomeEssentialsData.productTypes.find { it.id == typeId }
-    val products = HomeEssentialsData.products.filter { it.typeId == typeId }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
+fun HomeEssentialsCategoryScreen(navController: NavController, categoryId: String) {
+    val category = HomeEssentialsData.categories.find { it.id == categoryId }
+    val subcategories = HomeEssentialsData.subcategories.filter { it.categoryId == categoryId }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(type?.name ?: "Products", fontWeight = FontWeight.Bold) },
+                title = { Text(category?.name ?: "Categories", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.Black)
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
-                },
-                actions = {
-                    IconButton(onClick = { navController.navigate(Screen.Cart.route) }) {
-                        BadgedBox(badge = {
-                            if (cartViewModel.cartItems.isNotEmpty()) {
-                                Badge(containerColor = PinkPrimary) { 
-                                    Text(cartViewModel.cartItems.sumOf { it.quantity }.toString(), color = Color.White) 
-                                }
-                            }
-                        }) {
-                            Icon(Icons.Default.ShoppingCart, contentDescription = "Cart", tint = Color.Black)
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                }
             )
         },
         containerColor = Color.White
     ) { padding ->
-        if (products.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("Coming Soon!", color = Color.Gray)
-            }
-        } else {
-            LazyColumn(
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.padding(padding)
-            ) {
-                items(products) { product ->
-                    ProductCard(
-                        product = product,
-                        quantity = cartViewModel.getItemQuantity(product.id),
-                        onAdd = {
-                            cartViewModel.addToCart(product)
-                        },
-                        onIncrease = { cartViewModel.updateQuantity(product.id, true) },
-                        onDecrease = { cartViewModel.updateQuantity(product.id, false) }
-                    )
+        LazyColumn(
+            modifier = Modifier.padding(padding).fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(subcategories) { sub ->
+                Card(
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        navController.navigate(Screen.HomeEssentialsItems.createRoute(sub.id))
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8F8))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(20.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(sub.name, fontSize = 18.sp, fontWeight = FontWeight.Medium)
+                        Icon(Icons.Default.KeyboardArrowRight, contentDescription = null)
+                    }
                 }
             }
         }
     }
 }
 
+// --- LEVEL 3: ITEMS SCREEN ---
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProductCard(
-    product: Product,
+fun HomeEssentialsItemsScreen(navController: NavController, subcategoryId: String, cartViewModel: CartViewModel) {
+    val subcategory = HomeEssentialsData.subcategories.find { it.id == subcategoryId }
+    val products = HomeEssentialsData.products.filter { it.subcategoryId == subcategoryId }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(subcategory?.name ?: "Items", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { navController.navigate(Screen.HomeEssentialsCart.route) }) {
+                        BadgedBox(badge = {
+                            if (cartViewModel.homeCartItems.isNotEmpty()) {
+                                Badge(containerColor = PinkPrimary) {
+                                    Text(cartViewModel.homeCartItems.sumOf { it.quantity }.toString(), color = Color.White)
+                                }
+                            }
+                        }) {
+                            Icon(Icons.Default.ShoppingCart, contentDescription = "Cart")
+                        }
+                    }
+                }
+            )
+        },
+        containerColor = Color.White
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier.padding(padding).fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            items(products) { product ->
+                HomeProductCard(
+                    product = product,
+                    quantity = cartViewModel.getHomeItemQuantity(product.id),
+                    onIncrease = { cartViewModel.addHomeProduct(product) },
+                    onDecrease = { cartViewModel.removeHomeProduct(product.id) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun HomeProductCard(
+    product: HomeProduct,
     quantity: Int,
-    onAdd: () -> Unit,
     onIncrease: () -> Unit,
     onDecrease: () -> Unit
 ) {
@@ -267,51 +315,34 @@ fun ProductCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier
-                    .size(90.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFF8F8F8)),
+                modifier = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFFF5F5F5)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(Icons.Default.ShoppingBasket, contentDescription = null, tint = PinkPrimary.copy(alpha = 0.3f), modifier = Modifier.size(32.dp))
             }
-            
-            Spacer(modifier = Modifier.width(12.dp))
-            
+            Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = product.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
-                Text(text = product.description, fontSize = 12.sp, color = Color.Gray)
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "₹${product.price}", fontWeight = FontWeight.ExtraBold, color = PinkPrimary, fontSize = 16.sp)
-                    Text(text = " / ${product.unit}", fontSize = 12.sp, color = Color.Gray)
-                }
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp)) {
-                    Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFB300), modifier = Modifier.size(14.dp))
-                    Text(text = " ${product.rating}", fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                }
+                Text(product.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("₹${product.price} / ${product.unit}", color = PinkPrimary, fontWeight = FontWeight.ExtraBold)
             }
-
+            
             if (quantity == 0) {
                 Button(
-                    onClick = onAdd,
+                    onClick = onIncrease,
                     shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary),
-                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp)
+                    colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary)
                 ) {
-                    Text("ADD", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("ADD")
                 }
             } else {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .background(PinkPrimary, RoundedCornerShape(8.dp))
-                        .padding(horizontal = 4.dp)
+                    modifier = Modifier.background(PinkPrimary, RoundedCornerShape(8.dp)).padding(horizontal = 4.dp)
                 ) {
                     IconButton(onClick = onDecrease, modifier = Modifier.size(32.dp)) {
                         Icon(Icons.Default.Remove, contentDescription = null, tint = Color.White)
                     }
-                    Text(text = quantity.toString(), color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp))
+                    Text(quantity.toString(), color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp))
                     IconButton(onClick = onIncrease, modifier = Modifier.size(32.dp)) {
                         Icon(Icons.Default.Add, contentDescription = null, tint = Color.White)
                     }
@@ -324,284 +355,187 @@ fun ProductCard(
 // --- CART SCREEN ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CartScreen(navController: NavController, cartViewModel: CartViewModel) {
+fun HomeEssentialsCartScreen(navController: NavController, cartViewModel: CartViewModel) {
+    val cartItems = cartViewModel.homeCartItems
+    val deliveryFee = 30
+    val subtotal = cartItems.sumOf { it.product.price * it.quantity }
+    val grandTotal = if (cartItems.isEmpty()) 0 else subtotal + deliveryFee
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("My Cart", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.Black)
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                }
             )
         },
-        containerColor = Color.White
-    ) { padding ->
-        if (cartViewModel.cartItems.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        imageVector = Icons.Default.ShoppingCart,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = Color.LightGray
-                    )
-                    Spacer(Modifier.height(16.dp))
-                    Text("Your cart is empty", color = Color.Gray, fontSize = 18.sp)
-                }
-            }
-        } else {
-            Column(modifier = Modifier.padding(padding).fillMaxSize()) {
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+        bottomBar = {
+            if (cartItems.isNotEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(12.dp)
                 ) {
-                    items(cartViewModel.cartItems) { item ->
-                        CartItemRow(
-                            item = item,
-                            onIncrease = { cartViewModel.updateQuantity(item.product.id, true) },
-                            onDecrease = { cartViewModel.updateQuantity(item.product.id, false) },
-                            onRemove = { cartViewModel.removeFromCart(item.product.id) }
-                        )
+                    Column(modifier = Modifier.padding(24.dp).navigationBarsPadding()) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Grand Total", fontSize = 16.sp, color = Color.Gray)
+                            Text("₹$grandTotal", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = PinkPrimary)
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = { navController.navigate(Screen.HomeEssentialsCheckout.route) },
+                            modifier = Modifier.fillMaxWidth().height(56.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary)
+                        ) {
+                            Text("Proceed to Checkout", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
-                
-                PriceSummarySection(cartViewModel)
-                
-                Button(
-                    onClick = { navController.navigate(Screen.Payment.route) },
-                    modifier = Modifier.fillMaxWidth().padding(16.dp).height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary)
-                ) {
-                    Text("Proceed to Booking", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                }
             }
-        }
-    }
-}
-
-@Composable
-fun CartItemRow(
-    item: com.nisr.sauservices.ui.viewmodel.CartItem,
-    onIncrease: () -> Unit,
-    onDecrease: () -> Unit,
-    onRemove: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(70.dp)
-                    .background(Color(0xFFF8F8F8), RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center
+        },
+        containerColor = Color(0xFFFBFBFB)
+    ) { padding ->
+        if (cartItems.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Text("Your cart is empty", color = Color.Gray)
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.padding(padding).fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Icon(Icons.Default.ShoppingBag, contentDescription = null, tint = PinkPrimary.copy(alpha = 0.3f))
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = item.product.name, fontWeight = FontWeight.Bold, color = Color.Black)
-                Text(text = "₹${item.product.price} / ${item.product.unit}", color = Color.Gray, fontSize = 12.sp)
-                Text(text = "Total: ₹${item.product.price * item.quantity}", fontWeight = FontWeight.Bold, color = PinkPrimary, fontSize = 14.sp)
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                IconButton(onClick = onRemove, modifier = Modifier.size(24.dp)) { 
-                    Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red, modifier = Modifier.size(18.dp)) 
+                items(cartItems) { item ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(1.dp)
+                    ) {
+                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(item.product.name, fontWeight = FontWeight.Bold)
+                                Text("₹${item.product.price} x ${item.quantity}", color = Color.Gray, fontSize = 12.sp)
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(onClick = { cartViewModel.removeHomeProduct(item.product.id) }) { Icon(Icons.Default.Remove, null) }
+                                Text(item.quantity.toString(), fontWeight = FontWeight.Bold)
+                                IconButton(onClick = { 
+                                    val prod = HomeEssentialsData.products.find { it.id == item.product.id }
+                                    prod?.let { cartViewModel.addHomeProduct(it) }
+                                }) { Icon(Icons.Default.Add, null) }
+                            }
+                        }
+                    }
                 }
-                Spacer(Modifier.height(8.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.background(Color(0xFFF5F5F5), RoundedCornerShape(8.dp))
-                ) {
-                    IconButton(onClick = onDecrease, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Remove, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                    Text(text = item.quantity.toString(), fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 4.dp))
-                    IconButton(onClick = onIncrease, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                item {
+                    Column(modifier = Modifier.padding(top = 16.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Item Total")
+                            Text("₹$subtotal")
+                        }
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Delivery Fee")
+                            Text("₹$deliveryFee")
+                        }
+                    }
                 }
             }
         }
     }
 }
 
-@Composable
-fun PriceSummarySection(viewModel: CartViewModel) {
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFBFBFB)),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("Order Summary", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(bottom = 8.dp))
-            SummaryRow("Item Total", "₹${viewModel.itemTotal}")
-            SummaryRow("Delivery Fee", "₹${viewModel.deliveryFee}")
-            SummaryRow("Taxes", "₹${String.format("%.2f", viewModel.taxes)}")
-            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color.LightGray.copy(alpha = 0.5f))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(text = "Grand Total", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
-                Text(text = "₹${String.format("%.2f", viewModel.grandTotal)}", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = PinkPrimary)
-            }
-        }
-    }
-}
-
-@Composable
-fun SummaryRow(label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(text = label, color = Color.DarkGray, fontSize = 14.sp)
-        Text(text = value, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-    }
-}
-
-// --- PAYMENT SCREEN ---
+// --- CHECKOUT SCREEN ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PaymentScreen(navController: NavController, cartViewModel: CartViewModel) {
-    var selectedOption by remember { mutableStateOf("UPI") }
+fun HomeEssentialsCheckoutScreen(navController: NavController, cartViewModel: CartViewModel) {
+    var name by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+    var address by remember { mutableStateOf("") }
+    var selectedSlot by remember { mutableStateOf("Morning") }
+    var selectedPayment by remember { mutableStateOf("Cash on Delivery") }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Payment Methods", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.Black)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-            )
-        },
-        containerColor = Color.White
+            TopAppBar(title = { Text("Checkout", fontWeight = FontWeight.Bold) })
+        }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "Select Payment Option",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            Column(Modifier.selectableGroup()) {
-                PaymentOptionItem(
-                    title = "UPI (Google Pay, PhonePe)",
-                    icon = Icons.Default.AccountBalanceWallet,
-                    selected = selectedOption == "UPI",
-                    onClick = { selectedOption = "UPI" }
-                )
-                PaymentOptionItem(
-                    title = "Credit / Debit Card",
-                    icon = Icons.Default.CreditCard,
-                    selected = selectedOption == "Card",
-                    onClick = { selectedOption = "Card" }
-                )
-                PaymentOptionItem(
-                    title = "Net Banking",
-                    icon = Icons.Default.AccountBalance,
-                    selected = selectedOption == "NetBanking",
-                    onClick = { selectedOption = "NetBanking" }
-                )
-                PaymentOptionItem(
-                    title = "Cash on Delivery",
-                    icon = Icons.Default.Payments,
-                    selected = selectedOption == "COD",
-                    onClick = { selectedOption = "COD" }
-                )
+        Column(modifier = Modifier.padding(padding).fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
+            Text("Delivery Details", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Spacer(Modifier.height(16.dp))
+            OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth())
+            Spacer(Modifier.height(8.dp))
+            OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Phone Number") }, modifier = Modifier.fillMaxWidth())
+            Spacer(Modifier.height(8.dp))
+            OutlinedTextField(value = address, onValueChange = { address = it }, label = { Text("Full Address") }, modifier = Modifier.fillMaxWidth())
+            
+            Spacer(Modifier.height(24.dp))
+            Text("Delivery Slot", fontWeight = FontWeight.Bold)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("Morning", "Afternoon", "Evening").forEach { slot ->
+                    FilterChip(selected = selectedSlot == slot, onClick = { selectedSlot = slot }, label = { Text(slot) })
+                }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8F8)),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text("Total Amount", color = Color.Gray, fontSize = 14.sp)
-                        Text(
-                            "₹${String.format("%.2f", cartViewModel.grandTotal)}",
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 20.sp,
-                            color = PinkPrimary
-                        )
-                    }
-                    Button(
-                        onClick = { 
-                            cartViewModel.clearCart()
-                            navController.navigate(Screen.BookingSuccess.route) {
-                                popUpTo(Screen.Home.route)
-                            }
-                        },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary),
-                        modifier = Modifier.height(48.dp)
-                    ) {
-                        Text("Pay Now", fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(24.dp))
+            Text("Payment Method", fontWeight = FontWeight.Bold)
+            Column {
+                listOf("Cash on Delivery", "UPI").forEach { method ->
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { selectedPayment = method }) {
+                        RadioButton(selected = selectedPayment == method, onClick = { selectedPayment = method })
+                        Text(method)
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(32.dp))
+            Button(
+                onClick = { navController.navigate(Screen.HomeEssentialsSuccess.route) },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary),
+                enabled = name.isNotEmpty() && phone.isNotEmpty() && address.isNotEmpty()
+            ) {
+                Text("Place Order", fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
 
+// --- SUCCESS SCREEN ---
 @Composable
-fun PaymentOptionItem(
-    title: String,
-    icon: ImageVector,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .selectable(
-                selected = selected,
-                onClick = onClick,
-                role = Role.RadioButton
-            ),
-        shape = RoundedCornerShape(12.dp),
-        color = if (selected) Color(0xFFFFF1F0) else Color(0xFFFBFBFB),
-        border = if (selected) borderStroke(1.dp, PinkPrimary) else null
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+fun HomeEssentialsSuccessScreen(navController: NavController, cartViewModel: CartViewModel) {
+    Surface(modifier = Modifier.fillMaxSize(), color = Color.White) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Icon(icon, contentDescription = null, tint = if (selected) PinkPrimary else Color.Gray)
-            Spacer(modifier = Modifier.width(16.dp))
-            Text(
-                text = title,
-                modifier = Modifier.weight(1f),
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                color = if (selected) Color.Black else Color.DarkGray
-            )
-            RadioButton(
-                selected = selected,
-                onClick = null,
-                colors = RadioButtonDefaults.colors(selectedColor = PinkPrimary)
-            )
+            Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(100.dp), tint = Color(0xFF43A047))
+            Spacer(Modifier.height(24.dp))
+            Text("Order Placed Successfully!", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(8.dp))
+            Text("Order ID: #SAU${(1000..9999).random()}", color = Color.Gray)
+            Spacer(Modifier.height(16.dp))
+            Text("• Groceries packed\n• Delivery in 60–90 minutes", textAlign = TextAlign.Center, color = Color.DarkGray)
+            Spacer(Modifier.height(48.dp))
+            Button(
+                onClick = { 
+                    cartViewModel.clearHomeCart()
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Home.route) { inclusive = true }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary)
+            ) {
+                Text("Back to Home", fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
-
-@Composable
-fun borderStroke(width: androidx.compose.ui.unit.Dp, color: Color) = androidx.compose.foundation.BorderStroke(width, color)
