@@ -36,7 +36,6 @@ fun CategoriesGrid(
 ) {
     val allCategories = listOf(
         CategoryItem("Residential Services", Icons.Outlined.Home, Screen.ResidentialCategories.route),
-        CategoryItem("Essential Supplies", Icons.Outlined.ShoppingBag),
         CategoryItem("Home Essentials", Icons.Outlined.Star),
         CategoryItem("Food & Beverages", Icons.Outlined.Restaurant),
         CategoryItem("Education Services", Icons.Outlined.School),
@@ -79,7 +78,7 @@ fun CategoriesGrid(
                         onClick = {
                             when (item.name) {
                                 "More Services" -> navController.navigate(Screen.Categories.route)
-                                "Home Essentials", "Essential Supplies" -> onHomeEssentialsClick()
+                                "Home Essentials" -> onHomeEssentialsClick()
                                 "Residential Services" -> navController.navigate(item.route)
                                 "Food & Beverages" -> navController.navigate("FOODS_categories")
                                 "Education Services" -> onEducationClick()
