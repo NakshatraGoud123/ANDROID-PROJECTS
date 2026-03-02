@@ -1,6 +1,7 @@
 package com.nisr.sauservices.ui
 
 sealed class Screen(val route: String) {
+    object Onboarding : Screen("onboarding")
     object Home : Screen("home")
     object Categories : Screen("categories")
     object Bookings : Screen("bookings")
@@ -182,4 +183,7 @@ sealed class Screen(val route: String) {
     object ServiceWorkerDashboard : Screen("service_worker_dashboard")
     object DeliveryDashboard : Screen("delivery_dashboard")
     object ForgotPassword : Screen("forgot_password")
+    object SignUp : Screen("signup/{role}") {
+        fun createRoute(role: String) = "signup/$role"
+    }
 }

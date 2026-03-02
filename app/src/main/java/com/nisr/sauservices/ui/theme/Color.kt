@@ -2,7 +2,11 @@ package com.nisr.sauservices.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val PinkPrimary = Color(0xFFE91E63)
+val PinkPrimary = Color(0xFFE91E63) // Keeping for legacy
+val TealPrimary = Color(0xFF2D9F88)
+val TealSecondary = Color(0xFFE8F3F1)
+val TealDark = Color(0xFF1E6355)
+
 val BackgroundGray = Color(0xFFF7F7F7)
 val CardGray = Color(0xFFF8F8F8)
 val LightPink = Color(0xFFFCE4EC)

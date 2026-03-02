@@ -1,3 +1,4 @@
+
 package com.nisr.sauservices.navigation
 
 import androidx.compose.runtime.Composable
@@ -24,6 +25,7 @@ import com.nisr.sauservices.ui.tech.*
 import com.nisr.sauservices.ui.mens.*
 import com.nisr.sauservices.ui.womens.*
 import com.nisr.sauservices.ui.healthcare.*
+import com.nisr.sauservices.ui.onboarding.OnboardingScreen
 
 @Composable
 fun AppNavHost(navController: NavHostController) {
@@ -41,7 +43,10 @@ fun AppNavHost(navController: NavHostController) {
     val womensBeautyViewModel: WomensBeautyViewModel = viewModel()
     val healthViewModel: HealthcareViewModel = viewModel()
 
-    NavHost(navController, startDestination = Screen.RoleSelection.route) {
+    NavHost(navController, startDestination = Screen.Onboarding.route) {
+        // Onboarding
+        composable(Screen.Onboarding.route) { OnboardingScreen(navController) }
+        
         // Core Auth & Dashboards
         composable(Screen.RoleSelection.route) { RoleSelectionScreen(navController) }
         composable(Screen.AuthOptions.route) { backStackEntry ->
@@ -50,7 +55,11 @@ fun AppNavHost(navController: NavHostController) {
         }
         composable(Screen.Login.route) { backStackEntry ->
             val role = backStackEntry.arguments?.getString("role") ?: "customer"
-            LoginScreen(navController, sessionManager, role)
+            SignInScreen(navController, role) // Using the new SignInScreen
+        }
+        composable(Screen.SignUp.route) { backStackEntry ->
+            val role = backStackEntry.arguments?.getString("role") ?: "customer"
+            SignUpScreen(navController, role)
         }
         composable(Screen.Register.route) { CustomerSignUpScreen(navController) }
         composable(Screen.ShopkeeperRegister.route) { ShopkeeperRegisterScreen(navController, userRepository) }
@@ -65,7 +74,7 @@ fun AppNavHost(navController: NavHostController) {
         composable(Screen.Home.route) { CustomerHomeScreen(navController, sessionManager) }
         composable(Screen.Categories.route) { CategoriesScreen(navController) }
         
-        // --- NEW Home Essentials Flow (Master Prompt Implementation) ---
+        // --- NEW Home Essentials Flow ---
         composable(Screen.HomeEssentialsMain.route) { 
             HomeEssentialsMainScreen(navController, cartViewModel) 
         }
@@ -108,29 +117,22 @@ fun AppNavHost(navController: NavHostController) {
         composable(Screen.ResidentialPayment.route) { ResidentialPaymentScreen(navController, residentialViewModel) }
         composable(Screen.ResidentialOrderSummary.route) { ResidentialOrderSummaryScreen(navController, residentialViewModel) }
 
-        // Food & Beverages Flow (STRICT ROUTES IMPLEMENTATION)
+        // Food & Beverages Flow
         composable("FOODS_categories") { FoodMainScreen(navController) }
-        
         composable("FOODS_subcategories/{category}", arguments = listOf(navArgument("category") { type = NavType.StringType })) { backStackEntry ->
             FoodSubCategoryScreen(navController, backStackEntry.arguments?.getString("category") ?: "")
         }
-        
         composable("FOODS_types/{subcategory}", arguments = listOf(navArgument("subcategory") { type = NavType.StringType })) { backStackEntry ->
             FoodTypeScreen(navController, backStackEntry.arguments?.getString("subcategory") ?: "")
         }
-        
         composable("FOODS_items/{type}", arguments = listOf(navArgument("type") { type = NavType.StringType })) { backStackEntry ->
             FoodItemsScreen(navController, backStackEntry.arguments?.getString("type") ?: "", foodCartViewModel)
         }
-        
         composable("FOODS_cart") { FoodCartScreen(navController, foodCartViewModel) }
-        
         composable("FOODS_checkout") { FoodCheckoutScreen(navController, foodCartViewModel) }
-        
         composable("FOODS_booking/{service}", arguments = listOf(navArgument("service") { type = NavType.StringType })) { backStackEntry ->
             BookingScreen(navController, backStackEntry.arguments?.getString("service") ?: "")
         }
-        
         composable("FOODS_order_success") { FoodSuccessScreen(navController) }
 
         // Education Services Flow
