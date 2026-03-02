@@ -50,6 +50,7 @@ fun SignInScreen(navController: NavController, role: String) {
     val isShopkeeper = role == "shopkeeper"
     val isWorker = role == "service_worker"
     val isDelivery = role == "delivery"
+    val isCustomer = role == "customer"
     
     val headerTitle = when {
         isShopkeeper -> "Shop Login"
@@ -214,7 +215,18 @@ fun SignInScreen(navController: NavController, role: String) {
                     Spacer(modifier = Modifier.height(24.dp))
 
                     Button(
-                        onClick = { /* Handle Sign In */ },
+                        onClick = { 
+                            // Corrected Navigation logic based on role
+                            val route = when {
+                                isShopkeeper -> Screen.ShopkeeperDashboard.route
+                                isWorker -> Screen.ServiceWorkerDashboard.route
+                                isDelivery -> Screen.DeliveryDashboard.route
+                                else -> Screen.Home.route // Navigate to Home for Customer
+                            }
+                            navController.navigate(route) {
+                                popUpTo(Screen.Login.route) { inclusive = true }
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp)

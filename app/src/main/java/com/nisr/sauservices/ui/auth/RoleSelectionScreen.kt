@@ -1,4 +1,3 @@
-
 package com.nisr.sauservices.ui.auth
 
 import androidx.compose.animation.*
@@ -9,11 +8,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -55,6 +53,7 @@ data class RoleOption(
 @Composable
 fun RoleSelectionScreen(navController: NavController) {
     var selectedRoleId by remember { mutableStateOf<String?>(null) }
+    val scrollState = rememberScrollState()
 
     val roles = listOf(
         RoleOption(
@@ -107,7 +106,8 @@ fun RoleSelectionScreen(navController: NavController) {
                 modifier = Modifier
                     .fillMaxSize()
                     .statusBarsPadding()
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = 24.dp)
+                    .verticalScroll(scrollState),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(modifier = Modifier.height(40.dp))
@@ -117,9 +117,9 @@ fun RoleSelectionScreen(navController: NavController) {
                     modifier = Modifier
                         .size(80.dp)
                         .shadow(
-                            elevation = 16.dp,
+                            elevation = 8.dp, // Slight elevation as requested
                             shape = RoundedCornerShape(20.dp),
-                            spotColor = ElegantTeal.copy(alpha = 0.5f)
+                            spotColor = ElegantTeal.copy(alpha = 0.3f)
                         )
                         .clip(RoundedCornerShape(20.dp))
                         .background(
@@ -155,111 +155,109 @@ fun RoleSelectionScreen(navController: NavController) {
                     modifier = Modifier.padding(top = 8.dp)
                 )
 
-                Spacer(modifier = Modifier.height(40.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
-                // Role Grid
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    contentPadding = PaddingValues(bottom = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.weight(1f)
+                // Role Grid Replacement with Row/Column for "Short" boxes and "Continue after boxes"
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            RoleCard(role = roles[0], isSelected = selectedRoleId == roles[0].id, onClick = { selectedRoleId = roles[0].id })
+                        }
+                        Box(modifier = Modifier.weight(1f)) {
+                            RoleCard(role = roles[1], isSelected = selectedRoleId == roles[1].id, onClick = { selectedRoleId = roles[1].id })
+                        }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            RoleCard(role = roles[2], isSelected = selectedRoleId == roles[2].id, onClick = { selectedRoleId = roles[2].id })
+                        }
+                        Box(modifier = Modifier.weight(1f)) {
+                            RoleCard(role = roles[3], isSelected = selectedRoleId == roles[3].id, onClick = { selectedRoleId = roles[3].id })
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Continue Button Section - Directly after boxes
+                Button(
+                    onClick = {
+                        selectedRoleId?.let { role ->
+                            navController.navigate(Screen.AuthOptions.createRoute(role))
+                        }
+                    },
+                    enabled = selectedRoleId != null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .shadow(
+                            elevation = if (selectedRoleId != null) 4.dp else 0.dp, // Slight elevation
+                            shape = RoundedCornerShape(16.dp),
+                            spotColor = ElegantTeal
+                        ),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Transparent,
+                        disabledContainerColor = Color(0xFFE0E0E0)
+                    ),
+                    contentPadding = PaddingValues()
                 ) {
-                    items(roles) { role ->
-                        RoleCard(
-                            role = role,
-                            isSelected = selectedRoleId == role.id,
-                            onClick = { selectedRoleId = role.id }
+                    val background = if (selectedRoleId != null) {
+                        Brush.linearGradient(colors = listOf(ElegantTeal, ElegantTealDark))
+                    } else {
+                        Brush.linearGradient(colors = listOf(Color(0xFFE0E0E0), Color(0xFFE0E0E0)))
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(background),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Continue",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (selectedRoleId != null) Color.White else Color(0xFF9E9E9E)
                         )
                     }
                 }
 
-                // Continue Button Section
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Trust Indicators
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
-                    Button(
-                        onClick = {
-                            selectedRoleId?.let { role ->
-                                navController.navigate(Screen.AuthOptions.createRoute(role))
-                            }
-                        },
-                        enabled = selectedRoleId != null,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .shadow(
-                                elevation = if (selectedRoleId != null) 12.dp else 0.dp,
-                                shape = RoundedCornerShape(16.dp),
-                                spotColor = ElegantTeal
-                            ),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Transparent,
-                            disabledContainerColor = Color(0xFFE0E0E0)
-                        ),
-                        contentPadding = PaddingValues()
-                    ) {
-                        val background = if (selectedRoleId != null) {
-                            Brush.linearGradient(colors = listOf(ElegantTeal, ElegantTealDark))
-                        } else {
-                            Brush.linearGradient(colors = listOf(Color(0xFFE0E0E0), Color(0xFFE0E0E0)))
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(background),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "Continue",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (selectedRoleId != null) Color.White else Color(0xFF9E9E9E)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Trust Indicators
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(24.dp)
-                    ) {
-                        TrustIndicator(text = "Trusted by 10K+", icon = Icons.Rounded.Star)
-                        TrustIndicator(text = "Secure & Verified", icon = Icons.Rounded.Verified)
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Legal Text
-                    val annotatedText = buildAnnotatedString {
-                        withStyle(style = SpanStyle(color = TextGrey)) {
-                            append("By continuing, you agree to our ")
-                        }
-                        withStyle(style = SpanStyle(color = ElegantTeal, fontWeight = FontWeight.SemiBold)) {
-                            append("Terms of Service")
-                        }
-                        withStyle(style = SpanStyle(color = TextGrey)) {
-                            append(" & ")
-                        }
-                        withStyle(style = SpanStyle(color = ElegantTeal, fontWeight = FontWeight.SemiBold)) {
-                            append("Privacy Policy")
-                        }
-                    }
-
-                    Text(
-                        text = annotatedText,
-                        fontSize = 11.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
+                    TrustIndicator(text = "Trusted by 10K+", icon = Icons.Rounded.Star)
+                    TrustIndicator(text = "Secure & Verified", icon = Icons.Rounded.Verified)
                 }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Legal Text
+                val annotatedText = buildAnnotatedString {
+                    withStyle(style = SpanStyle(color = TextGrey)) {
+                        append("By continuing, you agree to our ")
+                    }
+                    withStyle(style = SpanStyle(color = ElegantTeal, fontWeight = FontWeight.SemiBold)) {
+                        append("Terms of Service")
+                    }
+                    withStyle(style = SpanStyle(color = TextGrey)) {
+                        append(" & ")
+                    }
+                    withStyle(style = SpanStyle(color = ElegantTeal, fontWeight = FontWeight.SemiBold)) {
+                        append("Privacy Policy")
+                    }
+                }
+
+                Text(
+                    text = annotatedText,
+                    fontSize = 11.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(start = 16.dp, top = 0.dp, end = 16.dp, bottom = 24.dp)
+                )
             }
         }
     }
@@ -276,16 +274,17 @@ fun RoleCard(
 
     val scale by animateFloatAsState(
         targetValue = when {
-            isPressed -> 0.96f
-            isSelected -> 1.05f
+            isPressed -> 0.98f
+            isSelected -> 1.02f
             else -> 1f
         },
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
         label = "scale"
     )
 
+    // Using slight elevation values
     val elevation by animateDpAsState(
-        targetValue = if (isSelected || isPressed) 16.dp else 2.dp,
+        targetValue = if (isSelected || isPressed) 6.dp else 2.dp,
         label = "elevation"
     )
 
@@ -296,7 +295,8 @@ fun RoleCard(
 
     Card(
         modifier = Modifier
-            .aspectRatio(1f)
+            .fillMaxWidth()
+            .height(140.dp) // Fixed shorter height
             .scale(scale)
             .shadow(
                 elevation = elevation,
@@ -315,14 +315,14 @@ fun RoleCard(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             // Icon Container
             Box(
                 modifier = Modifier
-                    .size(56.dp)
+                    .size(44.dp)
                     .clip(CircleShape)
                     .background(role.bgColor),
                 contentAlignment = Alignment.Center
@@ -331,28 +331,28 @@ fun RoleCard(
                     imageVector = role.icon,
                     contentDescription = role.title,
                     tint = role.tintColor,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             Text(
                 text = role.title,
-                fontSize = 18.sp,
+                fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextDark,
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             Text(
                 text = role.description,
-                fontSize = 12.sp,
+                fontSize = 11.sp,
                 color = TextGrey,
                 textAlign = TextAlign.Center,
-                lineHeight = 16.sp
+                lineHeight = 14.sp
             )
         }
     }
