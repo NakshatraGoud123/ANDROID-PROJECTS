@@ -2,6 +2,7 @@
 package com.nisr.sauservices.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -49,15 +50,15 @@ fun AppNavHost(navController: NavHostController) {
         
         // Core Auth & Dashboards
         composable(Screen.RoleSelection.route) { RoleSelectionScreen(navController) }
-        composable(Screen.AuthOptions.route) { backStackEntry ->
+        composable(Screen.AuthOptions.route, arguments = listOf(navArgument("role") { type = NavType.StringType })) { backStackEntry ->
             val role = backStackEntry.arguments?.getString("role") ?: "customer"
             AuthOptionsScreen(navController, role)
         }
-        composable(Screen.Login.route) { backStackEntry ->
+        composable(Screen.Login.route, arguments = listOf(navArgument("role") { type = NavType.StringType })) { backStackEntry ->
             val role = backStackEntry.arguments?.getString("role") ?: "customer"
-            SignInScreen(navController, role) // Using the new SignInScreen
+            SignInScreen(navController, role) 
         }
-        composable(Screen.SignUp.route) { backStackEntry ->
+        composable(Screen.SignUp.route, arguments = listOf(navArgument("role") { type = NavType.StringType })) { backStackEntry ->
             val role = backStackEntry.arguments?.getString("role") ?: "customer"
             SignUpScreen(navController, role)
         }
@@ -70,8 +71,20 @@ fun AppNavHost(navController: NavHostController) {
         composable(Screen.DeliveryDashboard.route) { DeliveryDashboardScreen(navController, sessionManager, viewModel(), viewModel()) }
         composable(Screen.ForgotPassword.route) { ForgotPasswordScreen(navController) }
 
-        // Main Home & Categories
-        composable(Screen.Home.route) { CustomerHomeScreen(navController, sessionManager) }
+        // Main Home & Categories - CUSTOMER only gets home if role is customer
+        composable(Screen.Home.route) { 
+            val role = sessionManager.getUserRole()
+            if (role == "customer" && sessionManager.isLoggedIn()) {
+                CustomerHomeScreen(navController, sessionManager)
+            } else {
+                LaunchedEffect(Unit) {
+                    navController.navigate(Screen.Login.createRoute("customer")) {
+                        popUpTo(Screen.Home.route) { inclusive = true }
+                    }
+                }
+            }
+        }
+
         composable(Screen.Categories.route) { CategoriesScreen(navController) }
         
         // --- NEW Home Essentials Flow ---
@@ -123,7 +136,8 @@ fun AppNavHost(navController: NavHostController) {
             FoodSubCategoryScreen(navController, backStackEntry.arguments?.getString("category") ?: "")
         }
         composable("FOODS_types/{subcategory}", arguments = listOf(navArgument("subcategory") { type = NavType.StringType })) { backStackEntry ->
-            FoodTypeScreen(navController, backStackEntry.arguments?.getString("subcategory") ?: "")
+            val subCat = backStackEntry.arguments?.getString("subcategory") ?: ""
+            FoodTypeScreen(navController, subCat)
         }
         composable("FOODS_items/{type}", arguments = listOf(navArgument("type") { type = NavType.StringType })) { backStackEntry ->
             FoodItemsScreen(navController, backStackEntry.arguments?.getString("type") ?: "", foodCartViewModel)

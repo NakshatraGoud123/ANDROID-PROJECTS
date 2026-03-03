@@ -12,10 +12,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.nisr.sauservices.data.local.SessionManager
 import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.theme.PinkPrimary
 import kotlinx.coroutines.launch
@@ -25,6 +27,23 @@ fun OnboardingScreen(navController: NavController) {
     val items = OnboardingItem.items
     val pagerState = rememberPagerState(pageCount = { items.size })
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val sessionManager = remember { SessionManager(context) }
+
+    LaunchedEffect(Unit) {
+        if (sessionManager.isLoggedIn()) {
+            val role = sessionManager.getUserRole()
+            val route = when (role) {
+                "shopkeeper" -> Screen.ShopkeeperDashboard.route
+                "service_worker" -> Screen.ServiceWorkerDashboard.route
+                "delivery" -> Screen.DeliveryDashboard.route
+                else -> Screen.Home.route
+            }
+            navController.navigate(route) {
+                popUpTo(Screen.Onboarding.route) { inclusive = true }
+            }
+        }
+    }
     
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -46,7 +65,7 @@ fun OnboardingScreen(navController: NavController) {
                 TextButton(
                     onClick = { 
                         navController.navigate(Screen.RoleSelection.route) {
-                            popUpTo(Screen.Home.route) { inclusive = true }
+                            popUpTo(Screen.Onboarding.route) { inclusive = true }
                         }
                     }
                 ) {
@@ -94,7 +113,7 @@ fun OnboardingScreen(navController: NavController) {
                             }
                         } else {
                             navController.navigate(Screen.RoleSelection.route) {
-                                popUpTo(Screen.Home.route) { inclusive = true }
+                                popUpTo(Screen.Onboarding.route) { inclusive = true }
                             }
                         }
                     },

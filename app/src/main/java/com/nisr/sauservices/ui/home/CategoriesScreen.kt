@@ -10,10 +10,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.nisr.sauservices.data.local.SessionManager
 import com.nisr.sauservices.ui.essentials.HomeEssentialsSheetContent
 import com.nisr.sauservices.ui.education.EducationBottomSheet
 import com.nisr.sauservices.ui.business.BusinessBottomSheet
@@ -23,6 +25,9 @@ import com.nisr.sauservices.ui.tech.TechBottomSheet
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoriesScreen(navController: NavController) {
+    val context = LocalContext.current
+    val sessionManager = remember { SessionManager(context) }
+    
     var showHomeEssentialsSheet by remember { mutableStateOf(false) }
     var showEduSheet by remember { mutableStateOf(false) }
     var showBizSheet by remember { mutableStateOf(false) }
@@ -40,7 +45,7 @@ fun CategoriesScreen(navController: NavController) {
     }
 
     Scaffold(
-        topBar = { TopAppBarUI() },
+        topBar = { TopAppBarUI(navController, sessionManager) },
         bottomBar = { BottomNavBar(navController) },
         containerColor = Color.White
     ) { padding ->

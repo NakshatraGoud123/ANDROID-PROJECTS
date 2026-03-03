@@ -24,7 +24,7 @@ fun CustomerHomeScreen(navController: NavController, sessionManager: SessionMana
     var showTechSheet by remember { mutableStateOf(false) }
 
     Scaffold(
-        topBar = { TopAppBarUI() },
+        topBar = { TopAppBarUI(navController, sessionManager) },
         bottomBar = { BottomNavBar(navController) },
         containerColor = Color.White
     ) { padding ->

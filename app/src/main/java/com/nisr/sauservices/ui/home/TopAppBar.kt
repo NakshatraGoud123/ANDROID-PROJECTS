@@ -8,27 +8,59 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.outlined.Logout
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import com.nisr.sauservices.data.local.SessionManager
+import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.theme.PinkPrimary
 
 @Composable
-fun TopAppBarUI() {
+fun TopAppBarUI(navController: NavController, sessionManager: SessionManager) {
+    var showLogoutDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = { Text("Logout") },
+            text = { Text("Are you sure you want to logout?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    sessionManager.logout()
+                    navController.navigate(Screen.Onboarding.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                    showLogoutDialog = false
+                }) {
+                    Text("Logout", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(Color.White)
-            .statusBarsPadding() // Added status bars padding to bring it down
-            .padding(top = 16.dp, bottom = 8.dp) // Increased top padding
+            .statusBarsPadding()
+            .padding(top = 16.dp, bottom = 8.dp)
     ) {
         Row(
             modifier = Modifier
@@ -41,7 +73,7 @@ fun TopAppBarUI() {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(36.dp) // Slightly larger
+                        .size(36.dp)
                         .clip(CircleShape)
                         .background(PinkPrimary),
                     contentAlignment = Alignment.Center
@@ -64,7 +96,7 @@ fun TopAppBarUI() {
                 modifier = Modifier
                     .clip(RoundedCornerShape(50))
                     .background(Color(0xFFF0F0F0))
-                    .padding(horizontal = 12.dp, vertical = 8.dp), // Increased vertical padding
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
@@ -91,7 +123,6 @@ fun TopAppBarUI() {
                 IconButton(onClick = { /* TODO */ }, modifier = Modifier.size(40.dp)) {
                     Box {
                         Icon(Icons.Outlined.Notifications, null, tint = Color.DarkGray, modifier = Modifier.size(26.dp))
-                        // Notification dot
                         Box(
                             modifier = Modifier
                                 .size(10.dp)
@@ -104,8 +135,8 @@ fun TopAppBarUI() {
                     }
                 }
                 Spacer(Modifier.width(4.dp))
-                IconButton(onClick = { /* TODO */ }, modifier = Modifier.size(40.dp)) {
-                    Icon(Icons.Outlined.Person, null, tint = Color.DarkGray, modifier = Modifier.size(26.dp))
+                IconButton(onClick = { showLogoutDialog = true }, modifier = Modifier.size(40.dp)) {
+                    Icon(Icons.Outlined.Logout, contentDescription = "Logout", tint = Color.DarkGray, modifier = Modifier.size(26.dp))
                 }
             }
         }
@@ -117,7 +148,7 @@ fun TopAppBarUI() {
             modifier = Modifier.padding(start = 16.dp, top = 4.dp)
         )
         
-        HorizontalDivider( // Updated to HorizontalDivider
+        HorizontalDivider(
             modifier = Modifier.padding(top = 16.dp),
             thickness = 0.5.dp,
             color = Color.LightGray.copy(alpha = 0.5f)

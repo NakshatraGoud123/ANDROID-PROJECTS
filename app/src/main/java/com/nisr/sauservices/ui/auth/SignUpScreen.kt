@@ -1,6 +1,9 @@
 
 package com.nisr.sauservices.ui.auth
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -30,8 +35,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.common.api.ApiException
+import com.google.firebase.auth.GoogleAuthProvider
 import com.nisr.sauservices.ui.Screen
+import com.nisr.sauservices.R
+import com.nisr.sauservices.data.local.SessionManager
+import com.nisr.sauservices.ui.viewmodel.AuthState
+import com.nisr.sauservices.ui.viewmodel.AuthViewModel
 
 // Colors as per design rules
 private val ElegantTeal = Color(0xFF0FA3A3)
@@ -42,13 +55,32 @@ private val TextDark = Color(0xFF1A1C1E)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SignUpScreen(navController: NavController, role: String) {
+fun SignUpScreen(navController: NavController, role: String, authViewModel: AuthViewModel = viewModel()) {
     var fullName by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     
+    val context = LocalContext.current
+    val sessionManager = remember { SessionManager(context) }
+    val authState by authViewModel.authState
+
+    val googleLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(ApiException::class.java)
+            account.idToken?.let { idToken ->
+                val credential = GoogleAuthProvider.getCredential(idToken, null)
+                authViewModel.signInWithGoogle(credential, role)
+            }
+        } catch (e: ApiException) {
+            // Handle error
+        }
+    }
+
     // Role specific fields
     var shopName by remember { mutableStateOf("") }
     var shopAddress by remember { mutableStateOf("") }
@@ -82,6 +114,24 @@ fun SignUpScreen(navController: NavController, role: String) {
         else -> Icons.Rounded.PersonAdd
     }
 
+    LaunchedEffect(authState) {
+        if (authState is AuthState.Success) {
+            sessionManager.saveLoginState(true)
+            sessionManager.saveUserRole(role)
+            
+            val route = when {
+                isShopkeeper -> Screen.ShopkeeperDashboard.route
+                isWorker -> Screen.ServiceWorkerDashboard.route
+                isDelivery -> Screen.DeliveryDashboard.route
+                else -> Screen.Home.route
+            }
+            navController.navigate(route) {
+                popUpTo(Screen.RoleSelection.route) { inclusive = true }
+            }
+            authViewModel.resetState()
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -98,7 +148,6 @@ fun SignUpScreen(navController: NavController, role: String) {
                 .padding(horizontal = 24.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Updated Back Button alignment
             Box(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                 IconButton(
                     onClick = { navController.popBackStack() },
@@ -114,7 +163,6 @@ fun SignUpScreen(navController: NavController, role: String) {
                     .padding(top = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Header Icon
                 Box(
                     modifier = Modifier
                         .size(80.dp)
@@ -148,29 +196,6 @@ fun SignUpScreen(navController: NavController, role: String) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Progress Indicators (Dots)
-            val dotCount = if (isShopkeeper || isWorker || isDelivery) 6 else 4
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                repeat(dotCount) { index ->
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .background(
-                                if (index == 0) ElegantTeal else TextGrey.copy(alpha = 0.2f),
-                                CircleShape
-                            )
-                    )
-                    if (index < dotCount - 1) Spacer(modifier = Modifier.width(8.dp))
-                }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Card Container for Inputs
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
@@ -178,6 +203,15 @@ fun SignUpScreen(navController: NavController, role: String) {
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
+                    if (authState is AuthState.Error) {
+                        Text(
+                            text = (authState as AuthState.Error).message,
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+
                     if (isShopkeeper) {
                         SignUpField(value = shopName, onValueChange = { shopName = it }, placeholder = "Shop Name", icon = Icons.Rounded.Store)
                         Spacer(modifier = Modifier.height(16.dp))
@@ -195,22 +229,7 @@ fun SignUpScreen(navController: NavController, role: String) {
 
                     if (isWorker) {
                         Spacer(modifier = Modifier.height(16.dp))
-                        OutlinedTextField(
-                            value = skillType,
-                            onValueChange = { skillType = it },
-                            placeholder = { Text("Skill Type") },
-                            leadingIcon = { Icon(Icons.Rounded.Work, null, modifier = Modifier.size(20.dp)) },
-                            trailingIcon = { Icon(Icons.Rounded.KeyboardArrowDown, null) },
-                            readOnly = true,
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = ElegantTeal,
-                                unfocusedBorderColor = Color(0xFFF0F0F0),
-                                focusedContainerColor = Color.White,
-                                unfocusedContainerColor = Color.White
-                            )
-                        )
+                        SignUpField(value = skillType, onValueChange = { skillType = it }, placeholder = "Skill Type", icon = Icons.Rounded.Work)
                         Spacer(modifier = Modifier.height(16.dp))
                         SignUpField(value = experience, onValueChange = { experience = it }, placeholder = "Experience (Years)", icon = Icons.Rounded.History, keyboardType = KeyboardType.Number)
                     }
@@ -240,72 +259,12 @@ fun SignUpScreen(navController: NavController, role: String) {
                         SignUpField(value = shopAddress, onValueChange = { shopAddress = it }, placeholder = "Shop Address", icon = Icons.Rounded.LocationOn)
                         
                         Spacer(modifier = Modifier.height(16.dp))
-                        OutlinedTextField(
-                            value = shopCategory,
-                            onValueChange = { shopCategory = it },
-                            placeholder = { Text("Shop Category") },
-                            leadingIcon = { Icon(Icons.Rounded.Category, null, modifier = Modifier.size(20.dp)) },
-                            trailingIcon = { Icon(Icons.Rounded.KeyboardArrowDown, null) },
-                            readOnly = true,
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = ElegantTeal,
-                                unfocusedBorderColor = Color(0xFFF0F0F0),
-                                focusedContainerColor = Color.White,
-                                unfocusedContainerColor = Color.White
-                            )
-                        )
+                        SignUpField(value = shopCategory, onValueChange = { shopCategory = it }, placeholder = "Shop Category", icon = Icons.Rounded.Category)
                     }
 
                     if (isDelivery) {
                         Spacer(modifier = Modifier.height(16.dp))
-                        OutlinedTextField(
-                            value = vehicleType,
-                            onValueChange = { vehicleType = it },
-                            placeholder = { Text("Vehicle Type") },
-                            leadingIcon = { Icon(Icons.Rounded.DirectionsCar, null, modifier = Modifier.size(20.dp)) },
-                            trailingIcon = { Icon(Icons.Rounded.KeyboardArrowDown, null) },
-                            readOnly = true,
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = ElegantTeal,
-                                unfocusedBorderColor = Color(0xFFF0F0F0),
-                                focusedContainerColor = Color.White,
-                                unfocusedContainerColor = Color.White
-                            )
-                        )
-                    }
-
-                    if (isWorker || isDelivery) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp)
-                                .background(Color(0xFFF9F9F9), RoundedCornerShape(16.dp))
-                                .border(1.dp, Color(0xFFF0F0F0).copy(alpha = 0.5f), RoundedCornerShape(16.dp))
-                                .clickable { /* Upload */ }
-                                .padding(horizontal = 16.dp),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(32.dp)
-                                        .background(ElegantTeal.copy(alpha = 0.1f), CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(Icons.Rounded.CloudUpload, null, tint = ElegantTeal, modifier = Modifier.size(16.dp))
-                                }
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Column {
-                                    Text(if (isDelivery) "Driving License" else "ID Document", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = TextDark)
-                                    Text("Tap to upload • PDF, JPG, PNG", fontSize = 11.sp, color = TextGrey)
-                                }
-                            }
-                        }
+                        SignUpField(value = vehicleType, onValueChange = { vehicleType = it }, placeholder = "Vehicle Type", icon = Icons.Rounded.DirectionsCar)
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -325,6 +284,7 @@ fun SignUpScreen(navController: NavController, role: String) {
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth(),
+                        enabled = authState !is AuthState.Loading,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = ElegantTeal,
                             unfocusedBorderColor = Color(0xFFF0F0F0),
@@ -336,7 +296,31 @@ fun SignUpScreen(navController: NavController, role: String) {
                     Spacer(modifier = Modifier.height(24.dp))
 
                     Button(
-                        onClick = { /* Handle Sign Up */ },
+                        onClick = { 
+                            if (email.isNotBlank() && password.isNotBlank()) {
+                                val userData = mutableMapOf<String, Any>(
+                                    "fullName" to fullName,
+                                    "phoneNumber" to phoneNumber,
+                                    "email" to email,
+                                    "role" to role
+                                )
+                                
+                                if (isShopkeeper) {
+                                    userData["shopName"] = shopName
+                                    userData["shopAddress"] = shopAddress
+                                    userData["shopCategory"] = shopCategory
+                                }
+                                if (isWorker) {
+                                    userData["skillType"] = skillType
+                                    userData["experience"] = experience
+                                }
+                                if (isDelivery) {
+                                    userData["vehicleType"] = vehicleType
+                                }
+
+                                authViewModel.signUp(email, password, userData)
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp)
@@ -345,6 +329,7 @@ fun SignUpScreen(navController: NavController, role: String) {
                                 shape = RoundedCornerShape(16.dp),
                                 spotColor = ElegantTeal
                             ),
+                        enabled = authState !is AuthState.Loading,
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color.Transparent
@@ -357,7 +342,68 @@ fun SignUpScreen(navController: NavController, role: String) {
                                 .background(Brush.linearGradient(listOf(ElegantTeal, ElegantTealDark))),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("Create Account", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            if (authState is AuthState.Loading) {
+                                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                            } else {
+                                Text("Create Account", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    HorizontalDivider(modifier = Modifier.weight(1f), color = Color(0xFFE0E0E0))
+                    Text(
+                        " OR CONTINUE WITH ",
+                        color = TextGrey,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    HorizontalDivider(modifier = Modifier.weight(1f), color = Color(0xFFE0E0E0))
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { GoogleSignInUtils.launchGoogleSignIn(context, googleLauncher) },
+                        modifier = Modifier.weight(1f).height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(1.dp, Color(0xFFF0F0F0))
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_google),
+                                contentDescription = "Google",
+                                tint = Color.Unspecified,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Google", color = TextDark, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                    OutlinedButton(
+                        onClick = { /* Phone Login */ },
+                        modifier = Modifier.weight(1f).height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(1.dp, Color(0xFFF0F0F0))
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.Smartphone, contentDescription = null, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Phone OTP", color = TextDark, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
@@ -365,7 +411,6 @@ fun SignUpScreen(navController: NavController, role: String) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Bottom Navigation
             val annotatedString = buildAnnotatedString {
                 withStyle(style = SpanStyle(color = TextGrey)) {
                     append("Already have an account? ")
@@ -379,7 +424,10 @@ fun SignUpScreen(navController: NavController, role: String) {
                 text = annotatedString,
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .clickable { navController.popBackStack() }
+                    .clickable { 
+                        authViewModel.resetState()
+                        navController.popBackStack() 
+                    }
                     .padding(bottom = 32.dp)
             )
 

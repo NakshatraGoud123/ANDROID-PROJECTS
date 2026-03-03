@@ -8,23 +8,27 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.nisr.sauservices.data.local.SessionManager
 import com.nisr.sauservices.ui.home.*
 import com.nisr.sauservices.ui.theme.PinkPrimary
 
 @Composable
 fun HomeScreen(navController: NavController){
+    val context = LocalContext.current
+    val sessionManager = remember { SessionManager(context) }
 
     Scaffold(
-        topBar = { TopAppBarUI() },
+        topBar = { TopAppBarUI(navController, sessionManager) },
         bottomBar = { BottomNavBar(navController) },
         containerColor = Color.White
     ){ pad ->

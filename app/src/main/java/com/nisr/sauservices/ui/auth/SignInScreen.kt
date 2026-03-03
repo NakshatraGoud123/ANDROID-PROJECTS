@@ -1,6 +1,8 @@
 
 package com.nisr.sauservices.ui.auth
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -28,9 +31,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.common.api.ApiException
+import com.google.firebase.auth.GoogleAuthProvider
 import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.R
+import com.nisr.sauservices.data.local.SessionManager
+import com.nisr.sauservices.ui.viewmodel.AuthState
+import com.nisr.sauservices.ui.viewmodel.AuthViewModel
 
 // Colors as per design rules
 private val ElegantTeal = Color(0xFF0FA3A3)
@@ -41,11 +51,30 @@ private val TextDark = Color(0xFF1A1C1E)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SignInScreen(navController: NavController, role: String) {
+fun SignInScreen(navController: NavController, role: String, authViewModel: AuthViewModel = viewModel()) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var rememberMe by remember { mutableStateOf(false) }
+    
+    val context = LocalContext.current
+    val sessionManager = remember { SessionManager(context) }
+    val authState by authViewModel.authState
+
+    val googleLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(ApiException::class.java)
+            account.idToken?.let { idToken ->
+                val credential = GoogleAuthProvider.getCredential(idToken, null)
+                authViewModel.signInWithGoogle(credential, role)
+            }
+        } catch (e: ApiException) {
+            // Handle error
+        }
+    }
 
     val isShopkeeper = role == "shopkeeper"
     val isWorker = role == "service_worker"
@@ -73,6 +102,24 @@ fun SignInScreen(navController: NavController, role: String) {
         else -> Icons.Rounded.Login
     }
 
+    LaunchedEffect(authState) {
+        if (authState is AuthState.Success) {
+            sessionManager.saveLoginState(true)
+            sessionManager.saveUserRole(role)
+            
+            val route = when {
+                isShopkeeper -> Screen.ShopkeeperDashboard.route
+                isWorker -> Screen.ServiceWorkerDashboard.route
+                isDelivery -> Screen.DeliveryDashboard.route
+                else -> Screen.Home.route
+            }
+            navController.navigate(route) {
+                popUpTo(Screen.Login.route) { inclusive = true }
+            }
+            authViewModel.resetState()
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -88,7 +135,6 @@ fun SignInScreen(navController: NavController, role: String) {
                 .statusBarsPadding()
                 .padding(horizontal = 24.dp)
         ) {
-            // Updated Back Button alignment
             Box(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                 IconButton(
                     onClick = { navController.popBackStack() },
@@ -104,7 +150,6 @@ fun SignInScreen(navController: NavController, role: String) {
                     .padding(top = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Header Icon
                 Box(
                     modifier = Modifier
                         .size(80.dp)
@@ -138,7 +183,6 @@ fun SignInScreen(navController: NavController, role: String) {
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            // Card Container for Inputs
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
@@ -146,13 +190,24 @@ fun SignInScreen(navController: NavController, role: String) {
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
+                    if (authState is AuthState.Error) {
+                        Text(
+                            text = (authState as AuthState.Error).message,
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
-                        placeholder = { Text("Email or Phone") },
+                        placeholder = { Text("Email Address") },
                         leadingIcon = { Icon(Icons.Rounded.AlternateEmail, contentDescription = null, modifier = Modifier.size(20.dp)) },
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        enabled = authState !is AuthState.Loading,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = ElegantTeal,
                             unfocusedBorderColor = Color(0xFFF0F0F0),
@@ -178,6 +233,7 @@ fun SignInScreen(navController: NavController, role: String) {
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         shape = RoundedCornerShape(16.dp),
                         modifier = Modifier.fillMaxWidth(),
+                        enabled = authState !is AuthState.Loading,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = ElegantTeal,
                             unfocusedBorderColor = Color(0xFFF0F0F0),
@@ -216,15 +272,8 @@ fun SignInScreen(navController: NavController, role: String) {
 
                     Button(
                         onClick = { 
-                            // Corrected Navigation logic based on role
-                            val route = when {
-                                isShopkeeper -> Screen.ShopkeeperDashboard.route
-                                isWorker -> Screen.ServiceWorkerDashboard.route
-                                isDelivery -> Screen.DeliveryDashboard.route
-                                else -> Screen.Home.route // Navigate to Home for Customer
-                            }
-                            navController.navigate(route) {
-                                popUpTo(Screen.Login.route) { inclusive = true }
+                            if (email.isNotBlank() && password.isNotBlank()) {
+                                authViewModel.signIn(email, password)
                             }
                         },
                         modifier = Modifier
@@ -235,6 +284,7 @@ fun SignInScreen(navController: NavController, role: String) {
                                 shape = RoundedCornerShape(16.dp),
                                 spotColor = ElegantTeal
                             ),
+                        enabled = authState !is AuthState.Loading,
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color.Transparent
@@ -247,7 +297,11 @@ fun SignInScreen(navController: NavController, role: String) {
                                 .background(Brush.linearGradient(listOf(ElegantTeal, ElegantTealDark))),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("Sign In", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            if (authState is AuthState.Loading) {
+                                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                            } else {
+                                Text("Sign In", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }
@@ -255,7 +309,6 @@ fun SignInScreen(navController: NavController, role: String) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Social Login Section
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -280,7 +333,7 @@ fun SignInScreen(navController: NavController, role: String) {
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     OutlinedButton(
-                        onClick = { /* Google Login */ },
+                        onClick = { GoogleSignInUtils.launchGoogleSignIn(context, googleLauncher) },
                         modifier = Modifier.weight(1f).height(56.dp),
                         shape = RoundedCornerShape(16.dp),
                         border = BorderStroke(1.dp, Color(0xFFF0F0F0))
@@ -313,7 +366,6 @@ fun SignInScreen(navController: NavController, role: String) {
             
             Spacer(modifier = Modifier.weight(1f))
 
-            // Bottom Navigation
             val annotatedString = buildAnnotatedString {
                 withStyle(style = SpanStyle(color = TextGrey)) {
                     append("Don't have an account? ")
@@ -327,7 +379,10 @@ fun SignInScreen(navController: NavController, role: String) {
                 text = annotatedString,
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .clickable { navController.navigate(Screen.SignUp.createRoute(role)) }
+                    .clickable { 
+                        authViewModel.resetState()
+                        navController.navigate(Screen.SignUp.createRoute(role)) 
+                    }
                     .padding(bottom = 24.dp)
             )
             
