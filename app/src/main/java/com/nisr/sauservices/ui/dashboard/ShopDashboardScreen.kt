@@ -16,7 +16,6 @@ import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
@@ -107,9 +106,26 @@ fun ShopDashboardScreen(viewModel: ShopkeeperViewModel) {
 
             items(orders) { order ->
                 OrderListItem(order) { newStatus ->
-                    viewModel.updateOrderStatus(order, newStatus)
+                    viewModel.updateOrderStatus(order.orderId, newStatus)
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun SummaryCard(title: String, value: String, modifier: Modifier = Modifier) {
+    ElevatedCard(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = Color.White)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(text = title, fontSize = 12.sp, color = Color.Gray)
+            Text(text = value, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
         }
     }
 }

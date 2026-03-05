@@ -19,21 +19,26 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.nisr.sauservices.R
+import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.theme.PinkPrimary
 
 data class PopularService(
+    val id: String,
     val name: String,
     val imageRes: Int,
     val price: String,
-    val rating: String
+    val rating: String,
+    val categoryId: String = "ac_repair",
+    val subcategoryId: String = "ac_service"
 )
 
 @Composable
-fun PopularServicesSection() {
+fun PopularServicesSection(navController: NavController) {
     val list = listOf(
-        PopularService("AC Repair", R.drawable.ac_repair, "₹499", "4.6"),
-        PopularService("Bathroom Cleaning", R.drawable.bathroom_cleaning, "₹699", "4.8")
+        PopularService("ac1", "AC Repair", R.drawable.ac_repair, "₹499", "4.6", "ac_repair", "ac_service"),
+        PopularService("hc2", "Bathroom Cleaning", R.drawable.bathroom_cleaning, "₹399", "4.8", "home_cleaning", "clean_room")
     )
 
     Column(modifier = Modifier.padding(vertical = 20.dp)) {
@@ -124,7 +129,9 @@ fun PopularServicesSection() {
                                 }
                                 
                                 Button(
-                                    onClick = { /* TODO */ },
+                                    onClick = {
+                                        navController.navigate(Screen.ResidentialServiceList.createRoute(item.categoryId, item.subcategoryId))
+                                    },
                                     colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary),
                                     shape = RoundedCornerShape(8.dp),
                                     modifier = Modifier.height(32.dp).width(90.dp),

@@ -15,9 +15,16 @@ import com.nisr.sauservices.ui.education.EducationBottomSheet
 import com.nisr.sauservices.ui.business.BusinessBottomSheet
 import com.nisr.sauservices.ui.lifestyle.LifestyleBottomSheet
 import com.nisr.sauservices.ui.tech.TechBottomSheet
+import com.nisr.sauservices.ui.viewmodel.BookingsViewModel
+import com.nisr.sauservices.ui.viewmodel.ResidentialViewModel
 
 @Composable
-fun CustomerHomeScreen(navController: NavController, sessionManager: SessionManager) {
+fun CustomerHomeScreen(
+    navController: NavController, 
+    sessionManager: SessionManager,
+    bookingsViewModel: BookingsViewModel,
+    residentialViewModel: ResidentialViewModel
+) {
     var showEduSheet by remember { mutableStateOf(false) }
     var showBizSheet by remember { mutableStateOf(false) }
     var showLifeSheet by remember { mutableStateOf(false) }
@@ -25,7 +32,7 @@ fun CustomerHomeScreen(navController: NavController, sessionManager: SessionMana
 
     Scaffold(
         topBar = { TopAppBarUI(navController, sessionManager) },
-        bottomBar = { BottomNavBar(navController) },
+        bottomBar = { BottomNavBar(navController, residentialViewModel = residentialViewModel) },
         containerColor = Color.White
     ) { padding ->
         Column(
@@ -35,15 +42,14 @@ fun CustomerHomeScreen(navController: NavController, sessionManager: SessionMana
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            HeroBanner()
+            HeroBanner(navController)
             
-            SearchBarUI()
+            SearchBarUI(navController)
 
             QuickServicesRow()
 
             Spacer(Modifier.height(24.dp))
             
-            // Pass navController to handle "More Services" click
             CategoriesGrid(
                 navController = navController,
                 onEducationClick = { showEduSheet = true },
@@ -56,7 +62,7 @@ fun CustomerHomeScreen(navController: NavController, sessionManager: SessionMana
             
             ValuePropositionsRow()
 
-            PopularServicesSection()
+            PopularServicesSection(navController)
 
             HowItWorks()
 

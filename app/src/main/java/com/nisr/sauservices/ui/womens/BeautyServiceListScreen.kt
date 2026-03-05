@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nisr.sauservices.ui.Screen
+import com.nisr.sauservices.ui.theme.PinkPrimary
 import com.nisr.sauservices.ui.viewmodel.BeautyService
 import com.nisr.sauservices.ui.viewmodel.WomensBeautyViewModel
 
@@ -39,10 +40,14 @@ fun BeautyServiceListScreen(navController: NavController, subcategory: String, v
                 },
                 actions = {
                     BadgedBox(
-                        badge = { if (cartItems.isNotEmpty()) Badge { Text(cartItems.size.toString()) } },
+                        badge = { 
+                            if (cartItems.isNotEmpty()) {
+                                Badge(containerColor = PinkPrimary) { Text(cartItems.size.toString(), color = Color.White) }
+                            }
+                        },
                         modifier = Modifier
                             .padding(end = 16.dp)
-                            .clickable { navController.navigate(Screen.WomensBeautyCart.route) }
+                            .clickable { navController.navigate(Screen.Cart.route) }
                     ) {
                         Icon(Icons.Default.ShoppingCart, contentDescription = "Cart")
                     }
@@ -65,11 +70,11 @@ fun BeautyServiceListScreen(navController: NavController, subcategory: String, v
                         Column {
                             val count = cartItems.sumOf { it.quantity }
                             Text("$count items", fontSize = 14.sp, color = Color.Gray)
-                            Text("₹${viewModel.calculateTotal().toInt()}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC2185B))
+                            Text("₹${viewModel.calculateTotal().toInt()}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PinkPrimary)
                         }
                         Button(
-                            onClick = { navController.navigate(Screen.WomensBeautyCart.route) },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC2185B)),
+                            onClick = { navController.navigate(Screen.Cart.route) },
+                            colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text("View Cart", fontWeight = FontWeight.Bold)
@@ -120,7 +125,7 @@ fun BeautyServiceCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(service.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("₹${service.price.toInt()}", fontWeight = FontWeight.ExtraBold, color = Color(0xFFC2185B), fontSize = 15.sp)
+                Text("₹${service.price.toInt()}", fontWeight = FontWeight.ExtraBold, color = PinkPrimary, fontSize = 15.sp)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text("${service.durationMinutes} mins", fontSize = 12.sp, color = Color.Gray)
             }
@@ -129,22 +134,22 @@ fun BeautyServiceCard(
                 OutlinedButton(
                     onClick = onAdd,
                     shape = RoundedCornerShape(8.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFC2185B)),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFC2185B))
+                    border = androidx.compose.foundation.BorderStroke(1.dp, PinkPrimary),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = PinkPrimary)
                 ) {
                     Text("ADD", fontWeight = FontWeight.Bold)
                 }
             } else {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.background(Color(0xFFFCE4EC), RoundedCornerShape(8.dp))
+                    modifier = Modifier.background(PinkPrimary.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
                 ) {
                     IconButton(onClick = onDecrease) {
-                        Text("-", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC2185B))
+                        Text("-", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = PinkPrimary)
                     }
-                    Text(quantity.toString(), fontWeight = FontWeight.Bold, color = Color(0xFFC2185B), modifier = Modifier.padding(horizontal = 4.dp))
+                    Text(quantity.toString(), fontWeight = FontWeight.Bold, color = PinkPrimary, modifier = Modifier.padding(horizontal = 4.dp))
                     IconButton(onClick = onIncrease) {
-                        Text("+", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC2185B))
+                        Text("+", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = PinkPrimary)
                     }
                 }
             }

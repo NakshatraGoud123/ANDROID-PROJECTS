@@ -15,13 +15,23 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.theme.PinkPrimary
 import com.nisr.sauservices.ui.viewmodel.CartViewModel
+import com.nisr.sauservices.ui.viewmodel.FoodCartViewModel
+import com.nisr.sauservices.ui.viewmodel.ResidentialViewModel
 
 @Composable
-fun BottomNavBar(navController: NavController, cartViewModel: CartViewModel = viewModel()) {
+fun BottomNavBar(
+    navController: NavController, 
+    cartViewModel: CartViewModel = viewModel(),
+    foodCartViewModel: FoodCartViewModel = viewModel(),
+    residentialViewModel: ResidentialViewModel = viewModel()
+) {
     val navBackStackEntry = navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry.value?.destination?.route
     
-    val cartCount = cartViewModel.cartItems.sumOf { it.quantity }
+    // Total badge count from all carts
+    val cartCount = cartViewModel.homeCartItems.sumOf { it.quantity } + 
+                    foodCartViewModel.cartItems.sumOf { it.quantity } +
+                    residentialViewModel.cartItems.sumOf { it.quantity }
 
     NavigationBar(
         containerColor = Color.White,

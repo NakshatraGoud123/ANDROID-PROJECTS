@@ -8,6 +8,15 @@ sealed class Screen(val route: String) {
     object Cart : Screen("cart")
     object Profile : Screen("profile")
     
+    // Profile System Routes
+    object EditProfile : Screen("profile/edit")
+    object Notifications : Screen("profile/notifications")
+    object ShippingAddress : Screen("profile/address")
+    object ChangePassword : Screen("profile/change-password")
+    object AddAccounts : Screen("profile/add-accounts")
+    object ContactUs : Screen("profile/contact")
+    object FAQ : Screen("profile/faq")
+    
     // Home Essentials Hierarchy (COMPREHENSIVE)
     object HomeEssentialsMain : Screen("home_main")
     object HomeEssentialsCategory : Screen("home_category/{categoryId}") {

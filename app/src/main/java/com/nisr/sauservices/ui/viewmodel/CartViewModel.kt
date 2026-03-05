@@ -98,7 +98,7 @@ class CartViewModel : ViewModel() {
         _homeCartItems.clear()
     }
 
-    // --- Combined Totals (Example uses Home Cart for now) ---
+    // --- Combined Totals ---
     val itemTotal: Double get() = _homeCartItems.sumOf { (it.product.price * it.quantity).toDouble() }
     val deliveryFee: Double get() = if (_homeCartItems.isEmpty()) 0.0 else 30.0
     val taxes: Double get() = itemTotal * 0.05

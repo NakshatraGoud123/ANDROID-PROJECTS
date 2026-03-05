@@ -1,18 +1,26 @@
 package com.nisr.sauservices.ui.dashboard
 
+import androidx.compose.animation.*
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.automirrored.rounded.Logout
+import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -21,125 +29,234 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 import com.nisr.sauservices.data.local.SessionManager
 import com.nisr.sauservices.data.model.Delivery
-import com.nisr.sauservices.data.model.Order
 import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.viewmodel.DeliveryViewModel
-import com.nisr.sauservices.ui.viewmodel.ShopkeeperViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+// Clean Palette
+private val PrimaryBlue = Color(0xFF1E3A8A)
+private val Background = Color(0xFFF9FAFB)
+private val Surface = Color(0xFFFFFFFF)
+private val Border = Color(0xFFF1F5F9)
+private val TextDark = Color(0xFF111827)
+private val TextGrey = Color(0xFF6B7280)
+private val SuccessGreen = Color(0xFF22C55E)
+private val PendingOrange = Color(0xFFF97316)
+private val ActiveBlue = Color(0xFF3B82F6)
+
 @Composable
 fun DeliveryDashboardScreen(
     navController: NavController,
     sessionManager: SessionManager,
-    deliveryViewModel: DeliveryViewModel,
-    shopkeeperViewModel: ShopkeeperViewModel
+    deliveryViewModel: DeliveryViewModel
 ) {
-    var selectedTab by remember { mutableIntStateOf(0) } 
-    val deliveries by deliveryViewModel.deliveries.observeAsState(initial = emptyList())
-    val orders by shopkeeperViewModel.orders.observeAsState(initial = emptyList())
-    
-    val location = LatLng(12.9716, 77.5946)
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(location, 11f)
-    }
+    var selectedTab by remember { mutableIntStateOf(0) }
+    var isChatOpen by remember { mutableStateOf(false) }
 
     Scaffold(
-        topBar = {
-            Column {
-                TopAppBar(
-                    title = { Text("Delivery Partner Dashboard", color = Color.White, fontWeight = FontWeight.Bold) },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF2E7D6B)),
-                    actions = {
-                        IconButton(onClick = {
-                            sessionManager.logout()
-                            navController.navigate(Screen.RoleSelection.route) {
-                                popUpTo(0)
-                            }
-                        }) {
-                            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Logout", tint = Color.White)
-                        }
-                    }
-                )
-                TabRow(
-                    selectedTabIndex = selectedTab,
-                    containerColor = Color(0xFF2E7D6B),
-                    contentColor = Color.White,
-                    divider = {}
-                ) {
-                    Tab(
-                        selected = selectedTab == 0,
-                        onClick = { selectedTab = 0 },
-                        text = { Text("Deliveries") }
-                    )
-                    Tab(
-                        selected = selectedTab == 1,
-                        onClick = { selectedTab = 1 },
-                        text = { Text("Shop Orders") }
-                    )
-                }
-            }
+        containerColor = Background,
+        bottomBar = {
+            DeliveryBottomNavigationBar(selectedTab) { selectedTab = it }
         },
-        containerColor = Color(0xFFF5F7F6)
+        floatingActionButton = {
+            DeliveryFloatingChatButton { isChatOpen = true }
+        }
     ) { padding ->
-        if (selectedTab == 0) {
-            LazyColumn(
-                modifier = Modifier
-                    .padding(padding)
-                    .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                item {
+        Box(modifier = Modifier.padding(padding)) {
+            when (selectedTab) {
+                0 -> DeliveryHomeScreen(deliveryViewModel, sessionManager, navController)
+                1 -> DeliveriesListScreen(deliveryViewModel)
+                2 -> DeliveryEarningsScreen()
+                3 -> DeliveryProfileScreen()
+            }
+            
+            if (isChatOpen) {
+                DeliveryChatWindow(onClose = { isChatOpen = false })
+            }
+        }
+    }
+}
+
+@Composable
+fun DeliveryHomeScreen(viewModel: DeliveryViewModel, sessionManager: SessionManager, navController: NavController) {
+    val deliveries by viewModel.deliveries.observeAsState(initial = emptyList())
+    var isOnline by remember { mutableStateOf(true) }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 24.dp)
+    ) {
+        item {
+            DeliveryDashboardHeader(
+                title = "Delivery Partner",
+                onLogout = {
+                    sessionManager.logout()
+                    navController.navigate(Screen.RoleSelection.route) { popUpTo(0) }
+                }
+            )
+        }
+
+        item {
+            Column(modifier = Modifier.padding(16.dp)) {
+                // Availability Card
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    color = Surface,
+                    border = BorderStroke(1.dp, Border)
+                ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        SummaryCard("Today Deliveries", "8", Modifier.weight(1f))
-                        SummaryCard("Earnings", "$85.50", Modifier.weight(1f))
+                        Column {
+                            Text("Availability", fontWeight = FontWeight.Bold, color = TextDark)
+                            Text(
+                                if (isOnline) "Online — Accepting jobs" else "Offline — Not accepting jobs",
+                                fontSize = 12.sp,
+                                color = if (isOnline) SuccessGreen else TextGrey
+                            )
+                        }
+                        Switch(
+                            checked = isOnline,
+                            onCheckedChange = { isOnline = it },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = PrimaryBlue
+                            )
+                        )
                     }
                 }
 
-                item {
-                    ElevatedCard(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(250.dp),
-                        shape = RoundedCornerShape(16.dp)
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Stats Grid
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    DeliveryStatCard("Ready for Pickup", "4", Icons.Rounded.Inventory2, PendingOrange, Modifier.weight(1f))
+                    DeliveryStatCard("Today's Deliveries", "7", Icons.Rounded.ElectricBike, ActiveBlue, Modifier.weight(1f))
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    DeliveryStatCard("Today's Earnings", "₹1,800", Icons.Rounded.Payments, SuccessGreen, Modifier.weight(1f))
+                    DeliveryStatCard("Distance Covered", "32 km", Icons.Rounded.MyLocation, TextGrey, Modifier.weight(1f))
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text("Delivery Tasks", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+        }
+
+        items(deliveries.take(3)) { delivery ->
+            Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+                DeliveryTaskCard(delivery)
+            }
+        }
+        
+        item {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Route Preview", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                Spacer(modifier = Modifier.height(12.dp))
+                RoutePreviewCard()
+            }
+        }
+    }
+}
+
+@Composable
+fun DeliveriesListScreen(viewModel: DeliveryViewModel) {
+    val deliveries by viewModel.deliveries.observeAsState(initial = emptyList())
+    
+    Column(modifier = Modifier.fillMaxSize()) {
+        DeliveryDashboardHeader(title = "Deliveries", showToggle = false)
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(deliveries) { delivery ->
+                DeliveryTaskCard(delivery)
+            }
+        }
+    }
+}
+
+@Composable
+fun DeliveryEarningsScreen() {
+    Column(modifier = Modifier.fillMaxSize()) {
+        DeliveryDashboardHeader(title = "Earnings", showToggle = false)
+        Column(modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                DeliveryStatCard("Today", "₹1,800", Icons.Rounded.AttachMoney, ActiveBlue, Modifier.weight(1f))
+                DeliveryStatCard("This Week", "₹9,200", Icons.Rounded.CalendarMonth, PrimaryBlue, Modifier.weight(1f))
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                color = Surface,
+                border = BorderStroke(1.dp, Border)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Weekly Earnings", fontSize = 14.sp, color = TextGrey)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth().height(120.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.Bottom
                     ) {
-                        GoogleMap(
-                            modifier = Modifier.fillMaxSize(),
-                            cameraPositionState = cameraPositionState,
-                            properties = MapProperties(isMyLocationEnabled = false)
-                        ) {
-                            Marker(
-                                state = rememberMarkerState(position = LatLng(12.9720, 77.5950)),
-                                title = "Pickup"
-                            )
-                            Marker(
-                                state = rememberMarkerState(position = LatLng(12.9800, 77.6000)),
-                                title = "Drop"
+                        val heights = listOf(0.4f, 0.6f, 0.5f, 0.85f, 0.7f, 0.9f, 0.8f)
+                        heights.forEach { h ->
+                            Box(
+                                modifier = Modifier
+                                    .width(32.dp)
+                                    .fillMaxHeight(h)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(ActiveBlue)
                             )
                         }
                     }
-                }
-
-                items(deliveries) { delivery ->
-                    DeliveryListItem(delivery) { newStatus ->
-                        deliveryViewModel.updateDeliveryStatus(delivery, newStatus)
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        listOf("M", "T", "W", "T", "F", "S", "S").forEach { 
+                            Text(it, fontSize = 12.sp, color = TextGrey)
+                        }
                     }
                 }
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .padding(padding)
-                    .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(orders) { order ->
-                    DashboardOrderListItem(order) { newStatus ->
-                        shopkeeperViewModel.updateOrderStatus(order, newStatus)
+
+            Spacer(modifier = Modifier.height(24.dp))
+            Text("Delivery History", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark)
+            Spacer(modifier = Modifier.height(12.dp))
+
+            val history = listOf(
+                Triple("Kumar Store — Block A, Sec 5", "Today", "₹60"),
+                Triple("Tech Hub — MG Road", "Today", "₹80"),
+                Triple("Daily Mart — Dwarka Sec 7", "Yesterday", "₹55")
+            )
+
+            history.forEach { (route, time, amount) ->
+                Surface(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    color = Surface,
+                    border = BorderStroke(1.dp, Border)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text(route, fontWeight = FontWeight.Bold, color = TextDark, fontSize = 14.sp)
+                            Text(time, fontSize = 12.sp, color = TextGrey)
+                        }
+                        Text(amount, fontWeight = FontWeight.Bold, color = SuccessGreen, fontSize = 16.sp)
                     }
                 }
             }
@@ -148,53 +265,246 @@ fun DeliveryDashboardScreen(
 }
 
 @Composable
-fun SummaryCard(title: String, value: String, modifier: Modifier = Modifier) {
-    ElevatedCard(
+fun DeliveryProfileScreen() {
+    Column(modifier = Modifier.fillMaxSize()) {
+        DeliveryDashboardHeader(title = "Profile", showToggle = false)
+        Column(
+            modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                color = Surface,
+                border = BorderStroke(1.dp, Border)
+            ) {
+                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier.size(64.dp).clip(RoundedCornerShape(12.dp)).background(ActiveBlue),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Rounded.ElectricBike, null, tint = Color.White, modifier = Modifier.size(32.dp))
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text("Suresh Yadav", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                        Text("Delivery Partner • ID: DP-3078", fontSize = 13.sp, color = TextGrey)
+                    }
+                }
+            }
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                color = Surface,
+                border = BorderStroke(1.dp, Border)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Vehicle Details", fontWeight = FontWeight.Bold, color = TextDark)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.ElectricBike, null, tint = Color.Red, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("Honda Activa • DL-05-AB-1234", fontSize = 14.sp, color = TextGrey)
+                    }
+                }
+            }
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                color = Surface,
+                border = BorderStroke(1.dp, Border)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Verification", fontWeight = FontWeight.Bold, color = TextDark)
+                        Text("Completed", color = SuccessGreen, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    VerificationDetail(Icons.Rounded.CheckCircleOutline, "Aadhaar Verified")
+                    VerificationDetail(Icons.Rounded.Badge, "Driving License Uploaded")
+                    VerificationDetail(Icons.Rounded.Phone, "+91 87654xxxxx")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun VerificationDetail(icon: ImageVector, text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
+        Icon(icon, null, tint = SuccessGreen, modifier = Modifier.size(18.dp))
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(text, fontSize = 14.sp, color = TextGrey)
+    }
+}
+
+@Composable
+fun DeliveryDashboardHeader(
+    title: String,
+    onLogout: () -> Unit = {},
+    showToggle: Boolean = true
+) {
+    Surface(
+        color = PrimaryBlue,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.statusBarsPadding().padding(horizontal = 16.dp, vertical = 16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (title != "Delivery Partner") {
+                        IconButton(onClick = {}, modifier = Modifier.size(24.dp)) {
+                            Icon(Icons.AutoMirrored.Rounded.Logout, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                    }
+                    Text(title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = {}) {
+                        Icon(Icons.Rounded.Notifications, null, tint = Color.White)
+                    }
+                    Box(
+                        modifier = Modifier.size(36.dp).clip(CircleShape).background(Color(0xFFEAB308)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Rounded.Person, null, tint = Color.White)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DeliveryStatCard(label: String, value: String, icon: ImageVector, color: Color, modifier: Modifier) {
+    Surface(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = Color.White)
+        color = Surface,
+        border = BorderStroke(1.dp, Border)
     ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(text = title, fontSize = 10.sp, color = Color.Gray)
-            Text(text = value, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+        Column(modifier = Modifier.padding(16.dp)) {
+            Box(
+                modifier = Modifier.size(36.dp).clip(CircleShape).background(color.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, null, tint = color, modifier = Modifier.size(20.dp))
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(value, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextDark)
+            Text(label, fontSize = 12.sp, color = TextGrey)
         }
     }
 }
 
 @Composable
-fun DeliveryListItem(delivery: Delivery, onStatusChange: (String) -> Unit) {
-    var status by remember { mutableStateOf(delivery.status) }
-
-    ElevatedCard(
+fun DeliveryTaskCard(delivery: Delivery) {
+    Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = Color.White)
+        color = Surface,
+        border = BorderStroke(1.dp, Border)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = delivery.customerName, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            Text(text = "From: ${delivery.pickupAddress}", fontSize = 14.sp, color = Color.Gray)
-            Text(text = "To: ${delivery.dropAddress}", fontSize = 14.sp, color = Color.Gray)
-            Text(text = "Distance: ${delivery.distance}", fontSize = 14.sp, color = Color(0xFF2E7D6B))
-
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                Button(
-                    onClick = {
-                        val nextStatus = when (status) {
-                            "Pending" -> "Picked"
-                            "Picked" -> "On The Way"
-                            "On The Way" -> "Delivered"
-                            else -> "Delivered"
-                        }
-                        status = nextStatus
-                        onStatusChange(nextStatus)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.Storefront, null, tint = PendingOrange, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(delivery.customerName, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextDark)
+                        Text(delivery.items, fontSize = 13.sp, color = TextGrey)
+                    }
+                }
+                Surface(
+                    color = when(delivery.status.lowercase()) {
+                        "pending" -> PendingOrange.copy(alpha = 0.1f)
+                        "active" -> ActiveBlue.copy(alpha = 0.1f)
+                        else -> SuccessGreen.copy(alpha = 0.1f)
                     },
-                    shape = RoundedCornerShape(24.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D6B))
+                    shape = RoundedCornerShape(20.dp)
                 ) {
-                    Text(status)
+                    Text(
+                        delivery.status.uppercase(),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = when(delivery.status.lowercase()) {
+                            "pending" -> PendingOrange
+                            "active" -> ActiveBlue
+                            else -> SuccessGreen
+                        }
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.LocationOn, null, tint = PendingOrange, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(delivery.dropAddress, fontSize = 13.sp, color = TextGrey)
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.Schedule, null, tint = TextGrey, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("${delivery.cartAddedTime} — \uD83D\uDCB3 Cash", fontSize = 13.sp, color = TextGrey)
+            }
+
+            if (delivery.status.lowercase() == "active") {
+                Spacer(modifier = Modifier.height(16.dp))
+                Surface(
+                    color = Background,
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("Status Flow", fontSize = 12.sp, color = TextGrey)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("Pickup", color = SuccessGreen, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Text(" → ", color = TextGrey)
+                        Text("Out for Delivery", color = ActiveBlue, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Text(" → ", color = TextGrey)
+                        Text("Delivered", color = TextGrey, fontSize = 12.sp)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            if (delivery.status.lowercase() == "pending") {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Button(
+                        onClick = { },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text("Accept")
+                    }
+                    Button(
+                        onClick = { },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = ActiveBlue),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text("Navigate")
+                    }
+                }
+            } else if (delivery.status.lowercase() == "active") {
+                Button(
+                    onClick = { },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("Complete Delivery")
                 }
             }
         }
@@ -202,34 +512,108 @@ fun DeliveryListItem(delivery: Delivery, onStatusChange: (String) -> Unit) {
 }
 
 @Composable
-private fun DashboardOrderListItem(order: Order, onStatusChange: (String) -> Unit) {
-    var status by remember { mutableStateOf(order.status) }
-
-    ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
+fun RoutePreviewCard() {
+    Surface(
+        modifier = Modifier.fillMaxWidth().height(180.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = Color.White)
+        color = Color(0xFFE5E7EB),
+        border = BorderStroke(1.dp, Border)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "Order ID: ${order.orderId}", fontSize = 12.sp, color = Color.Gray)
-            Text(text = order.customerName, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            Text(text = "Total: ${order.amount}", fontSize = 14.sp, color = Color.DarkGray)
-
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                Button(
-                    onClick = {
-                        val nextStatus = when (status) {
-                            "Pending" -> "Accepted"
-                            "Accepted" -> "Completed"
-                            else -> "Completed"
-                        }
-                        status = nextStatus
-                        onStatusChange(nextStatus)
-                    },
-                    shape = RoundedCornerShape(24.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D6B))
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
+                    modifier = Modifier.size(40.dp).clip(CircleShape).background(PrimaryBlue),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(status)
+                    Icon(Icons.Rounded.MyLocation, null, tint = Color.White)
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                Text("You: Sector 10", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text("Pickup: Kumar Store", fontSize = 12.sp, color = TextGrey)
+                Text("Drop: Block A, Sector 5", fontSize = 12.sp, color = TextGrey)
+            }
+        }
+    }
+}
+
+@Composable
+fun DeliveryBottomNavigationBar(selectedTab: Int, onTabSelected: (Int) -> Unit) {
+    NavigationBar(
+        containerColor = Surface,
+        contentColor = PrimaryBlue,
+        tonalElevation = 8.dp
+    ) {
+        NavigationBarItem(
+            icon = { Icon(Icons.Rounded.Home, null) },
+            label = { Text("Home") },
+            selected = selectedTab == 0,
+            onClick = { onTabSelected(0) }
+        )
+        NavigationBarItem(
+            icon = { Icon(Icons.Rounded.Assignment, null) },
+            label = { Text("Deliveries") },
+            selected = selectedTab == 1,
+            onClick = { onTabSelected(1) }
+        )
+        NavigationBarItem(
+            icon = { Icon(Icons.Rounded.BarChart, null) },
+            label = { Text("Earnings") },
+            selected = selectedTab == 2,
+            onClick = { onTabSelected(2) }
+        )
+        NavigationBarItem(
+            icon = { Icon(Icons.Rounded.PersonOutline, null) },
+            label = { Text("Profile") },
+            selected = selectedTab == 3,
+            onClick = { onTabSelected(3) }
+        )
+    }
+}
+
+@Composable
+fun DeliveryFloatingChatButton(onClick: () -> Unit) {
+    FloatingActionButton(
+        onClick = onClick,
+        containerColor = PendingOrange,
+        contentColor = Color.White,
+        shape = CircleShape
+    ) {
+        Icon(Icons.Rounded.Chat, null)
+    }
+}
+
+@Composable
+fun DeliveryChatWindow(onClose: () -> Unit) {
+    Box(
+        modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)).clickable { onClose() },
+        contentAlignment = Alignment.BottomEnd
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(0.85f).fillMaxHeight(0.6f).padding(16.dp).clickable(enabled = false) { },
+            shape = RoundedCornerShape(24.dp),
+            color = Surface
+        ) {
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth().background(PrimaryBlue).padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("SAU Chatbot", color = Color.White, fontWeight = FontWeight.Bold)
+                    IconButton(onClose) { Icon(Icons.Rounded.Close, null, tint = Color.White) }
+                }
+                Box(modifier = Modifier.weight(1f).padding(16.dp)) {
+                    Text("Need help with your route or delivery?", color = TextGrey)
+                }
+                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = "", onValueChange = {}, modifier = Modifier.weight(1f),
+                        placeholder = { Text("Type message...") }, shape = RoundedCornerShape(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(onClick = {}, modifier = Modifier.background(PrimaryBlue, CircleShape)) {
+                        Icon(Icons.AutoMirrored.Rounded.Send, null, tint = Color.White)
+                    }
                 }
             }
         }
