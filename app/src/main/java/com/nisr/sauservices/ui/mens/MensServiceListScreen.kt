@@ -5,23 +5,23 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nisr.sauservices.ui.Screen
+import com.nisr.sauservices.ui.theme.PinkPrimary
 import com.nisr.sauservices.ui.viewmodel.MensGroomingService
 import com.nisr.sauservices.ui.viewmodel.MensGroomingViewModel
 import java.net.URLDecoder
@@ -30,8 +30,8 @@ import java.net.URLDecoder
 @Composable
 fun MensServiceListScreen(navController: NavController, subcategory: String, viewModel: MensGroomingViewModel) {
     val decodedSub = URLDecoder.decode(subcategory, "UTF-8")
-    
     val services = getServicesForSubcategory(decodedSub)
+    val cartItems = viewModel.cartItems
 
     Scaffold(
         topBar = {
@@ -45,17 +45,45 @@ fun MensServiceListScreen(navController: NavController, subcategory: String, vie
                 actions = {
                     BadgedBox(
                         badge = {
-                            if (viewModel.cartItems.isNotEmpty()) {
-                                Badge { Text(viewModel.cartItems.size.toString()) }
+                            if (cartItems.isNotEmpty()) {
+                                Badge(containerColor = PinkPrimary) { Text(cartItems.size.toString(), color = Color.White) }
                             }
                         },
-                        modifier = Modifier.padding(end = 16.dp).clickable { navController.navigate(Screen.MensCart.route) }
+                        modifier = Modifier.padding(end = 16.dp).clickable { navController.navigate(Screen.Cart.route) }
                     ) {
                         Icon(Icons.Default.ShoppingCart, contentDescription = "Cart")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
+        },
+        bottomBar = {
+            if (cartItems.isNotEmpty()) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shadowElevation = 8.dp,
+                    color = Color.White
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp).navigationBarsPadding(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            val count = cartItems.sumOf { it.quantity }
+                            Text("$count items added", fontSize = 14.sp, color = Color.Gray)
+                            Text("₹${viewModel.getTotalPrice().toInt()}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PinkPrimary)
+                        }
+                        Button(
+                            onClick = { navController.navigate(Screen.Cart.route) },
+                            colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("View Cart", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
         },
         containerColor = Color(0xFFF7F7F7)
     ) { padding ->
@@ -65,16 +93,27 @@ fun MensServiceListScreen(navController: NavController, subcategory: String, vie
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(services) { service ->
-                MensServiceCard(service) {
-                    viewModel.addToCart(service)
-                }
+                val quantity = cartItems.find { it.id == service.id }?.quantity ?: 0
+                MensServiceCard(
+                    service = service,
+                    quantity = quantity,
+                    onAdd = { viewModel.addToCart(service) },
+                    onIncrease = { viewModel.increaseQty(service.id) },
+                    onDecrease = { viewModel.decreaseQty(service.id) }
+                )
             }
         }
     }
 }
 
 @Composable
-fun MensServiceCard(service: MensGroomingService, onAdd: () -> Unit) {
+fun MensServiceCard(
+    service: MensGroomingService,
+    quantity: Int,
+    onAdd: () -> Unit,
+    onIncrease: () -> Unit,
+    onDecrease: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -89,18 +128,33 @@ fun MensServiceCard(service: MensGroomingService, onAdd: () -> Unit) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(service.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("₹${service.price.toInt()}", fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary, fontSize = 18.sp)
+                Text("₹${service.price.toInt()}", fontWeight = FontWeight.ExtraBold, color = PinkPrimary, fontSize = 18.sp)
             }
             
-            Button(
-                onClick = onAdd,
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Add")
+            if (quantity == 0) {
+                Button(
+                    onClick = onAdd,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Add")
+                }
+            } else {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.background(PinkPrimary.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                ) {
+                    IconButton(onClick = onDecrease) {
+                        Icon(Icons.Default.Remove, contentDescription = null, tint = PinkPrimary)
+                    }
+                    Text(quantity.toString(), fontWeight = FontWeight.Bold, color = PinkPrimary, modifier = Modifier.padding(horizontal = 8.dp))
+                    IconButton(onClick = onIncrease) {
+                        Icon(Icons.Default.Add, contentDescription = null, tint = PinkPrimary)
+                    }
+                }
             }
         }
     }

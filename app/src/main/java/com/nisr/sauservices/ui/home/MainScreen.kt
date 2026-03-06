@@ -46,8 +46,8 @@ fun HomeScreen(navController: NavController){
                 .padding(16.dp)
         ){
 
-            HeroBanner()
-            SearchBarUI()
+            HeroBanner(navController)
+            SearchBarUI(navController)
 
             Spacer(Modifier.height(16.dp))
             QuickServicesRow()
@@ -57,6 +57,9 @@ fun HomeScreen(navController: NavController){
             CategoriesGrid(navController, onHomeEssentialsClick = {
                 showSheet = true
             })
+
+            Spacer(Modifier.height(20.dp))
+            PopularServicesSection(navController)
 
             Spacer(Modifier.height(20.dp))
             HowItWorks()

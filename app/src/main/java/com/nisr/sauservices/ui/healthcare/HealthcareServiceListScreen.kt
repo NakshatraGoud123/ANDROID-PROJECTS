@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nisr.sauservices.ui.Screen
+import com.nisr.sauservices.ui.theme.TealPrimary
 import com.nisr.sauservices.ui.viewmodel.HealthcareService
 import com.nisr.sauservices.ui.viewmodel.HealthcareViewModel
 
@@ -39,8 +40,12 @@ fun HealthcareServiceListScreen(navController: NavController, subcategory: Strin
                 },
                 actions = {
                     BadgedBox(
-                        badge = { if (cartItems.isNotEmpty()) Badge { Text(cartItems.size.toString()) } },
-                        modifier = Modifier.padding(end = 16.dp).clickable { navController.navigate(Screen.HealthcareCart.route) }
+                        badge = { 
+                            if (cartItems.isNotEmpty()) {
+                                Badge(containerColor = TealPrimary) { Text(cartItems.size.toString(), color = Color.White) }
+                            }
+                        },
+                        modifier = Modifier.padding(end = 16.dp).clickable { navController.navigate(Screen.Cart.route) }
                     ) {
                         Icon(Icons.Default.ShoppingCart, contentDescription = "Cart")
                     }
@@ -63,11 +68,11 @@ fun HealthcareServiceListScreen(navController: NavController, subcategory: Strin
                         Column {
                             val count = cartItems.sumOf { it.quantity }
                             Text("$count items added", fontSize = 14.sp, color = Color.Gray)
-                            Text("₹${viewModel.calculateTotal().toInt()}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1976D2))
+                            Text("₹${viewModel.calculateTotal().toInt()}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TealPrimary)
                         }
                         Button(
-                            onClick = { navController.navigate(Screen.HealthcareCart.route) },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2)),
+                            onClick = { navController.navigate(Screen.Cart.route) },
+                            colors = ButtonDefaults.buttonColors(containerColor = TealPrimary),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text("View Cart", fontWeight = FontWeight.Bold)
@@ -118,7 +123,7 @@ fun HealthcareServiceCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(service.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("₹${service.price.toInt()}", fontWeight = FontWeight.ExtraBold, color = Color(0xFF1976D2), fontSize = 15.sp)
+                Text("₹${service.price.toInt()}", fontWeight = FontWeight.ExtraBold, color = TealPrimary, fontSize = 15.sp)
                 if (service.requiresPrescription) {
                     Text("Prescription Required", fontSize = 10.sp, color = Color.Red, fontWeight = FontWeight.Medium)
                 }
@@ -128,21 +133,21 @@ fun HealthcareServiceCard(
                 Button(
                     onClick = onAdd,
                     shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
+                    colors = ButtonDefaults.buttonColors(containerColor = TealPrimary)
                 ) {
                     Text("ADD", fontWeight = FontWeight.Bold)
                 }
             } else {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.background(Color(0xFFE3F2FD), RoundedCornerShape(8.dp))
+                    modifier = Modifier.background(TealPrimary.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
                 ) {
                     IconButton(onClick = onDecrease) {
-                        Text("-", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1976D2))
+                        Text("-", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TealPrimary)
                     }
-                    Text(quantity.toString(), fontWeight = FontWeight.Bold, color = Color(0xFF1976D2), modifier = Modifier.padding(horizontal = 8.dp))
+                    Text(quantity.toString(), fontWeight = FontWeight.Bold, color = TealPrimary, modifier = Modifier.padding(horizontal = 8.dp))
                     IconButton(onClick = onIncrease) {
-                        Text("+", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1976D2))
+                        Text("+", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TealPrimary)
                     }
                 }
             }
