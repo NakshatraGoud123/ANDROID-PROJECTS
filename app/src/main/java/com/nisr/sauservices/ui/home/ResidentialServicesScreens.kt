@@ -36,7 +36,12 @@ import androidx.navigation.NavController
 import com.nisr.sauservices.data.model.*
 import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.theme.PinkPrimary
-import com.nisr.sauservices.ui.viewmodel.ResidentialViewModel
+import com.nisr.sauservices.ui.viewmodel.*
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+data class PaymentOptionData(val name: String, val icon: ImageVector)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -169,7 +174,7 @@ fun ResidentialServiceListScreen(navController: NavController, categoryId: Strin
                     color = Color.White
                 ) {
                     Button(
-                        onClick = { navController.navigate(Screen.ResidentialCart.route) },
+                        onClick = { navController.navigate(Screen.Cart.route) },
                         modifier = Modifier.padding(16.dp).fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary)
@@ -245,66 +250,9 @@ fun ResidentialServiceCard(service: ResidentialServiceItem, quantity: Int, onAdd
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ResidentialCartScreen(navController: NavController, viewModel: ResidentialViewModel) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("My Cart", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.Default.ArrowBack, contentDescription = null) }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-            )
-        },
-        containerColor = Color.White
-    ) { padding ->
-        if (viewModel.cartItems.isEmpty()) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { 
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(64.dp), tint = Color.LightGray)
-                    Text("Your cart is empty", color = Color.Gray)
-                }
-            }
-        } else {
-            Column(Modifier.padding(padding).fillMaxSize()) {
-                LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(viewModel.cartItems) { item ->
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFBFBFB)),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Column(Modifier.weight(1f)) {
-                                    Text(item.service.name, fontWeight = FontWeight.Bold, color = Color.Black)
-                                    Text("₹${item.service.price}", color = PinkPrimary, fontWeight = FontWeight.SemiBold)
-                                }
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.background(PinkPrimary.copy(alpha = 0.1f), RoundedCornerShape(8.dp))) {
-                                    IconButton(onClick = { viewModel.updateQty(item.service.id, false) }) { Icon(Icons.Default.Remove, contentDescription = null, tint = PinkPrimary) }
-                                    Text(item.quantity.toString(), fontWeight = FontWeight.Bold, color = PinkPrimary)
-                                    IconButton(onClick = { viewModel.updateQty(item.service.id, true) }) { Icon(Icons.Default.Add, contentDescription = null, tint = PinkPrimary) }
-                                }
-                            }
-                        }
-                    }
-                }
-                Surface(Modifier.fillMaxWidth(), shadowElevation = 16.dp, color = Color.White) {
-                    Column(Modifier.padding(16.dp)) {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Total Amount", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                            Text("₹${viewModel.calculateTotal()}", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = PinkPrimary)
-                        }
-                        Spacer(Modifier.height(16.dp))
-                        Button(
-                            onClick = { navController.navigate(Screen.ResidentialBookingDetails.route) },
-                            modifier = Modifier.fillMaxWidth().height(56.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary)
-                        ) {
-                            Text("Proceed to Booking", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        }
-                    }
-                }
-            }
+    LaunchedEffect(Unit) {
+        navController.navigate(Screen.Cart.route) {
+            popUpTo(Screen.ResidentialCart.route) { inclusive = true }
         }
     }
 }
@@ -452,15 +400,40 @@ fun ResidentialPaymentScreen(navController: NavController, viewModel: Residentia
     }
 }
 
-data class PaymentOptionData(val name: String, val icon: ImageVector)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ResidentialOrderSummaryScreen(navController: NavController, viewModel: ResidentialViewModel) {
+fun ResidentialOrderSummaryScreen(
+    navController: NavController,
+    viewModel: ResidentialViewModel,
+    bookingsViewModel: BookingsViewModel,
+    businessViewModel: BusinessViewModel,
+    lifestyleViewModel: LifestyleViewModel,
+    techViewModel: TechServicesViewModel,
+    mensGroomingViewModel: MensGroomingViewModel,
+    womensBeautyViewModel: WomensBeautyViewModel,
+    healthcareViewModel: HealthcareViewModel
+) {
+    val bookingInfo = viewModel.bookingDetails.value
+    
+    val allItems = mutableListOf<Pair<String, String>>()
+    viewModel.cartItems.forEach { allItems.add(it.service.name + " x ${it.quantity}" to "₹${it.service.price * it.quantity}") }
+    businessViewModel.cartItems.forEach { allItems.add(it.name + " x ${it.quantity}" to "₹${it.price * it.quantity}") }
+    lifestyleViewModel.cartItems.forEach { allItems.add(it.name + " x ${it.quantity}" to "₹${it.price * it.quantity}") }
+    techViewModel.cartItems.forEach { allItems.add(it.name + " x ${it.quantity}" to "₹${it.price * it.quantity}") }
+    mensGroomingViewModel.cartItems.forEach { allItems.add(it.name + " x ${it.quantity}" to "₹${it.price * it.quantity}") }
+    womensBeautyViewModel.cartItems.forEach { allItems.add(it.name + " x ${it.quantity}" to "₹${it.price * it.quantity}") }
+    healthcareViewModel.cartItems.forEach { allItems.add(it.name + " x ${it.quantity}" to "₹${it.price * it.quantity}") }
+
+    val total = viewModel.calculateTotal() + businessViewModel.getTotalPrice() + 
+                lifestyleViewModel.getTotalPrice() + techViewModel.getTotalPrice() + 
+                mensGroomingViewModel.getTotalPrice() + womensBeautyViewModel.calculateTotal() + 
+                healthcareViewModel.calculateTotal()
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Order Summary", fontWeight = FontWeight.Bold) },
+                navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.Default.ArrowBack, null) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
@@ -478,7 +451,7 @@ fun ResidentialOrderSummaryScreen(navController: NavController, viewModel: Resid
                         Spacer(Modifier.width(8.dp))
                         Text("Service Address", fontWeight = FontWeight.Bold)
                     }
-                    Text(viewModel.bookingDetails.value.address, modifier = Modifier.padding(start = 28.dp), color = Color.DarkGray)
+                    Text(bookingInfo.address, modifier = Modifier.padding(start = 28.dp), color = Color.DarkGray)
                     
                     Spacer(Modifier.height(16.dp))
                     
@@ -487,7 +460,7 @@ fun ResidentialOrderSummaryScreen(navController: NavController, viewModel: Resid
                         Spacer(Modifier.width(8.dp))
                         Text("Date & Time", fontWeight = FontWeight.Bold)
                     }
-                    Text("${viewModel.bookingDetails.value.date} | ${viewModel.bookingDetails.value.timeSlot}", modifier = Modifier.padding(start = 28.dp), color = Color.DarkGray)
+                    Text("${bookingInfo.date} | ${bookingInfo.timeSlot}", modifier = Modifier.padding(start = 28.dp), color = Color.DarkGray)
                     
                     Spacer(Modifier.height(16.dp))
 
@@ -496,7 +469,7 @@ fun ResidentialOrderSummaryScreen(navController: NavController, viewModel: Resid
                         Spacer(Modifier.width(8.dp))
                         Text("Payment Method", fontWeight = FontWeight.Bold)
                     }
-                    Text(viewModel.bookingDetails.value.paymentMethod, modifier = Modifier.padding(start = 28.dp), color = Color.DarkGray)
+                    Text(bookingInfo.paymentMethod, modifier = Modifier.padding(start = 28.dp), color = Color.DarkGray)
                 }
             }
             
@@ -505,10 +478,10 @@ fun ResidentialOrderSummaryScreen(navController: NavController, viewModel: Resid
             Spacer(Modifier.height(8.dp))
             
             LazyColumn(modifier = Modifier.weight(1f)) {
-                items(viewModel.cartItems) { item ->
+                items(allItems) { item ->
                     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("${item.service.name} x ${item.quantity}", color = Color.DarkGray)
-                        Text("₹${item.service.price * item.quantity}", fontWeight = FontWeight.Bold)
+                        Text(item.first, color = Color.DarkGray, modifier = Modifier.weight(1f))
+                        Text(item.second, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -516,12 +489,41 @@ fun ResidentialOrderSummaryScreen(navController: NavController, viewModel: Resid
             HorizontalDivider(Modifier.padding(vertical = 16.dp), color = Color.LightGray.copy(alpha = 0.5f))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("Total Amount", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
-                Text("₹${viewModel.calculateTotal()}", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = PinkPrimary)
+                Text("₹${total}", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = PinkPrimary)
             }
             Spacer(Modifier.height(24.dp))
             Button(
                 onClick = {
+                    // Add all items to bookings and clear carts
+                    fun addBooking(name: String, price: String) {
+                        bookingsViewModel.addBooking(
+                            BookingItem(
+                                id = "SRV_${System.currentTimeMillis()}_${name.take(3)}",
+                                serviceName = name,
+                                date = bookingInfo.date,
+                                time = bookingInfo.timeSlot,
+                                status = "Upcoming",
+                                price = price
+                            )
+                        )
+                    }
+
+                    viewModel.cartItems.forEach { addBooking(it.service.name, "₹${it.service.price * it.quantity}") }
+                    businessViewModel.cartItems.forEach { addBooking(it.name, "₹${it.price * it.quantity}") }
+                    lifestyleViewModel.cartItems.forEach { addBooking(it.name, "₹${it.price * it.quantity}") }
+                    techViewModel.cartItems.forEach { addBooking(it.name, "₹${it.price * it.quantity}") }
+                    mensGroomingViewModel.cartItems.forEach { addBooking(it.name, "₹${it.price * it.quantity}") }
+                    womensBeautyViewModel.cartItems.forEach { addBooking(it.name, "₹${it.price * it.quantity}") }
+                    healthcareViewModel.cartItems.forEach { addBooking(it.name, "₹${it.price * it.quantity}") }
+
                     viewModel.clearCart()
+                    businessViewModel.clearCart()
+                    lifestyleViewModel.clearCart()
+                    techViewModel.clearCart()
+                    mensGroomingViewModel.clearCart()
+                    womensBeautyViewModel.clearCart()
+                    healthcareViewModel.clearCart()
+
                     navController.navigate(Screen.BookingSuccess.route) {
                         popUpTo(Screen.Home.route) { inclusive = false }
                     }
@@ -530,41 +532,6 @@ fun ResidentialOrderSummaryScreen(navController: NavController, viewModel: Resid
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary)
             ) { Text("Confirm Booking", fontWeight = FontWeight.Bold, fontSize = 18.sp) }
-        }
-    }
-}
-
-@Composable
-fun BookingSuccessScreen(navController: NavController) {
-    val infiniteTransition = rememberInfiniteTransition(label = "")
-    val scale by infiniteTransition.animateFloat(
-        initialValue = 0.8f,
-        targetValue = 1.1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = LinearOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ), label = ""
-    )
-
-    Box(Modifier.fillMaxSize().background(Color.White), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(contentAlignment = Alignment.Center) {
-                Box(Modifier.size(160.dp).scale(scale).clip(CircleShape).background(PinkPrimary.copy(alpha = 0.1f)))
-                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(100.dp))
-            }
-            Spacer(Modifier.height(32.dp))
-            Text("Booking Successful!", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Color.Black)
-            Spacer(Modifier.height(8.dp))
-            Text("Our expert will reach you soon.", color = Color.Gray, fontSize = 16.sp)
-            Spacer(Modifier.height(48.dp))
-            Button(
-                onClick = { navController.navigate(Screen.Home.route) { popUpTo(0) } },
-                colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.height(48.dp).padding(horizontal = 32.dp)
-            ) {
-                Text("Go to Home", fontWeight = FontWeight.Bold)
-            }
         }
     }
 }

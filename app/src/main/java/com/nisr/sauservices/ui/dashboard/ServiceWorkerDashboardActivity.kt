@@ -117,7 +117,7 @@ class ServiceWorkerDashboardActivity : AppCompatActivity(), OnMapReadyCallback {
             layoutManager = LinearLayoutManager(this@ServiceWorkerDashboardActivity)
         }
         val adapter = BookingsAdapter(emptyList()) { booking ->
-            viewModel.updateBookingStatus(booking, booking.status)
+            viewModel.updateBookingStatus(booking.bookingId, booking.status)
         }
         recyclerView.adapter = adapter
         contentLayout.addView(recyclerView)

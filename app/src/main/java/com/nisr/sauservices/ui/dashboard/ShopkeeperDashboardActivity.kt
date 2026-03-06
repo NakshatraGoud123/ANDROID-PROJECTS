@@ -117,7 +117,7 @@ class ShopkeeperDashboardActivity : AppCompatActivity(), OnMapReadyCallback {
             layoutManager = LinearLayoutManager(this@ShopkeeperDashboardActivity)
         }
         val adapter = OrdersAdapter(emptyList()) { order ->
-            viewModel.updateOrderStatus(order, order.status)
+            viewModel.updateOrderStatus(order.orderId, order.status)
         }
         recyclerView.adapter = adapter
         contentLayout.addView(recyclerView)

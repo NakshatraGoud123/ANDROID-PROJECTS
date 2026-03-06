@@ -41,7 +41,12 @@ import com.nisr.sauservices.data.model.HomeSubcategory
 import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.theme.PinkPrimary
 import com.nisr.sauservices.ui.theme.LightPink
+import com.nisr.sauservices.ui.viewmodel.BookingItem
+import com.nisr.sauservices.ui.viewmodel.BookingsViewModel
 import com.nisr.sauservices.ui.viewmodel.CartViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -236,8 +241,7 @@ fun HomeEssentialsCategoryScreen(navController: NavController, categoryId: Strin
                     Row(
                         modifier = Modifier.padding(20.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
+                        horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(sub.name, fontSize = 18.sp, fontWeight = FontWeight.Medium)
                         Icon(Icons.Default.KeyboardArrowRight, contentDescription = null)
                     }
@@ -364,7 +368,7 @@ fun HomeEssentialsCartScreen(navController: NavController, cartViewModel: CartVi
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("My Cart", fontWeight = FontWeight.Bold) },
+                title = { Text("Home Essentials Cart", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -492,7 +496,7 @@ fun HomeEssentialsCheckoutScreen(navController: NavController, cartViewModel: Ca
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(Modifier.height(32.dp))
             Button(
                 onClick = { navController.navigate(Screen.HomeEssentialsSuccess.route) },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -508,7 +512,24 @@ fun HomeEssentialsCheckoutScreen(navController: NavController, cartViewModel: Ca
 
 // --- SUCCESS SCREEN ---
 @Composable
-fun HomeEssentialsSuccessScreen(navController: NavController, cartViewModel: CartViewModel) {
+fun HomeEssentialsSuccessScreen(navController: NavController, cartViewModel: CartViewModel, bookingsViewModel: BookingsViewModel) {
+    // Add to bookings on entry
+    LaunchedEffect(Unit) {
+        val cartItems = cartViewModel.homeCartItems
+        cartItems.forEach { item ->
+            bookingsViewModel.addBooking(
+                BookingItem(
+                    id = "ESS_${System.currentTimeMillis()}_${item.product.id}",
+                    serviceName = item.product.name,
+                    date = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date()),
+                    time = "Today",
+                    status = "Upcoming",
+                    price = "₹${item.product.price * item.quantity}"
+                )
+            )
+        }
+    }
+
     Surface(modifier = Modifier.fillMaxSize(), color = Color.White) {
         Column(
             modifier = Modifier.fillMaxSize().padding(24.dp),

@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -15,9 +16,29 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nisr.sauservices.ui.Screen
+import com.nisr.sauservices.ui.viewmodel.BookingItem
+import com.nisr.sauservices.ui.viewmodel.BookingsViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
-fun FoodSuccessScreen(navController: NavController) {
+fun FoodSuccessScreen(navController: NavController, bookingsViewModel: BookingsViewModel) {
+    // Add a generic food booking entry on entry for demonstration
+    // In a real app, you'd pass the actual cart/booking details
+    LaunchedEffect(Unit) {
+        bookingsViewModel.addBooking(
+            BookingItem(
+                id = "FOOD_${System.currentTimeMillis()}",
+                serviceName = "Food & Beverage Order",
+                date = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date()),
+                time = "Today",
+                status = "Upcoming",
+                price = "Order Confirmed"
+            )
+        )
+    }
+
     Box(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         contentAlignment = Alignment.Center

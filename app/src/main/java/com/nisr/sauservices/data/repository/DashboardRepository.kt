@@ -2,33 +2,83 @@ package com.nisr.sauservices.data.repository
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.nisr.sauservices.data.model.Booking
-import com.nisr.sauservices.data.model.Delivery
-import com.nisr.sauservices.data.model.Order
+import com.nisr.sauservices.data.model.*
 
 class DashboardRepository {
 
     fun getOrders(): LiveData<List<Order>> {
         val orders = MutableLiveData<List<Order>>()
         orders.value = listOf(
-            Order("101", "John Doe", "$25.00", "Pending"),
-            Order("102", "Jane Smith", "$40.50", "Accepted"),
-            Order("103", "Robert Brown", "$15.00", "Completed"),
-            Order("104", "Emily Davis", "$60.00", "Pending"),
-            Order("105", "Michael Wilson", "$32.00", "Accepted"),
-            Order("106", "Sarah Miller", "$22.00", "Pending")
+            Order(
+                orderId = "ORD001",
+                customerName = "Aarav Mehta",
+                customerPhone = "+91 98765 00001",
+                amount = "₹660",
+                status = "placed",
+                paymentMode = "COD",
+                items = listOf(
+                    OrderItem("Basmati Rice 5kg", 1, 380.0),
+                    OrderItem("Amul Butter 500g", 1, 280.0)
+                ),
+                createdAt = "2024-03-04 14:30"
+            ),
+            Order(
+                orderId = "ORD002",
+                customerName = "Priya Sharma",
+                customerPhone = "+91 98765 00002",
+                amount = "₹370",
+                status = "accepted",
+                paymentMode = "Prepaid",
+                items = listOf(
+                    OrderItem("Toor Dal 1kg", 2, 280.0),
+                    OrderItem("Fresh Paneer 200g", 1, 90.0)
+                ),
+                createdAt = "2024-03-04 14:45"
+            )
         )
         return orders
+    }
+
+    fun getInventory(): LiveData<List<InventoryItem>> {
+        val inventory = MutableLiveData<List<InventoryItem>>()
+        inventory.value = listOf(
+            InventoryItem("1", "Basmati Rice 5kg", "Groceries", 380.0, 420.0, 45, "In Stock"),
+            InventoryItem("2", "Amul Butter 500g", "Dairy", 280.0, 290.0, 22, "In Stock"),
+            InventoryItem("3", "Toor Dal 1kg", "Groceries", 140.0, 160.0, 3, "Low Stock"),
+            InventoryItem("4", "Coca Cola 2L", "Beverages", 95.0, 100.0, 8, "Low Stock"),
+            InventoryItem("5", "Fresh Paneer 200g", "Dairy", 90.0, 100.0, 15, "In Stock"),
+            InventoryItem("6", "Paracetamol Strips", "Pharmacy", 35.0, 38.0, 60, "In Stock")
+        )
+        return inventory
     }
 
     fun getBookings(): LiveData<List<Booking>> {
         val bookings = MutableLiveData<List<Booking>>()
         bookings.value = listOf(
-            Booking("B001", "Alice Johnson", "Plumbing", "123 Maple St", "10:00 AM", "Assigned"),
-            Booking("B002", "Bob Thompson", "Electrician", "456 Oak Ave", "02:00 PM", "On The Way"),
-            Booking("B003", "Charlie Davis", "Cleaning", "789 Pine Ln", "09:00 AM", "Started"),
-            Booking("B004", "Diana Prince", "AC Repair", "321 Birch Rd", "11:30 AM", "Completed"),
-            Booking("B005", "Edward Norton", "Painting", "654 Cedar Ct", "04:00 PM", "Assigned")
+            Booking(
+                bookingId = "B001",
+                customerName = "Aarav Mehta",
+                customerPhone = "+91 98765 00001",
+                serviceType = "AC Repair",
+                address = "42, MG Road, Sector 15",
+                timeSlot = "10:00 AM - 12:00 PM",
+                status = "placed",
+                price = "₹799",
+                description = "Split AC not cooling properly",
+                otp = "6743"
+            ),
+            Booking(
+                bookingId = "B002",
+                customerName = "Priya Sharma",
+                customerPhone = "+91 98765 00002",
+                serviceType = "Wiring Repair",
+                address = "78, Lakeview Apartments",
+                timeSlot = "2:00 PM - 4:00 PM",
+                status = "accepted",
+                price = "₹399",
+                description = "Kitchen wiring sparking",
+                otp = "2198"
+            )
         )
         return bookings
     }
@@ -36,11 +86,20 @@ class DashboardRepository {
     fun getDeliveries(): LiveData<List<Delivery>> {
         val deliveries = MutableLiveData<List<Delivery>>()
         deliveries.value = listOf(
-            Delivery("D101", "Kevin Hart", "101 Alpha St", "202 Beta Rd", "3.5 km", "Pending"),
-            Delivery("D102", "Justin Bieber", "50 Cent Ave", "8 Mile Blvd", "5.2 km", "Picked"),
-            Delivery("D103", "Selena Gomez", "99 Sunset Strip", "101 Hollywood Hills", "2.1 km", "On The Way"),
-            Delivery("D104", "Taylor Swift", "13 Folklore Ln", "1989 Pop St", "10.0 km", "Delivered"),
-            Delivery("D105", "Dwayne Johnson", "1 Rock Solid Pl", "100 Gym Floor", "1.5 km", "Pending")
+            Delivery(
+                deliveryId = "D101",
+                customerName = "Priya Sharma",
+                pickupAddress = "78, Lakeview Apartments",
+                dropAddress = "FreshMart Express",
+                distance = "3.2 km",
+                status = "Assigned",
+                cartAddedTime = "04:45 PM",
+                items = "Toor Dal 1kg, Fresh Paneer 200g",
+                otp = "7193",
+                paymentMode = "Prepaid",
+                pickupShop = "FreshMart Express",
+                eta = "15 min"
+            )
         )
         return deliveries
     }

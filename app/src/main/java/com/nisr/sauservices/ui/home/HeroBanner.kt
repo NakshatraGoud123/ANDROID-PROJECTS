@@ -22,11 +22,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.nisr.sauservices.R
+import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.theme.PinkPrimary
 
 @Composable
-fun HeroBanner() {
+fun HeroBanner(navController: NavController) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -58,7 +60,7 @@ fun HeroBanner() {
             Spacer(Modifier.height(16.dp))
 
             Button(
-                onClick = {},
+                onClick = { navController.navigate(Screen.ResidentialCategories.route) },
                 colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.height(40.dp)
