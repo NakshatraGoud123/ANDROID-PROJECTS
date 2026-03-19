@@ -1,6 +1,7 @@
 package com.nisr.sauservices.ui.tech
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -30,8 +31,8 @@ import java.net.URLDecoder
 @Composable
 fun TechServiceListScreen(navController: NavController, subcategory: String, viewModel: TechServicesViewModel) {
     val decodedSub = URLDecoder.decode(subcategory, "UTF-8")
-    
     val services = getTechServicesForSubcategory(decodedSub)
+    val cartItems = viewModel.cartItems
 
     Scaffold(
         topBar = {
@@ -43,20 +44,49 @@ fun TechServiceListScreen(navController: NavController, subcategory: String, vie
                     }
                 },
                 actions = {
-                    IconButton(onClick = { navController.navigate(Screen.TechCart.route) }) {
-                        BadgedBox(badge = {
-                            if (viewModel.cartItems.isNotEmpty()) {
+                    BadgedBox(
+                        badge = {
+                            if (cartItems.isNotEmpty()) {
                                 Badge(containerColor = PinkPrimary) {
-                                    Text(viewModel.cartItems.sumOf { it.quantity }.toString(), color = Color.White)
+                                    Text(cartItems.sumOf { it.quantity }.toString(), color = Color.White)
                                 }
                             }
-                        }) {
-                            Icon(Icons.Default.ShoppingCart, contentDescription = "Cart")
-                        }
+                        },
+                        modifier = Modifier.padding(end = 16.dp).clickable { navController.navigate(Screen.Cart.route) }
+                    ) {
+                        Icon(Icons.Default.ShoppingCart, contentDescription = "Cart")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
+        },
+        bottomBar = {
+            if (cartItems.isNotEmpty()) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shadowElevation = 8.dp,
+                    color = Color.White
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp).navigationBarsPadding(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            val count = cartItems.sumOf { it.quantity }
+                            Text("$count items added", fontSize = 14.sp, color = Color.Gray)
+                            Text("₹${viewModel.getTotalPrice().toInt()}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PinkPrimary)
+                        }
+                        Button(
+                            onClick = { navController.navigate(Screen.Cart.route) },
+                            colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("View Cart", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
         },
         containerColor = Color(0xFFF7F7F7)
     ) { padding ->

@@ -52,6 +52,13 @@ fun DeliveryDashboardScreen(
     var selectedTab by remember { mutableIntStateOf(0) }
     var isChatOpen by remember { mutableStateOf(false) }
 
+    val onLogout = {
+        sessionManager.logout()
+        navController.navigate(Screen.RoleSelection.route) {
+            popUpTo(0) { inclusive = true }
+        }
+    }
+
     Scaffold(
         containerColor = Background,
         bottomBar = {
@@ -63,10 +70,10 @@ fun DeliveryDashboardScreen(
     ) { padding ->
         Box(modifier = Modifier.padding(padding)) {
             when (selectedTab) {
-                0 -> DeliveryHomeScreen(deliveryViewModel, sessionManager, navController)
-                1 -> DeliveriesListScreen(deliveryViewModel)
-                2 -> DeliveryEarningsScreen()
-                3 -> DeliveryProfileScreen()
+                0 -> DeliveryHomeScreen(deliveryViewModel, onLogout)
+                1 -> DeliveriesListScreen(deliveryViewModel, onLogout)
+                2 -> DeliveryEarningsScreen(onLogout)
+                3 -> DeliveryProfileScreen(onLogout)
             }
             
             if (isChatOpen) {
@@ -77,7 +84,7 @@ fun DeliveryDashboardScreen(
 }
 
 @Composable
-fun DeliveryHomeScreen(viewModel: DeliveryViewModel, sessionManager: SessionManager, navController: NavController) {
+fun DeliveryHomeScreen(viewModel: DeliveryViewModel, onLogout: () -> Unit) {
     val deliveries by viewModel.deliveries.observeAsState(initial = emptyList())
     var isOnline by remember { mutableStateOf(true) }
 
@@ -88,10 +95,7 @@ fun DeliveryHomeScreen(viewModel: DeliveryViewModel, sessionManager: SessionMana
         item {
             DeliveryDashboardHeader(
                 title = "Delivery Partner",
-                onLogout = {
-                    sessionManager.logout()
-                    navController.navigate(Screen.RoleSelection.route) { popUpTo(0) }
-                }
+                onLogout = onLogout
             )
         }
 
@@ -165,11 +169,11 @@ fun DeliveryHomeScreen(viewModel: DeliveryViewModel, sessionManager: SessionMana
 }
 
 @Composable
-fun DeliveriesListScreen(viewModel: DeliveryViewModel) {
+fun DeliveriesListScreen(viewModel: DeliveryViewModel, onLogout: () -> Unit) {
     val deliveries by viewModel.deliveries.observeAsState(initial = emptyList())
     
     Column(modifier = Modifier.fillMaxSize()) {
-        DeliveryDashboardHeader(title = "Deliveries", showToggle = false)
+        DeliveryDashboardHeader(title = "Deliveries", onLogout = onLogout, showToggle = false)
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
@@ -183,9 +187,9 @@ fun DeliveriesListScreen(viewModel: DeliveryViewModel) {
 }
 
 @Composable
-fun DeliveryEarningsScreen() {
+fun DeliveryEarningsScreen(onLogout: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
-        DeliveryDashboardHeader(title = "Earnings", showToggle = false)
+        DeliveryDashboardHeader(title = "Earnings", onLogout = onLogout, showToggle = false)
         Column(modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 DeliveryStatCard("Today", "₹1,800", Icons.Rounded.AttachMoney, ActiveBlue, Modifier.weight(1f))
@@ -265,9 +269,9 @@ fun DeliveryEarningsScreen() {
 }
 
 @Composable
-fun DeliveryProfileScreen() {
+fun DeliveryProfileScreen(onLogout: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
-        DeliveryDashboardHeader(title = "Profile", showToggle = false)
+        DeliveryDashboardHeader(title = "Profile", onLogout = onLogout, showToggle = false)
         Column(
             modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -357,12 +361,10 @@ fun DeliveryDashboardHeader(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (title != "Delivery Partner") {
-                        IconButton(onClick = {}, modifier = Modifier.size(24.dp)) {
-                            Icon(Icons.AutoMirrored.Rounded.Logout, null, tint = Color.White, modifier = Modifier.size(20.dp))
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
+                    IconButton(onClick = onLogout, modifier = Modifier.size(24.dp)) {
+                        Icon(Icons.AutoMirrored.Rounded.Logout, null, tint = Color.White, modifier = Modifier.size(20.dp))
                     }
+                    Spacer(modifier = Modifier.width(12.dp))
                     Text(title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
