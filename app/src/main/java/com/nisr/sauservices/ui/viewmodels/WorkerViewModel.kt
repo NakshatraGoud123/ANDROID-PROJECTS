@@ -2,7 +2,7 @@ package com.nisr.sauservices.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nisr.sauservices.data.model.Order
+import com.nisr.sauservices.data.model.Booking
 import com.nisr.sauservices.data.repository.FirebaseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,36 +11,47 @@ import kotlinx.coroutines.launch
 class WorkerViewModel : ViewModel() {
     private val repository = FirebaseRepository()
 
-    private val _assignedJobs = MutableStateFlow<List<Order>>(emptyList())
+    private val _assignedJobs = MutableStateFlow<List<Booking>>(emptyList())
     val assignedJobs = _assignedJobs.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
+    private val _error = MutableStateFlow<String?>(null)
+    val error = _error.asStateFlow()
+
     fun loadJobs(workerId: String) {
         viewModelScope.launch {
-            repository.observeWorkerJobs(workerId).collect {
-                _assignedJobs.value = it
+            _isLoading.value = true
+            try {
+                repository.observeBookingsByRole("WORKER", workerId).collect {
+                    _assignedJobs.value = it
+                    _isLoading.value = false
+                }
+            } catch (e: Exception) {
+                _error.value = e.message
+                _isLoading.value = false
             }
         }
     }
 
-    fun updateJobStatus(orderId: String, status: String) {
+    fun updateJobStatus(bookingId: String, status: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            repository.updateOrderStatus(orderId, status).onSuccess {
-                // Status updated
+            repository.updateBookingStatus(bookingId, status).onSuccess {
+                _error.value = null
             }.onFailure {
-                // Handle error
+                _error.value = it.message
             }
             _isLoading.value = false
         }
     }
 
-    // Additional logic for availability can be added to User profile
-    fun setAvailability(workerId: String, isAvailable: Boolean) {
-        viewModelScope.launch {
-            // Update 'status' or a new 'isAvailable' field in users collection
-        }
+    fun markJobCompleted(bookingId: String) {
+        updateJobStatus(bookingId, "completed")
+    }
+
+    fun startJob(bookingId: String) {
+        updateJobStatus(bookingId, "in_progress")
     }
 }

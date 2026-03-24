@@ -15,28 +15,28 @@ interface SauApiService {
 
     // Customer
     @GET("customer/products")
-    suspend fun getProducts(@Query("category") category: String? = null): Response<List<Product>>
+    suspend fun getProducts(@Query("category") category: String? = null): Response<List<ApiProduct>>
 
     @GET("customer/services")
-    suspend fun getServices(@Query("category") category: String? = null): Response<List<ServiceItem>>
+    suspend fun getServices(@Query("category") category: String? = null): Response<List<ApiServiceItem>>
 
     @POST("customer/orders")
-    suspend fun createOrder(@Body orderData: Map<String, Any>): Response<Order>
+    suspend fun createOrder(@Body orderData: Map<String, Any>): Response<ApiOrder>
 
     @GET("customer/orders/{id}")
-    suspend fun getOrderStatus(@Path("id") orderId: Int): Response<Order>
+    suspend fun getOrderStatus(@Path("id") orderId: Int): Response<ApiOrder>
 
     // Shopkeeper
     @GET("shop/orders")
-    suspend fun getShopOrders(): Response<List<Order>>
+    suspend fun getShopOrders(): Response<List<ApiOrder>>
 
     @PATCH("shop/orders/{id}")
     suspend fun updateOrderStatus(
         @Path("id") orderId: Int,
         @Body status: Map<String, String>
-    ): Response<Order>
+    ): Response<ApiOrder>
 
     // Worker
     @GET("worker/jobs")
-    suspend fun getWorkerJobs(): Response<List<Order>>
+    suspend fun getWorkerJobs(): Response<List<ApiOrder>>
 }

@@ -2,8 +2,8 @@ package com.nisr.sauservices.ui.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nisr.sauservices.data.model.ApiUser
 import com.nisr.sauservices.data.model.LoginResponse
-import com.nisr.sauservices.data.model.User
 import com.nisr.sauservices.data.repository.SauRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 sealed class AuthState {
     object Idle : AuthState()
     object Loading : AuthState()
-    data class Success(val user: User) : AuthState()
+    data class Success(val user: ApiUser) : AuthState()
     data class Error(val message: String) : AuthState()
 }
 
@@ -27,12 +27,12 @@ class AuthViewModel : ViewModel() {
             _authState.value = AuthState.Loading
             try {
                 val response = repository.login(mapOf("email" to email, "password" to password))
-                if (response.isSuccessful && response.body()?.success == true) {
-                    val user = response.body()?.user
-                    if (user != null) {
-                        _authState.value = AuthState.Success(user)
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body?.success == true && body.user != null) {
+                        _authState.value = AuthState.Success(body.user)
                     } else {
-                        _authState.value = AuthState.Error("User data not found")
+                        _authState.value = AuthState.Error(body?.message ?: "Login failed")
                     }
                 } else {
                     _authState.value = AuthState.Error(response.message() ?: "Login failed")
@@ -48,12 +48,12 @@ class AuthViewModel : ViewModel() {
             _authState.value = AuthState.Loading
             try {
                 val response = repository.register(userData)
-                if (response.isSuccessful && response.body()?.success == true) {
-                    val user = response.body()?.user
-                    if (user != null) {
-                        _authState.value = AuthState.Success(user)
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body?.success == true && body.user != null) {
+                        _authState.value = AuthState.Success(body.user)
                     } else {
-                        _authState.value = AuthState.Error("Registration successful but user data missing")
+                        _authState.value = AuthState.Error(body?.message ?: "Registration failed")
                     }
                 } else {
                     _authState.value = AuthState.Error(response.message() ?: "Registration failed")

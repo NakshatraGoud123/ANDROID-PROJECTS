@@ -2,8 +2,7 @@ package com.nisr.sauservices.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nisr.sauservices.data.model.Order
-import com.nisr.sauservices.data.model.Product
+import com.nisr.sauservices.data.model.Booking
 import com.nisr.sauservices.data.repository.FirebaseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,40 +11,42 @@ import kotlinx.coroutines.launch
 class CustomerViewModel : ViewModel() {
     private val repository = FirebaseRepository()
 
-    private val _products = MutableStateFlow<List<Product>>(emptyList())
-    val products = _products.asStateFlow()
-
-    private val _myOrders = MutableStateFlow<List<Order>>(emptyList())
-    val myOrders = _myOrders.asStateFlow()
+    private val _myBookings = MutableStateFlow<List<Booking>>(emptyList())
+    val myBookings = _myBookings.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
-    fun loadProducts(category: String? = null) {
-        viewModelScope.launch {
-            repository.getProducts(category).collect {
-                _products.value = it
-            }
-        }
-    }
+    private val _currentBookingStatus = MutableStateFlow<String?>(null)
+    val currentBookingStatus = _currentBookingStatus.asStateFlow()
 
-    fun loadMyOrders(userId: String) {
-        viewModelScope.launch {
-            repository.observeUserOrders(userId).collect {
-                _myOrders.value = it
-            }
-        }
-    }
-
-    fun placeOrder(order: Order) {
+    fun loadMyBookings(userId: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            repository.createOrder(order).onSuccess {
-                // Success
+            repository.observeBookingsByRole("CUSTOMER", userId).collect {
+                _myBookings.value = it
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun placeBooking(booking: Booking) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            repository.createBooking(booking).onSuccess { bookingId ->
+                observeBookingStatus(bookingId)
             }.onFailure {
                 // Handle error
             }
             _isLoading.value = false
+        }
+    }
+
+    fun observeBookingStatus(bookingId: String) {
+        viewModelScope.launch {
+            repository.observeBookingStatus(bookingId).collect { status ->
+                _currentBookingStatus.value = status
+            }
         }
     }
 }

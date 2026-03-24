@@ -12,14 +12,14 @@ class SauRepository {
     suspend fun register(userData: Map<String, String>): Response<LoginResponse> = api.register(userData)
 
     // Customer
-    suspend fun getProducts(category: String? = null): Response<List<Product>> = api.getProducts(category)
-    suspend fun getServices(category: String? = null): Response<List<ServiceItem>> = api.getServices(category)
-    suspend fun createOrder(orderData: Map<String, Any>): Response<Order> = api.createOrder(orderData)
-    suspend fun getOrderStatus(orderId: Int): Response<Order> = api.getOrderStatus(orderId)
+    suspend fun getProducts(category: String? = null): Response<List<ApiProduct>> = api.getProducts(category)
+    suspend fun getServices(category: String? = null): Response<List<ApiServiceItem>> = api.getServices(category)
+    suspend fun createOrder(orderData: Map<String, Any>): Response<ApiOrder> = api.createOrder(orderData)
+    suspend fun getOrderStatus(orderId: Int): Response<ApiOrder> = api.getOrderStatus(orderId)
 
     // Dashboards
-    suspend fun getShopOrders(): Response<List<Order>> = api.getShopOrders()
-    suspend fun getWorkerJobs(): Response<List<Order>> = api.getWorkerJobs()
-    suspend fun updateOrderStatus(orderId: Int, status: String): Response<Order> = 
+    suspend fun getShopOrders(): Response<List<ApiOrder>> = api.getShopOrders()
+    suspend fun getWorkerJobs(): Response<List<ApiOrder>> = api.getWorkerJobs()
+    suspend fun updateOrderStatus(orderId: Int, status: String): Response<ApiOrder> =
         api.updateOrderStatus(orderId, mapOf("status" to status))
 }

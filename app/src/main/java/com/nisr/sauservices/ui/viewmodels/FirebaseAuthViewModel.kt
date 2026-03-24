@@ -3,7 +3,7 @@ package com.nisr.sauservices.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
-import com.nisr.sauservices.data.model.User
+import com.nisr.sauservices.data.model.FirebaseUser
 import com.nisr.sauservices.data.repository.FirebaseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,7 +13,7 @@ class FirebaseAuthViewModel : ViewModel() {
     private val repository = FirebaseRepository()
     private val auth = FirebaseAuth.getInstance()
 
-    private val _userState = MutableStateFlow<User?>(null)
+    private val _userState = MutableStateFlow<FirebaseUser?>(null)
     val userState = _userState.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
@@ -29,7 +29,7 @@ class FirebaseAuthViewModel : ViewModel() {
                 auth.createUserWithEmailAndPassword(email, pass).addOnCompleteListener { task ->
                     if (task.isSuccessful) {
                         val uid = task.result?.user?.uid ?: ""
-                        val newUser = User(
+                        val newUser = FirebaseUser(
                             userId = uid,
                             name = name,
                             email = email,

@@ -50,6 +50,13 @@ fun ServiceWorkerDashboardScreen(
     var selectedTab by remember { mutableIntStateOf(0) }
     var isChatOpen by remember { mutableStateOf(false) }
 
+    val onLogout = {
+        sessionManager.logout()
+        navController.navigate(Screen.RoleSelection.route) {
+            popUpTo(0) { inclusive = true }
+        }
+    }
+
     Scaffold(
         containerColor = Background,
         bottomBar = {
@@ -61,10 +68,10 @@ fun ServiceWorkerDashboardScreen(
     ) { padding ->
         Box(modifier = Modifier.padding(padding)) {
             when (selectedTab) {
-                0 -> HomeScreen(viewModel, sessionManager, navController)
-                1 -> TasksScreen(viewModel)
-                2 -> EarningsScreen()
-                3 -> ProfileScreen()
+                0 -> HomeScreen(viewModel, onLogout)
+                1 -> TasksScreen(viewModel, onLogout)
+                2 -> EarningsScreen(onLogout)
+                3 -> ProfileScreen(onLogout)
             }
             
             if (isChatOpen) {
@@ -75,7 +82,7 @@ fun ServiceWorkerDashboardScreen(
 }
 
 @Composable
-fun HomeScreen(viewModel: ServiceWorkerViewModel, sessionManager: SessionManager, navController: NavController) {
+fun HomeScreen(viewModel: ServiceWorkerViewModel, onLogout: () -> Unit) {
     val bookings by viewModel.bookings.observeAsState(initial = emptyList())
     var isOnline by remember { mutableStateOf(true) }
 
@@ -86,12 +93,7 @@ fun HomeScreen(viewModel: ServiceWorkerViewModel, sessionManager: SessionManager
         item {
             DashboardHeader(
                 title = "Service Worker",
-                onLogout = {
-                    sessionManager.logout()
-                    navController.navigate(Screen.RoleSelection.route) { 
-                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
-                    }
-                }
+                onLogout = onLogout
             )
         }
 
@@ -166,11 +168,11 @@ fun HomeScreen(viewModel: ServiceWorkerViewModel, sessionManager: SessionManager
 }
 
 @Composable
-fun TasksScreen(viewModel: ServiceWorkerViewModel) {
+fun TasksScreen(viewModel: ServiceWorkerViewModel, onLogout: () -> Unit) {
     val bookings by viewModel.bookings.observeAsState(initial = emptyList())
     
     Column(modifier = Modifier.fillMaxSize()) {
-        DashboardHeader(title = "Tasks")
+        DashboardHeader(title = "Tasks", onLogout = onLogout)
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
@@ -184,9 +186,9 @@ fun TasksScreen(viewModel: ServiceWorkerViewModel) {
 }
 
 @Composable
-fun EarningsScreen() {
+fun EarningsScreen(onLogout: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
-        DashboardHeader(title = "Earnings")
+        DashboardHeader(title = "Earnings", onLogout = onLogout)
         Column(modifier = Modifier.padding(16.dp)) {
             // Weekly Trend Chart Placeholder
             Surface(
@@ -262,9 +264,9 @@ fun EarningsScreen() {
 }
 
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(onLogout: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
-        DashboardHeader(title = "Profile")
+        DashboardHeader(title = "Profile", onLogout = onLogout)
         Column(
             modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -371,12 +373,10 @@ fun DashboardHeader(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (title != "Service Worker") {
-                        IconButton(onClick = onLogout, modifier = Modifier.size(24.dp)) {
-                            Icon(Icons.AutoMirrored.Rounded.Logout, null, tint = Color.White, modifier = Modifier.size(20.dp))
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
+                    IconButton(onClick = onLogout, modifier = Modifier.size(24.dp)) {
+                        Icon(Icons.AutoMirrored.Rounded.Logout, null, tint = Color.White, modifier = Modifier.size(20.dp))
                     }
+                    Spacer(modifier = Modifier.width(12.dp))
                     Text(title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {

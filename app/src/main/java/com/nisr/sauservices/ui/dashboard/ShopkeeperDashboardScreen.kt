@@ -54,6 +54,11 @@ fun ShopkeeperDashboardScreen(
     var selectedTab by remember { mutableIntStateOf(0) }
     var isChatOpen by remember { mutableStateOf(false) }
 
+    val onLogout = {
+        sessionManager.logout()
+        navController.navigate(Screen.RoleSelection.route) { popUpTo(0) { inclusive = true } }
+    }
+
     Scaffold(
         containerColor = Background,
         bottomBar = {
@@ -65,10 +70,10 @@ fun ShopkeeperDashboardScreen(
     ) { padding ->
         Box(modifier = Modifier.padding(padding)) {
             when (selectedTab) {
-                0 -> ShopHomeScreen(viewModel, sessionManager, navController)
-                1 -> InventoryScreen(viewModel)
-                2 -> ShopAnalyticsScreen()
-                3 -> ShopProfileScreen()
+                0 -> ShopHomeScreen(viewModel, onLogout)
+                1 -> InventoryScreen(viewModel, onLogout)
+                2 -> ShopAnalyticsScreen(onLogout)
+                3 -> ShopProfileScreen(onLogout)
             }
             
             if (isChatOpen) {
@@ -79,7 +84,7 @@ fun ShopkeeperDashboardScreen(
 }
 
 @Composable
-fun ShopHomeScreen(viewModel: ShopkeeperViewModel, sessionManager: SessionManager, navController: NavController) {
+fun ShopHomeScreen(viewModel: ShopkeeperViewModel, onLogout: () -> Unit) {
     val orders by viewModel.orders.observeAsState(initial = emptyList())
     var isOnline by remember { mutableStateOf(true) }
 
@@ -90,10 +95,7 @@ fun ShopHomeScreen(viewModel: ShopkeeperViewModel, sessionManager: SessionManage
         item {
             ShopDashboardHeader(
                 title = "Vendor Dashboard",
-                onLogout = {
-                    sessionManager.logout()
-                    navController.navigate(Screen.RoleSelection.route) { popUpTo(0) }
-                }
+                onLogout = onLogout
             )
         }
 
@@ -176,13 +178,13 @@ fun ShopHomeScreen(viewModel: ShopkeeperViewModel, sessionManager: SessionManage
 }
 
 @Composable
-fun InventoryScreen(viewModel: ShopkeeperViewModel) {
+fun InventoryScreen(viewModel: ShopkeeperViewModel, onLogout: () -> Unit) {
     val inventory by viewModel.inventory.observeAsState(initial = emptyList())
     var selectedCategory by remember { mutableStateOf("All") }
     val categories = listOf("Grocery", "Food & Beverages", "Electronics", "Fashion", "Home")
 
     Column(modifier = Modifier.fillMaxSize()) {
-        ShopDashboardHeader(title = "Inventory", showToggle = false)
+        ShopDashboardHeader(title = "Inventory", onLogout = onLogout, showToggle = false)
         
         Column(modifier = Modifier.padding(16.dp)) {
             // Add New Product Button
@@ -231,9 +233,9 @@ fun InventoryScreen(viewModel: ShopkeeperViewModel) {
 }
 
 @Composable
-fun ShopAnalyticsScreen() {
+fun ShopAnalyticsScreen(onLogout: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
-        ShopDashboardHeader(title = "Analytics", showToggle = false)
+        ShopDashboardHeader(title = "Analytics", onLogout = onLogout, showToggle = false)
         Column(modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 ShopStatCard("Today's Sales", "₹8,400", Icons.Rounded.AttachMoney, SuccessGreen, Modifier.weight(1f))
@@ -319,9 +321,9 @@ fun ShopAnalyticsScreen() {
 }
 
 @Composable
-fun ShopProfileScreen() {
+fun ShopProfileScreen(onLogout: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
-        ShopDashboardHeader(title = "Shop Profile", showToggle = false)
+        ShopDashboardHeader(title = "Shop Profile", onLogout = onLogout, showToggle = false)
         Column(
             modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -410,12 +412,10 @@ fun ShopDashboardHeader(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (title != "Vendor Dashboard") {
-                        IconButton(onClick = {}, modifier = Modifier.size(24.dp)) {
-                            Icon(Icons.AutoMirrored.Rounded.Logout, null, tint = Color.White, modifier = Modifier.size(20.dp))
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
+                    IconButton(onClick = onLogout, modifier = Modifier.size(24.dp)) {
+                        Icon(Icons.AutoMirrored.Rounded.Logout, null, tint = Color.White, modifier = Modifier.size(20.dp))
                     }
+                    Spacer(modifier = Modifier.width(12.dp))
                     Text(title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {

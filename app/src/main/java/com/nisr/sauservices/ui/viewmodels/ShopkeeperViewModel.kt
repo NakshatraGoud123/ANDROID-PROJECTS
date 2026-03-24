@@ -2,8 +2,7 @@ package com.nisr.sauservices.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nisr.sauservices.data.model.Order
-import com.nisr.sauservices.data.model.Product
+import com.nisr.sauservices.data.model.Booking
 import com.nisr.sauservices.data.repository.FirebaseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,35 +11,40 @@ import kotlinx.coroutines.launch
 class ShopkeeperViewModel : ViewModel() {
     private val repository = FirebaseRepository()
 
-    private val _orders = MutableStateFlow<List<Order>>(emptyList())
-    val orders = _orders.asStateFlow()
+    private val _bookings = MutableStateFlow<List<Booking>>(emptyList())
+    val bookings = _bookings.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
-    fun loadOrders(shopId: String) {
-        viewModelScope.launch {
-            repository.observeShopOrders(shopId).collect {
-                _orders.value = it
-            }
-        }
-    }
+    private val _error = MutableStateFlow<String?>(null)
+    val error = _error.asStateFlow()
 
-    fun addProduct(product: Product) {
+    fun loadShopBookings(shopkeeperId: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            repository.addProduct(product).onSuccess {
-                // Handle success
-            }.onFailure {
-                // Handle failure
+            repository.observeBookingsByRole("SHOPKEEPER", shopkeeperId).collect {
+                _bookings.value = it
+                _isLoading.value = false
             }
-            _isLoading.value = false
         }
     }
 
-    fun updateStatus(orderId: String, status: String) {
+    fun acceptBooking(bookingId: String, shopkeeperId: String) {
         viewModelScope.launch {
-            repository.updateOrderStatus(orderId, status)
+            repository.updateBookingStatus(bookingId, "accepted", shopkeeperId = shopkeeperId)
+        }
+    }
+
+    fun assignWorker(bookingId: String, workerId: String) {
+        viewModelScope.launch {
+            repository.updateBookingStatus(bookingId, "assigned", workerId = workerId)
+        }
+    }
+    
+    fun assignDeliveryBoy(bookingId: String, deliveryBoyId: String) {
+        viewModelScope.launch {
+            repository.updateBookingStatus(bookingId, "assigned", deliveryBoyId = deliveryBoyId)
         }
     }
 }

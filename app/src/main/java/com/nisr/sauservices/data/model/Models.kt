@@ -2,8 +2,8 @@ package com.nisr.sauservices.data.model
 
 import com.google.gson.annotations.SerializedName
 
-data class User(
-    val user_id: Int,
+data class ApiUser(
+    @SerializedName("user_id") val userId: Int,
     val name: String,
     val email: String,
     val phone: String,
@@ -12,38 +12,38 @@ data class User(
     val token: String? = null
 )
 
-data class Product(
-    val product_id: Int,
-    val shop_id: Int,
+data class ApiProduct(
+    @SerializedName("product_id") val productId: Int,
+    @SerializedName("shop_id") val shopId: Int,
     val name: String,
     val category: String,
     val price: Double,
     val stock: Int,
-    val image_url: String
+    @SerializedName("image_url") val imageUrl: String
 )
 
-data class ServiceItem(
-    val service_id: Int,
-    val worker_id: Int,
+data class ApiServiceItem(
+    @SerializedName("service_id") val serviceId: Int,
+    @SerializedName("worker_id") val workerId: Int,
     val name: String,
     val category: String,
-    val base_price: Double,
+    @SerializedName("base_price") val basePrice: Double,
     val duration: String,
     val description: String
 )
 
-data class Order(
-    val order_id: Int,
-    val customer_id: Int,
-    val item_type: String,
-    val total_price: Double,
-    val order_status: String,
-    val created_at: String
+data class ApiOrder(
+    @SerializedName("order_id") val orderId: Int,
+    @SerializedName("customer_id") val customerId: Int,
+    @SerializedName("item_type") val itemType: String,
+    @SerializedName("total_price") val totalPrice: Double,
+    @SerializedName("order_status") val orderStatus: String,
+    @SerializedName("created_at") val createdAt: String
 )
 
 data class LoginResponse(
     val success: Boolean,
     val message: String,
-    val user: User?,
+    val user: ApiUser?,
     val token: String?
 )

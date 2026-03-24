@@ -2,9 +2,9 @@ package com.nisr.sauservices.ui.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nisr.sauservices.data.model.Order
-import com.nisr.sauservices.data.model.Product
-import com.nisr.sauservices.data.model.ServiceItem
+import com.nisr.sauservices.data.model.ApiOrder
+import com.nisr.sauservices.data.model.ApiProduct
+import com.nisr.sauservices.data.model.ApiServiceItem
 import com.nisr.sauservices.data.repository.SauRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,19 +21,19 @@ class DashboardViewModel : ViewModel() {
     private val repository = SauRepository()
 
     // Shopkeeper State
-    private val _shopOrders = MutableStateFlow<DashboardState<List<Order>>>(DashboardState.Idle)
-    val shopOrders: StateFlow<DashboardState<List<Order>>> = _shopOrders
+    private val _shopOrders = MutableStateFlow<DashboardState<List<ApiOrder>>>(DashboardState.Idle)
+    val shopOrders: StateFlow<DashboardState<List<ApiOrder>>> = _shopOrders
 
     // Worker State
-    private val _workerJobs = MutableStateFlow<DashboardState<List<Order>>>(DashboardState.Idle)
-    val workerJobs: StateFlow<DashboardState<List<Order>>> = _workerJobs
+    private val _workerJobs = MutableStateFlow<DashboardState<List<ApiOrder>>>(DashboardState.Idle)
+    val workerJobs: StateFlow<DashboardState<List<ApiOrder>>> = _workerJobs
 
     // Customer States
-    private val _products = MutableStateFlow<DashboardState<List<Product>>>(DashboardState.Idle)
-    val products: StateFlow<DashboardState<List<Product>>> = _products
+    private val _products = MutableStateFlow<DashboardState<List<ApiProduct>>>(DashboardState.Idle)
+    val products: StateFlow<DashboardState<List<ApiProduct>>> = _products
 
-    private val _services = MutableStateFlow<DashboardState<List<ServiceItem>>>(DashboardState.Idle)
-    val services: StateFlow<DashboardState<List<ServiceItem>>> = _services
+    private val _services = MutableStateFlow<DashboardState<List<ApiServiceItem>>>(DashboardState.Idle)
+    val services: StateFlow<DashboardState<List<ApiServiceItem>>> = _services
 
     // --- SHOPKEEPER ACTIONS ---
     fun fetchShopOrders() {
