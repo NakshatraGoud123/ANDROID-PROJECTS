@@ -25,6 +25,7 @@ object Routes {
     const val BOOKINGS = "bookings"
     const val CART = "cart" // Unified Cart
     const val SEARCH_RESULTS = "search_results/{query}"
+    const val MY_ORDERS = "my_orders"
 
     // Profile
     const val PROFILE = "profile"
@@ -89,4 +90,8 @@ object Routes {
     const val SERVICE_PAYMENT = "service_payment"
     const val SERVICE_ORDER_SUMMARY = "service_order_summary"
     const val SERVICE_BOOKING_SUCCESS = "service_booking_success"
+    
+    // New Modules
+    const val ESSENTIAL_SUPPLIES = "essential_supplies"
+    const val BOOKINGS_MODULE = "bookings_module"
 }

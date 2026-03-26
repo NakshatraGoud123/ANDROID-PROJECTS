@@ -11,7 +11,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -45,14 +45,14 @@ fun UnifiedCartScreen(
     val womensItems = womensBeautyViewModel.cartItems
     val healthItems = healthcareViewModel.cartItems
     val foodItems = foodCartViewModel.cartItems
-    val homeItems = homeCartViewModel.homeCartItems
+    val dbCartItems by homeCartViewModel.dbCartItems.collectAsState()
 
     val isEmpty = resItems.isEmpty() && businessItems.isEmpty() && 
                   lifestyleItems.isEmpty() && techItems.isEmpty() &&
                   mensItems.isEmpty() && womensItems.isEmpty() && healthItems.isEmpty() &&
-                  foodItems.isEmpty() && homeItems.isEmpty()
+                  foodItems.isEmpty() && dbCartItems.isEmpty()
     
-    val subtotal = residentialViewModel.calculateTotal().toDouble() + 
+    val subtotal = residentialViewModel.calculateTotal() + 
                    businessViewModel.getTotalPrice() +
                    lifestyleViewModel.getTotalPrice() +
                    techViewModel.getTotalPrice() +
@@ -60,7 +60,7 @@ fun UnifiedCartScreen(
                    womensBeautyViewModel.calculateTotal() +
                    healthcareViewModel.calculateTotal() +
                    foodCartViewModel.getTotal().toDouble() +
-                   homeCartViewModel.itemTotal.toDouble()
+                   dbCartItems.sumOf { it.totalPrice }
     
     val deliveryFee = if (isEmpty) 0.0 else 30.0
     val grandTotal = subtotal + deliveryFee
@@ -137,12 +137,12 @@ fun UnifiedCartScreen(
                     }
                 }
 
-                if (homeItems.isNotEmpty()) {
-                    item { Text("Home Essentials", fontWeight = FontWeight.Bold, color = PinkPrimary) }
-                    items(homeItems) { item ->
-                        CartItemRow(item.product.name, item.product.price, item.quantity, 
-                            { homeCartViewModel.addHomeProduct(item.product) }, 
-                            { homeCartViewModel.removeHomeProduct(item.product.id) })
+                if (dbCartItems.isNotEmpty()) {
+                    item { Text("Essentials & Supplies", fontWeight = FontWeight.Bold, color = PinkPrimary) }
+                    items(dbCartItems) { item ->
+                        CartItemRow(item.itemName, item.price.toInt(), item.quantity, 
+                            { homeCartViewModel.updateQuantity(item.itemId, item.quantity + 1) }, 
+                            { homeCartViewModel.updateQuantity(item.itemId, item.quantity - 1) })
                     }
                 }
 
@@ -207,7 +207,7 @@ fun UnifiedCartScreen(
                         Text("₹$subtotal")
                     }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Service Fee", color = Color.Gray)
+                        Text("Service/Delivery Fee", color = Color.Gray)
                         Text("₹$deliveryFee", color = Color.Gray)
                     }
                 }

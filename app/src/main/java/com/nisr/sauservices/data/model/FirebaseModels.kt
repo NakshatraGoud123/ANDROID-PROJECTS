@@ -10,10 +10,9 @@ data class FirebaseUser(
     val phone: String = "",
     val email: String = "",
     val role: String = "", // "customer", "worker", "shopkeeper", "delivery"
-    val serviceType: String = "", // For workers (e.g., "Electrician")
+    val serviceType: String? = null, // e.g., "Electrician"
     @get:PropertyName("available") @set:PropertyName("available") var available: Boolean = true,
-    val address: String = "",
-    val status: String = "APPROVED",
+    val status: String = "PENDING",
     val createdAt: Timestamp = Timestamp.now()
 )
 
@@ -22,13 +21,13 @@ data class FirestoreBooking(
     val customerId: String = "",
     val customerName: String = "",
     val roleTarget: String = "", // "worker", "shopkeeper", "delivery"
-    val serviceType: String = "",
+    val serviceType: String? = null,
+    @get:PropertyName("assigned") @set:PropertyName("assigned") var assigned: Boolean = false,
+    val status: String = "pending", // "pending", "accepted", "on_the_way", "completed"
     val workerId: String? = null,
     val shopkeeperId: String? = null,
     val deliveryBoyId: String? = null,
-    val status: String = "pending", // "pending", "accepted", "on_the_way", "completed"
-    @get:PropertyName("assigned") @set:PropertyName("assigned") var assigned: Boolean = false,
     val address: String = "",
     val price: String = "",
-    val timestamp: Timestamp = Timestamp.now()
+    val timestamp: Long = System.currentTimeMillis()
 )

@@ -8,7 +8,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
@@ -27,7 +26,7 @@ import com.nisr.sauservices.ui.viewmodel.BookingsViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookingsScreen(navController: NavController, viewModel: BookingsViewModel) {
-    val bookings = viewModel.bookings
+    val bookings by viewModel.bookingsFlow.collectAsState()
     var selectedTab by remember { mutableStateOf(0) } // 0: Upcoming, 1: Completed
 
     Scaffold(
@@ -61,14 +60,17 @@ fun BookingsScreen(navController: NavController, viewModel: BookingsViewModel) {
             }
 
             val filteredBookings = if (selectedTab == 0) {
-                bookings.filter { it.status == "Upcoming" }
+                bookings.filter { it.status == "Upcoming" || it.status == "pending" || it.status == "success" }
             } else {
                 bookings.filter { it.status == "Completed" }
             }
 
             if (filteredBookings.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No bookings found", color = Color.Gray)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.CalendarMonth, null, modifier = Modifier.size(64.dp), tint = Color.LightGray)
+                        Text("No bookings found", color = Color.Gray)
+                    }
                 }
             } else {
                 LazyColumn(
@@ -94,7 +96,7 @@ fun BookingCard(booking: BookingItem) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(booking.serviceName, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text(booking.serviceName, fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.weight(1f))
                 Text(booking.price, fontWeight = FontWeight.ExtraBold, color = PinkPrimary)
             }
             
@@ -115,18 +117,26 @@ fun BookingCard(booking: BookingItem) {
             Spacer(Modifier.height(16.dp))
             
             Row(verticalAlignment = Alignment.CenterVertically) {
+                val statusColor = when(booking.status.lowercase()) {
+                    "completed" -> Color(0xFF2E7D32)
+                    "upcoming", "success", "pending" -> Color(0xFFEF6C00)
+                    else -> Color.Gray
+                }
+                val bgColor = when(booking.status.lowercase()) {
+                    "completed" -> Color(0xFFE8F5E9)
+                    "upcoming", "success", "pending" -> Color(0xFFFFF3E0)
+                    else -> Color(0xFFF5F5F5)
+                }
+
                 Box(
                     modifier = Modifier
-                        .background(
-                            if (booking.status == "Completed") Color(0xFFE8F5E9) else Color(0xFFFFF3E0),
-                            RoundedCornerShape(8.dp)
-                        )
+                        .background(bgColor, RoundedCornerShape(8.dp))
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text(
-                        booking.status,
-                        color = if (booking.status == "Completed") Color(0xFF2E7D32) else Color(0xFFEF6C00),
-                        fontSize = 12.sp,
+                        booking.status.uppercase(),
+                        color = statusColor,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }

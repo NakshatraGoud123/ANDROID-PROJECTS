@@ -2,7 +2,7 @@ package com.nisr.sauservices.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nisr.sauservices.data.model.Booking
+import com.nisr.sauservices.data.model.FirestoreBooking
 import com.nisr.sauservices.data.repository.FirebaseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 class WorkerViewModel : ViewModel() {
     private val repository = FirebaseRepository()
 
-    private val _assignedJobs = MutableStateFlow<List<Booking>>(emptyList())
+    private val _assignedJobs = MutableStateFlow<List<FirestoreBooking>>(emptyList())
     val assignedJobs = _assignedJobs.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
@@ -24,7 +24,7 @@ class WorkerViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                repository.observeBookingsByRole("WORKER", workerId).collect {
+                repository.observeMyBookings("worker", workerId).collect {
                     _assignedJobs.value = it
                     _isLoading.value = false
                 }

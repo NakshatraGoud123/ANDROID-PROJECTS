@@ -2,7 +2,7 @@ package com.nisr.sauservices.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nisr.sauservices.data.model.Booking
+import com.nisr.sauservices.data.model.FirestoreBooking
 import com.nisr.sauservices.data.repository.FirebaseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 class DeliveryViewModel : ViewModel() {
     private val repository = FirebaseRepository()
 
-    private val _assignedDeliveries = MutableStateFlow<List<Booking>>(emptyList())
+    private val _assignedDeliveries = MutableStateFlow<List<FirestoreBooking>>(emptyList())
     val assignedDeliveries = _assignedDeliveries.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
@@ -19,7 +19,7 @@ class DeliveryViewModel : ViewModel() {
 
     fun observeDeliveries(deliveryBoyId: String) {
         viewModelScope.launch {
-            repository.observeBookingsByRole("DELIVERYBOY", deliveryBoyId).collect {
+            repository.observeMyBookings("delivery", deliveryBoyId).collect {
                 _assignedDeliveries.value = it
             }
         }
@@ -28,11 +28,7 @@ class DeliveryViewModel : ViewModel() {
     fun updateDeliveryStatus(bookingId: String, status: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            repository.updateBookingStatus(bookingId, status).onSuccess {
-                // Success
-            }.onFailure {
-                // Handle error
-            }
+            repository.updateBookingStatus(bookingId, status)
             _isLoading.value = false
         }
     }

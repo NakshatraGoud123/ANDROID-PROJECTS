@@ -1,4 +1,3 @@
-
 package com.nisr.sauservices.navigation
 
 import androidx.compose.runtime.Composable
@@ -28,6 +27,8 @@ import com.nisr.sauservices.ui.womens.*
 import com.nisr.sauservices.ui.healthcare.*
 import com.nisr.sauservices.ui.onboarding.OnboardingScreen
 import com.nisr.sauservices.ui.profile.*
+import com.nisr.sauservices.ui.location.LocationPickerScreen
+import com.nisr.sauservices.ui.location.OrderTrackingScreen
 
 @Composable
 fun AppNavHost(navController: NavHostController) {
@@ -48,9 +49,62 @@ fun AppNavHost(navController: NavHostController) {
     val healthViewModel: HealthcareViewModel = viewModel()
     val profileViewModel: ProfileViewModel = viewModel()
     val bookingsViewModel: BookingsViewModel = viewModel()
+    val locationViewModel: LocationViewModel = viewModel()
+    
+    // New Module ViewModels
+    val newBookingsViewModel: NewBookingsViewModel = viewModel()
 
     NavHost(navController, startDestination = Screen.Onboarding.route) {
         
+        // --- NEW MODULES ---
+        composable(Screen.EssentialSupplies.route) {
+            EssentialSuppliesScreen(navController, cartViewModel)
+        }
+        composable(Screen.BookingsModule.route) {
+            BookingsModuleScreen(navController, newBookingsViewModel)
+        }
+        composable(Screen.MyOrders.route) {
+            MyOrdersScreen(navController)
+        }
+        composable(
+            route = Screen.BookingSummary.route + "?name={name}&date={date}&time={time}&qty={qty}&price={price}&cat={cat}&sub={sub}",
+            arguments = listOf(
+                navArgument("name") { type = NavType.StringType },
+                navArgument("date") { type = NavType.StringType },
+                navArgument("time") { type = NavType.StringType },
+                navArgument("qty") { type = NavType.IntType },
+                navArgument("price") { type = NavType.StringType },
+                navArgument("cat") { type = NavType.StringType },
+                navArgument("sub") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val name = backStackEntry.arguments?.getString("name") ?: ""
+            val date = backStackEntry.arguments?.getString("date") ?: ""
+            val time = backStackEntry.arguments?.getString("time") ?: ""
+            val qty = backStackEntry.arguments?.getInt("qty") ?: 1
+            val price = backStackEntry.arguments?.getString("price") ?: ""
+            val cat = backStackEntry.arguments?.getString("cat") ?: ""
+            val sub = backStackEntry.arguments?.getString("sub") ?: ""
+            
+            BookingSummaryScreen(navController, newBookingsViewModel, name, date, time, qty, price, cat, sub)
+        }
+        
+        composable(Screen.HomeEssentialsCheckout.route) {
+            SuppliesCheckoutScreen(navController, cartViewModel)
+        }
+
+        // --- MAP & TRACKING ---
+        composable(Screen.MapPicker.route) {
+            LocationPickerScreen(navController, locationViewModel)
+        }
+        composable(
+            route = Screen.OrderTracking.route,
+            arguments = listOf(navArgument("orderId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val orderId = backStackEntry.arguments?.getString("orderId") ?: ""
+            OrderTrackingScreen(navController, orderId)
+        }
+
         // --- ONBOARDING & AUTH ---
         composable(Screen.Onboarding.route) { OnboardingScreen(navController) }
         composable(Screen.RoleSelection.route) { RoleSelectionScreen(navController) }
@@ -106,23 +160,21 @@ fun AppNavHost(navController: NavHostController) {
         }
 
         composable(Screen.Categories.route) { CategoriesScreen(navController) }
-        composable(Screen.Bookings.route) { BookingsScreen(navController, bookingsViewModel) }
         
-        // UNIFIED CART
-        composable(Screen.Cart.route) { 
-            UnifiedCartScreen(
-                navController = navController,
-                residentialViewModel = residentialViewModel,
-                businessViewModel = businessViewModel,
-                lifestyleViewModel = lifestyleViewModel,
-                techViewModel = techViewModel,
-                mensGroomingViewModel = mensGroomingViewModel,
-                womensBeautyViewModel = womensBeautyViewModel,
-                healthcareViewModel = healthViewModel,
-                foodCartViewModel = foodCartViewModel,
-                homeCartViewModel = cartViewModel
-            ) 
-        }
+        // Integrate BookingNavGraph
+        bookingNavGraph(
+            navController = navController,
+            residentialViewModel = residentialViewModel,
+            businessViewModel = businessViewModel,
+            lifestyleViewModel = lifestyleViewModel,
+            techViewModel = techViewModel,
+            mensGroomingViewModel = mensGroomingViewModel,
+            womensBeautyViewModel = womensBeautyViewModel,
+            healthcareViewModel = healthViewModel,
+            bookingsViewModel = bookingsViewModel,
+            foodCartViewModel = foodCartViewModel,
+            homeCartViewModel = cartViewModel
+        )
         
         // --- PROFILE SYSTEM ---
         composable(Screen.Profile.route) { ProfileScreen(navController, profileViewModel) }
@@ -151,7 +203,6 @@ fun AppNavHost(navController: NavHostController) {
             HomeEssentialsItemsScreen(navController, id, cartViewModel)
         }
         composable(Screen.HomeEssentialsCart.route) { HomeEssentialsCartScreen(navController, cartViewModel) }
-        composable(Screen.HomeEssentialsCheckout.route) { HomeEssentialsCheckoutScreen(navController, cartViewModel) }
         composable(Screen.HomeEssentialsSuccess.route) { HomeEssentialsSuccessScreen(navController, cartViewModel, bookingsViewModel) }
 
         // --- FOOD & BEVERAGES ---
@@ -187,6 +238,25 @@ fun AppNavHost(navController: NavHostController) {
             BookingScreen(navController, srv)
         }
         composable(Screen.FoodOrderSuccess.route) { FoodSuccessScreen(navController, bookingsViewModel) }
+
+        // --- EDUCATION ---
+        composable(
+            route = Screen.EducationSubCategory.route,
+            arguments = listOf(navArgument("category") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val cat = backStackEntry.arguments?.getString("category") ?: ""
+            EducationSubCategoryScreen(navController, cat)
+        }
+        composable(
+            route = Screen.EducationCourses.route,
+            arguments = listOf(navArgument("subcategory") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val sub = backStackEntry.arguments?.getString("subcategory") ?: ""
+            EducationCoursesScreen(navController, sub, educationCartViewModel)
+        }
+        composable(Screen.EducationCart.route) { EducationCartScreen(navController, educationCartViewModel) }
+        composable(Screen.EducationBooking.route) { TutorBookingScreen(navController, educationCartViewModel) }
+        composable(Screen.EducationSuccess.route) { EducationSuccessScreen(navController) }
 
         // --- UNIFIED SERVICES FLOW ---
         
@@ -226,7 +296,7 @@ fun AppNavHost(navController: NavHostController) {
             val sub = backStackEntry.arguments?.getString("subcategory") ?: ""
             BusinessServicesScreen(navController, sub, businessViewModel)
         }
-        
+
         // Lifestyle
         composable(
             route = Screen.LifestyleSubCategory.route,
@@ -242,8 +312,8 @@ fun AppNavHost(navController: NavHostController) {
             val sub = backStackEntry.arguments?.getString("subcategory") ?: ""
             LifestyleServicesScreen(navController, sub, lifestyleViewModel)
         }
-        
-        // Tech
+
+        // Tech Services
         composable(
             route = Screen.TechSubCategory.route,
             arguments = listOf(navArgument("category") { type = NavType.StringType })
@@ -258,8 +328,8 @@ fun AppNavHost(navController: NavHostController) {
             val sub = backStackEntry.arguments?.getString("subcategory") ?: ""
             TechServiceListScreen(navController, sub, techViewModel)
         }
-        
-        // Mens
+
+        // Men's Grooming
         composable(Screen.MensCategories.route) { MensGroomingCategoryScreen(navController) }
         composable(
             route = Screen.MensSubcategories.route,
@@ -275,8 +345,8 @@ fun AppNavHost(navController: NavHostController) {
             val sub = backStackEntry.arguments?.getString("subcategory") ?: ""
             MensServiceListScreen(navController, sub, mensGroomingViewModel)
         }
-        
-        // Womens Beauty
+
+        // Women's Beauty
         composable(Screen.WomensBeautyCategories.route) { WomensBeautyCategoryScreen(navController) }
         composable(
             route = Screen.WomensBeautySubcategories.route,
@@ -292,8 +362,7 @@ fun AppNavHost(navController: NavHostController) {
             val sub = backStackEntry.arguments?.getString("subcategory") ?: ""
             BeautyServiceListScreen(navController, sub, womensBeautyViewModel)
         }
-        composable(Screen.WomensBeautyBooking.route) { BeautyBookingScreen(navController, womensBeautyViewModel) }
-        
+
         // Healthcare
         composable(Screen.HealthcareCategories.route) { HealthcareCategoryScreen(navController) }
         composable(
@@ -310,71 +379,5 @@ fun AppNavHost(navController: NavHostController) {
             val sub = backStackEntry.arguments?.getString("subcategory") ?: ""
             HealthcareServiceListScreen(navController, sub, healthViewModel)
         }
-        composable(Screen.HealthcareBooking.route) { HealthcareBookingScreen(navController, healthViewModel) }
-
-        // Shared Checkout System for Unified Services
-        composable(Screen.ResidentialBookingDetails.route) { ResidentialBookingDetailsScreen(navController, residentialViewModel) }
-        composable(Screen.ResidentialPayment.route) { ResidentialPaymentScreen(navController, residentialViewModel) }
-        composable(Screen.ResidentialOrderSummary.route) { 
-            ResidentialOrderSummaryScreen(
-                navController = navController, 
-                viewModel = residentialViewModel, 
-                bookingsViewModel = bookingsViewModel, 
-                businessViewModel = businessViewModel, 
-                lifestyleViewModel = lifestyleViewModel, 
-                techViewModel = techViewModel, 
-                mensGroomingViewModel = mensGroomingViewModel, 
-                womensBeautyViewModel = womensBeautyViewModel, 
-                healthcareViewModel = healthViewModel
-            ) 
-        }
-        composable(Screen.BookingSuccess.route) { 
-            com.nisr.sauservices.ui.home.BookingSuccessScreen(navController) 
-        }
-
-        // --- EDUCATION ---
-        composable(
-            route = Screen.EducationSubCategory.route,
-            arguments = listOf(navArgument("category") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val cat = backStackEntry.arguments?.getString("category") ?: ""
-            EducationSubCategoryScreen(navController, cat)
-        }
-        composable(
-            route = Screen.EducationCourses.route,
-            arguments = listOf(navArgument("subcategory") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val sub = backStackEntry.arguments?.getString("subcategory") ?: ""
-            EducationCoursesScreen(navController, sub, educationCartViewModel)
-        }
-        composable(Screen.EducationCart.route) { EducationCartScreen(navController, educationCartViewModel) }
-        composable(Screen.EducationBooking.route) { TutorBookingScreen(navController, educationCartViewModel) }
-        composable(Screen.EducationSuccess.route) { EducationSuccessScreen(navController) }
-        
-        // --- REDIRECTS TO UNIFIED CART ---
-        composable(Screen.ResidentialCart.route) { navController.navigate(Screen.Cart.route) { popUpTo(Screen.Cart.route) { inclusive = true } } }
-        composable(Screen.BusinessCart.route) { navController.navigate(Screen.Cart.route) { popUpTo(Screen.Cart.route) { inclusive = true } } }
-        composable(Screen.LifestyleCart.route) { navController.navigate(Screen.Cart.route) { popUpTo(Screen.Cart.route) { inclusive = true } } }
-        composable(Screen.TechCart.route) { navController.navigate(Screen.Cart.route) { popUpTo(Screen.Cart.route) { inclusive = true } } }
-        composable(Screen.MensCart.route) { navController.navigate(Screen.Cart.route) { popUpTo(Screen.Cart.route) { inclusive = true } } }
-        composable(Screen.WomensBeautyCart.route) { navController.navigate(Screen.Cart.route) { popUpTo(Screen.Cart.route) { inclusive = true } } }
-        composable(Screen.HealthcareCart.route) { navController.navigate(Screen.Cart.route) { popUpTo(Screen.Cart.route) { inclusive = true } } }
-
-        // --- SEARCH ---
-        composable(
-            route = "search_results/{query}",
-            arguments = listOf(navArgument("query") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val query = backStackEntry.arguments?.getString("query") ?: ""
-            SearchResultsScreen(navController, query, residentialViewModel)
-        }
-        
-        // --- SUCCESS SCREENS ---
-        composable(Screen.BusinessSuccess.route) { BusinessSuccessScreen(navController, businessViewModel) }
-        composable(Screen.LifestyleSuccess.route) { LifestyleSuccessScreen(navController, lifestyleViewModel) }
-        composable(Screen.TechSuccess.route) { TechBookingSuccessScreen(navController, techViewModel) }
-        composable(Screen.MensSuccess.route) { MensSuccessScreen(navController, mensGroomingViewModel) }
-        composable(Screen.WomensBeautySuccess.route) { BeautyBookingSuccessScreen(navController, womensBeautyViewModel) }
-        composable(Screen.HealthcareSuccess.route) { HealthcareSuccessScreen(navController, healthViewModel) }
     }
 }

@@ -2,7 +2,7 @@ package com.nisr.sauservices.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nisr.sauservices.data.model.Booking
+import com.nisr.sauservices.data.model.FirestoreBooking
 import com.nisr.sauservices.data.repository.FirebaseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 class CustomerViewModel : ViewModel() {
     private val repository = FirebaseRepository()
 
-    private val _myBookings = MutableStateFlow<List<Booking>>(emptyList())
+    private val _myBookings = MutableStateFlow<List<FirestoreBooking>>(emptyList())
     val myBookings = _myBookings.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
@@ -23,20 +23,18 @@ class CustomerViewModel : ViewModel() {
     fun loadMyBookings(userId: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            repository.observeBookingsByRole("CUSTOMER", userId).collect {
+            repository.observeMyBookings("customer", userId).collect {
                 _myBookings.value = it
                 _isLoading.value = false
             }
         }
     }
 
-    fun placeBooking(booking: Booking) {
+    fun placeBooking(booking: FirestoreBooking) {
         viewModelScope.launch {
             _isLoading.value = true
             repository.createBooking(booking).onSuccess { bookingId ->
                 observeBookingStatus(bookingId)
-            }.onFailure {
-                // Handle error
             }
             _isLoading.value = false
         }

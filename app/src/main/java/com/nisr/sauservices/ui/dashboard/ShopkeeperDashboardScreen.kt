@@ -25,6 +25,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
@@ -147,6 +148,11 @@ fun ShopHomeScreen(viewModel: ShopkeeperViewModel, onLogout: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+                Text("Active Tracking", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                Spacer(modifier = Modifier.height(12.dp))
+                ShopMiniMapCard() // Real Map integration
+
+                Spacer(modifier = Modifier.height(24.dp))
                 Text("Recent Orders", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark)
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -157,29 +163,12 @@ fun ShopHomeScreen(viewModel: ShopkeeperViewModel, onLogout: () -> Unit) {
                 OrderCard(order, viewModel)
             }
         }
-        
-        item {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Inventory Highlights", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark)
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                val highlightItems = listOf(
-                    Triple("Basmati Rice 5kg", "Grocery • Stock: 12", "₹320"),
-                    Triple("Amul Butter 500g", "Food • Stock: 3", "₹260"),
-                    Triple("USB-C Cable", "Electronics • Stock: 0", "₹150")
-                )
-                
-                highlightItems.forEach { (name, desc, price) ->
-                    InventoryHighlightRow(name, desc, price)
-                }
-            }
-        }
     }
 }
 
 @Composable
 fun InventoryScreen(viewModel: ShopkeeperViewModel, onLogout: () -> Unit) {
-    val inventory by viewModel.inventory.observeAsState(initial = emptyList())
+    val inventory by viewModel.inventory.collectAsState()
     var selectedCategory by remember { mutableStateOf("All") }
     val categories = listOf("Grocery", "Food & Beverages", "Electronics", "Fashion", "Home")
 
@@ -279,43 +268,6 @@ fun ShopAnalyticsScreen(onLogout: () -> Unit) {
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
-            Text("Most Sold Products", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark)
-            Spacer(modifier = Modifier.height(12.dp))
-
-            val mostSold = listOf(
-                Triple("Basmati Rice 5kg", "45 units sold", "₹14,400"),
-                Triple("Amul Butter 500g", "38 units sold", "₹9,880"),
-                Triple("Toor Dal 1kg", "32 units sold", "₹4,160")
-            )
-
-            mostSold.forEach { (name, units, total) ->
-                Surface(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    color = Surface,
-                    border = BorderStroke(1.dp, Border)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(32.dp).clip(CircleShape).background(PendingOrange.copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
-                                Icon(Icons.Rounded.EmojiEvents, null, tint = PendingOrange, modifier = Modifier.size(16.dp))
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Text(name, fontWeight = FontWeight.Bold, color = TextDark)
-                                Text(units, fontSize = 12.sp, color = TextGrey)
-                            }
-                        }
-                        Text(total, fontWeight = FontWeight.Bold, color = SuccessGreen, fontSize = 14.sp)
-                    }
-                }
-            }
         }
     }
 }
@@ -348,50 +300,7 @@ fun ShopProfileScreen(onLogout: () -> Unit) {
                     }
                 }
             }
-
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                color = Surface,
-                border = BorderStroke(1.dp, Border)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Shop Details", fontWeight = FontWeight.Bold, color = TextDark)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    ProfileDetailItem(Icons.Rounded.LocationOn, "Shop 14, Main Market, Sector 5, Noida")
-                    ProfileDetailItem(Icons.Rounded.Phone, "+91 98765xxxxx")
-                }
-            }
-
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                color = Surface,
-                border = BorderStroke(1.dp, Border)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Bank Details", fontWeight = FontWeight.Bold, color = TextDark)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    ProfileDetailItem(Icons.Rounded.AccountBalance, "HDFC Bank • XXXX-XXXX-1234")
-                    ProfileDetailItem(Icons.Rounded.QrCode, "UPI: kumarstore@upi")
-                }
-            }
-            
-            Column {
-                Text("Shop Location", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextDark)
-                Spacer(modifier = Modifier.height(12.dp))
-                ShopMiniMapCard()
-            }
         }
-    }
-}
-
-@Composable
-fun ProfileDetailItem(icon: ImageVector, text: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 8.dp)) {
-        Icon(icon, null, tint = TextGrey, modifier = Modifier.size(20.dp))
-        Spacer(modifier = Modifier.width(12.dp))
-        Text(text, fontSize = 14.sp, color = TextGrey)
     }
 }
 
@@ -418,16 +327,8 @@ fun ShopDashboardHeader(
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = {}) {
-                        Icon(Icons.Rounded.Notifications, null, tint = Color.White)
-                    }
-                    Box(
-                        modifier = Modifier.size(36.dp).clip(CircleShape).background(Color(0xFFEAB308)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Rounded.Person, null, tint = Color.White)
-                    }
+                IconButton(onClick = {}) {
+                    Icon(Icons.Rounded.Notifications, null, tint = Color.White)
                 }
             }
         }
@@ -471,11 +372,7 @@ fun OrderCard(order: Order, viewModel: ShopkeeperViewModel) {
                     Text(order.items.joinToString { it.name }, fontSize = 14.sp, color = TextGrey)
                 }
                 Surface(
-                    color = when(order.status.lowercase()) {
-                        "pending" -> PendingOrange.copy(alpha = 0.1f)
-                        "active" -> ActiveBlue.copy(alpha = 0.1f)
-                        else -> SuccessGreen.copy(alpha = 0.1f)
-                    },
+                    color = ActiveBlue.copy(alpha = 0.1f),
                     shape = RoundedCornerShape(20.dp)
                 ) {
                     Text(
@@ -483,93 +380,7 @@ fun OrderCard(order: Order, viewModel: ShopkeeperViewModel) {
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = when(order.status.lowercase()) {
-                            "pending" -> PendingOrange
-                            "active" -> ActiveBlue
-                            else -> SuccessGreen
-                        }
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.LocationOn, null, tint = PendingOrange, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Block A, Sector 5", fontSize = 13.sp, color = TextGrey)
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.Schedule, null, tint = TextGrey, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("${order.createdAt} — \uD83D\uDCB3 UPI", fontSize = 13.sp, color = TextGrey)
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            if (order.status.lowercase() == "pending") {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Button(
-                        onClick = { viewModel.updateOrderStatus(order.orderId, "active") },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Text("Accept")
-                    }
-                    Button(
-                        onClick = { },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Text("Reject")
-                    }
-                }
-            } else if (order.status.lowercase() == "active") {
-                Button(
-                    onClick = { },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = ActiveBlue),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Text("Assign Delivery")
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun InventoryHighlightRow(name: String, desc: String, price: String) {
-    Surface(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        shape = RoundedCornerShape(12.dp),
-        color = Surface,
-        border = BorderStroke(1.dp, Border)
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Text(name, fontWeight = FontWeight.Bold, color = TextDark)
-                Text(desc, fontSize = 12.sp, color = TextGrey)
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(price, fontWeight = FontWeight.Bold, color = TextDark)
-                Surface(
-                    color = if (desc.contains("Stock: 0")) Color.Red.copy(alpha = 0.1f) else if (desc.contains("Stock: 3")) PendingOrange.copy(alpha = 0.1f) else SuccessGreen.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(6.dp)
-                ) {
-                    Text(
-                        if (desc.contains("Stock: 0")) "Rejected" else if (desc.contains("Stock: 3")) "Pending" else "Completed",
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (desc.contains("Stock: 0")) Color.Red else if (desc.contains("Stock: 3")) PendingOrange else SuccessGreen
+                        color = ActiveBlue
                     )
                 }
             }
@@ -595,18 +406,8 @@ fun InventoryItemCard(item: InventoryItem) {
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(item.name, fontWeight = FontWeight.Bold, color = TextDark)
-                Text("Kumar Store • Stock: ${item.stockCount}", fontSize = 12.sp, color = TextGrey)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("₹${item.price.toInt()}", fontWeight = FontWeight.Bold, color = TextDark)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Surface(color = SuccessGreen.copy(alpha = 0.1f), shape = RoundedCornerShape(6.dp)) {
-                        Text("Completed", modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), fontSize = 10.sp, color = SuccessGreen, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-            Row {
-                IconButton(onClick = {}) { Icon(Icons.Rounded.Edit, null, tint = TextGrey, modifier = Modifier.size(20.dp)) }
-                IconButton(onClick = {}) { Icon(Icons.Rounded.Delete, null, tint = Color.Red.copy(alpha = 0.5f), modifier = Modifier.size(20.dp)) }
+                Text("Stock: ${item.stockCount}", fontSize = 12.sp, color = TextGrey)
+                Text("₹${item.price.toInt()}", fontWeight = FontWeight.Bold, color = TextDark)
             }
         }
     }
@@ -614,23 +415,27 @@ fun InventoryItemCard(item: InventoryItem) {
 
 @Composable
 fun ShopMiniMapCard() {
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(LatLng(28.6139, 77.2090), 14f)
+    }
+
     Surface(
-        modifier = Modifier.fillMaxWidth().height(180.dp),
+        modifier = Modifier.fillMaxWidth().height(220.dp),
         shape = RoundedCornerShape(16.dp),
-        color = Color(0xFFE5E7EB),
+        color = Color.LightGray,
         border = BorderStroke(1.dp, Border)
     ) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(
-                    modifier = Modifier.size(40.dp).clip(CircleShape).background(PrimaryBlue),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Rounded.LocationOn, null, tint = Color.White)
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Kumar General Store", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-            }
+        GoogleMap(
+            modifier = Modifier.fillMaxSize(),
+            cameraPositionState = cameraPositionState,
+            uiSettings = MapUiSettings(zoomControlsEnabled = false)
+        ) {
+            Marker(
+                state = MarkerState(position = LatLng(28.6139, 77.2090)),
+                title = "My Shop",
+                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
+            )
+            // Animated delivery boy marker would be added here via Firebase listener
         }
     }
 }
@@ -650,7 +455,7 @@ fun ShopBottomNavigationBar(selectedTab: Int, onTabSelected: (Int) -> Unit) {
         )
         NavigationBarItem(
             icon = { Icon(Icons.Rounded.Inventory2, null) },
-            label = { Text("Orders") }, // Per image labels
+            label = { Text("Inventory") },
             selected = selectedTab == 1,
             onClick = { onTabSelected(1) }
         )
@@ -702,17 +507,7 @@ fun ShopChatWindow(onClose: () -> Unit) {
                     IconButton(onClose) { Icon(Icons.Rounded.Close, null, tint = Color.White) }
                 }
                 Box(modifier = Modifier.weight(1f).padding(16.dp)) {
-                    Text("How can I help you manage your shop?", color = TextGrey)
-                }
-                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedTextField(
-                        value = "", onValueChange = {}, modifier = Modifier.weight(1f),
-                        placeholder = { Text("Type message...") }, shape = RoundedCornerShape(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    IconButton(onClick = {}, modifier = Modifier.background(PrimaryBlue, CircleShape)) {
-                        Icon(Icons.AutoMirrored.Rounded.Send, null, tint = Color.White)
-                    }
+                    Text("How can I help you?", color = TextGrey)
                 }
             }
         }

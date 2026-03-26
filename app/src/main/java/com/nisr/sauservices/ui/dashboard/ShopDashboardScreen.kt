@@ -25,7 +25,7 @@ import com.nisr.sauservices.ui.viewmodel.ShopkeeperViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShopDashboardScreen(viewModel: ShopkeeperViewModel) {
-    val orders by viewModel.orders.observeAsState(initial = emptyList())
+    val orders by viewModel.orders.observeAsState(initial = emptyList<Order>())
     val singapore = LatLng(1.35, 103.87)
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(singapore, 10f)
@@ -34,7 +34,7 @@ fun ShopDashboardScreen(viewModel: ShopkeeperViewModel) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Shopkeeper Dashboard", color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text("Shopkeeper Dashboard", color = White, fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF2E7D6B)),
                 actions = {
                     IconButton(onClick = { /* Logout */ }) {
@@ -74,8 +74,9 @@ fun ShopDashboardScreen(viewModel: ShopkeeperViewModel) {
                         modifier = Modifier.fillMaxSize(),
                         cameraPositionState = cameraPositionState
                     ) {
+                        val markerState = rememberMarkerState(position = singapore)
                         Marker(
-                            state = MarkerState(position = singapore),
+                            state = markerState,
                             title = "Shop Location"
                         )
                     }
@@ -118,7 +119,7 @@ fun SummaryCard(title: String, value: String, modifier: Modifier = Modifier) {
     ElevatedCard(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = Color.White)
+        colors = CardDefaults.elevatedCardColors(containerColor = White)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -166,7 +167,7 @@ fun OrderListItem(order: Order, onStatusChange: (String) -> Unit) {
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = Color.White)
+        colors = CardDefaults.elevatedCardColors(containerColor = White)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(

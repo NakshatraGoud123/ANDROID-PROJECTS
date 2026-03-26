@@ -1,7 +1,5 @@
 package com.nisr.sauservices.ui.home
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -14,17 +12,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
@@ -52,7 +48,7 @@ fun ResidentialCategoryScreen(navController: NavController) {
                 title = { Text("Residential Services", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
@@ -111,7 +107,7 @@ fun ResidentialSubcategoryScreen(navController: NavController, categoryId: Strin
                 title = { Text(category?.name ?: "Subcategories", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
@@ -131,7 +127,7 @@ fun ResidentialSubcategoryScreen(navController: NavController, categoryId: Strin
                     },
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8F8)),
-                    elevation = CardDefaults.cardElevation(0.dp)
+                    elevation = CardDefaults.cardElevation(0.0.dp)
                 ) {
                     Row(
                         modifier = Modifier.padding(20.dp),
@@ -159,7 +155,7 @@ fun ResidentialServiceListScreen(navController: NavController, categoryId: Strin
                 title = { Text(sub?.name ?: "Services", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
@@ -249,16 +245,6 @@ fun ResidentialServiceCard(service: ResidentialServiceItem, quantity: Int, onAdd
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ResidentialCartScreen(navController: NavController, viewModel: ResidentialViewModel) {
-    LaunchedEffect(Unit) {
-        navController.navigate(Screen.Cart.route) {
-            popUpTo(Screen.ResidentialCart.route) { inclusive = true }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
 fun ResidentialBookingDetailsScreen(navController: NavController, viewModel: ResidentialViewModel) {
     var address by remember { mutableStateOf(viewModel.bookingDetails.value.address) }
     var phone by remember { mutableStateOf(viewModel.bookingDetails.value.phone) }
@@ -271,7 +257,7 @@ fun ResidentialBookingDetailsScreen(navController: NavController, viewModel: Res
         topBar = {
             TopAppBar(
                 title = { Text("Booking Details", fontWeight = FontWeight.Bold) },
-                navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.Default.ArrowBack, null) } },
+                navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
@@ -350,7 +336,7 @@ fun ResidentialPaymentScreen(navController: NavController, viewModel: Residentia
         topBar = {
             TopAppBar(
                 title = { Text("Payment Methods", fontWeight = FontWeight.Bold) },
-                navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.Default.ArrowBack, null) } },
+                navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
@@ -411,29 +397,64 @@ fun ResidentialOrderSummaryScreen(
     techViewModel: TechServicesViewModel,
     mensGroomingViewModel: MensGroomingViewModel,
     womensBeautyViewModel: WomensBeautyViewModel,
-    healthcareViewModel: HealthcareViewModel
+    healthcareViewModel: HealthcareViewModel,
+    foodCartViewModel: FoodCartViewModel,
+    homeCartViewModel: CartViewModel
 ) {
     val bookingInfo = viewModel.bookingDetails.value
+    val dbCartItems by homeCartViewModel.dbCartItems.collectAsState()
     
-    val allItems = mutableListOf<Pair<String, String>>()
-    viewModel.cartItems.forEach { allItems.add(it.service.name + " x ${it.quantity}" to "₹${it.service.price * it.quantity}") }
-    businessViewModel.cartItems.forEach { allItems.add(it.name + " x ${it.quantity}" to "₹${it.price * it.quantity}") }
-    lifestyleViewModel.cartItems.forEach { allItems.add(it.name + " x ${it.quantity}" to "₹${it.price * it.quantity}") }
-    techViewModel.cartItems.forEach { allItems.add(it.name + " x ${it.quantity}" to "₹${it.price * it.quantity}") }
-    mensGroomingViewModel.cartItems.forEach { allItems.add(it.name + " x ${it.quantity}" to "₹${it.price * it.quantity}") }
-    womensBeautyViewModel.cartItems.forEach { allItems.add(it.name + " x ${it.quantity}" to "₹${it.price * it.quantity}") }
-    healthcareViewModel.cartItems.forEach { allItems.add(it.name + " x ${it.quantity}" to "₹${it.price * it.quantity}") }
+    val resItems = viewModel.cartItems
+    val bizItems = businessViewModel.cartItems
+    val lifeItems = lifestyleViewModel.cartItems
+    val tItems = techViewModel.cartItems
+    val mItems = mensGroomingViewModel.cartItems
+    val wItems = womensBeautyViewModel.cartItems
+    val hItems = healthcareViewModel.cartItems
+    val fItems = foodCartViewModel.cartItems
 
-    val total = viewModel.calculateTotal() + businessViewModel.getTotalPrice() + 
-                lifestyleViewModel.getTotalPrice() + techViewModel.getTotalPrice() + 
-                mensGroomingViewModel.getTotalPrice() + womensBeautyViewModel.calculateTotal() + 
-                healthcareViewModel.calculateTotal()
+    val allCartModels = remember(resItems, bizItems, lifeItems, tItems, mItems, wItems, hItems, fItems, dbCartItems) {
+        val list = mutableListOf<CartModel>()
+        resItems.forEach { list.add(CartModel(itemName = it.service.name, price = it.service.price.toDouble(), quantity = it.quantity, totalPrice = it.service.price * it.quantity.toDouble(), category = "Residential")) }
+        bizItems.forEach { list.add(CartModel(itemName = it.name, price = it.price.toDouble(), quantity = it.quantity, totalPrice = it.price * it.quantity.toDouble(), category = "Business")) }
+        lifeItems.forEach { list.add(CartModel(itemName = it.name, price = it.price.toDouble(), quantity = it.quantity, totalPrice = it.price * it.quantity.toDouble(), category = "Lifestyle")) }
+        tItems.forEach { list.add(CartModel(itemName = it.name, price = it.price.toDouble(), quantity = it.quantity, totalPrice = it.price * it.quantity.toDouble(), category = "Tech")) }
+        mItems.forEach { list.add(CartModel(itemName = it.name, price = it.price.toDouble(), quantity = it.quantity, totalPrice = it.price * it.quantity.toDouble(), category = "Mens")) }
+        wItems.forEach { list.add(CartModel(itemName = it.name, price = it.price.toDouble(), quantity = it.quantity, totalPrice = it.price * it.quantity.toDouble(), category = "Womens")) }
+        hItems.forEach { list.add(CartModel(itemName = it.name, price = it.price.toDouble(), quantity = it.quantity, totalPrice = it.price * it.quantity.toDouble(), category = "Healthcare")) }
+        fItems.forEach { list.add(CartModel(itemName = it.name, price = it.price.toDouble(), quantity = it.quantity, totalPrice = it.price * it.quantity.toDouble(), category = "Food")) }
+        list.addAll(dbCartItems)
+        list
+    }
+
+    val total = allCartModels.sumOf { it.totalPrice }
+    val bookingResult by bookingsViewModel.bookingResult.collectAsState()
+
+    LaunchedEffect(bookingResult) {
+        bookingResult?.let {
+            if (it.isSuccess) {
+                viewModel.clearCart()
+                businessViewModel.clearCart()
+                lifestyleViewModel.clearCart()
+                techViewModel.clearCart()
+                mensGroomingViewModel.clearCart()
+                womensBeautyViewModel.clearCart()
+                healthcareViewModel.clearCart()
+                foodCartViewModel.clearCart()
+                homeCartViewModel.clearHomeCart()
+                bookingsViewModel.resetResult()
+                navController.navigate(Screen.BookingSuccess.route) {
+                    popUpTo(Screen.Home.route) { inclusive = false }
+                }
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Order Summary", fontWeight = FontWeight.Bold) },
-                navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.Default.ArrowBack, null) } },
+                navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
@@ -474,14 +495,14 @@ fun ResidentialOrderSummaryScreen(
             }
             
             Spacer(Modifier.height(24.dp))
-            Text("Selected Services", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text("Selected Items/Services", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Spacer(Modifier.height(8.dp))
             
             LazyColumn(modifier = Modifier.weight(1f)) {
-                items(allItems) { item ->
+                items(allCartModels) { item ->
                     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(item.first, color = Color.DarkGray, modifier = Modifier.weight(1f))
-                        Text(item.second, fontWeight = FontWeight.Bold)
+                        Text("${item.itemName} x ${item.quantity}", color = Color.DarkGray, modifier = Modifier.weight(1f))
+                        Text("₹${item.totalPrice}", fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -494,44 +515,24 @@ fun ResidentialOrderSummaryScreen(
             Spacer(Modifier.height(24.dp))
             Button(
                 onClick = {
-                    // Add all items to bookings and clear carts
-                    fun addBooking(name: String, price: String) {
-                        bookingsViewModel.addBooking(
-                            BookingItem(
-                                id = "SRV_${System.currentTimeMillis()}_${name.take(3)}",
-                                serviceName = name,
-                                date = bookingInfo.date,
-                                time = bookingInfo.timeSlot,
-                                status = "Upcoming",
-                                price = price
-                            )
-                        )
-                    }
-
-                    viewModel.cartItems.forEach { addBooking(it.service.name, "₹${it.service.price * it.quantity}") }
-                    businessViewModel.cartItems.forEach { addBooking(it.name, "₹${it.price * it.quantity}") }
-                    lifestyleViewModel.cartItems.forEach { addBooking(it.name, "₹${it.price * it.quantity}") }
-                    techViewModel.cartItems.forEach { addBooking(it.name, "₹${it.price * it.quantity}") }
-                    mensGroomingViewModel.cartItems.forEach { addBooking(it.name, "₹${it.price * it.quantity}") }
-                    womensBeautyViewModel.cartItems.forEach { addBooking(it.name, "₹${it.price * it.quantity}") }
-                    healthcareViewModel.cartItems.forEach { addBooking(it.name, "₹${it.price * it.quantity}") }
-
-                    viewModel.clearCart()
-                    businessViewModel.clearCart()
-                    lifestyleViewModel.clearCart()
-                    techViewModel.clearCart()
-                    mensGroomingViewModel.clearCart()
-                    womensBeautyViewModel.clearCart()
-                    healthcareViewModel.clearCart()
-
-                    navController.navigate(Screen.BookingSuccess.route) {
-                        popUpTo(Screen.Home.route) { inclusive = false }
-                    }
+                    val firstName = allCartModels.firstOrNull()?.itemName ?: "Service"
+                    bookingsViewModel.placeUnifiedOrder(
+                        serviceName = if (allCartModels.size > 1) "$firstName + ${allCartModels.size - 1} items" else firstName,
+                        category = allCartModels.firstOrNull()?.category ?: "General",
+                        subcategory = "",
+                        date = bookingInfo.date,
+                        time = bookingInfo.timeSlot,
+                        amount = total,
+                        paymentMethod = bookingInfo.paymentMethod,
+                        address = bookingInfo.address,
+                        items = allCartModels
+                    )
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary)
-            ) { Text("Confirm Booking", fontWeight = FontWeight.Bold, fontSize = 18.sp) }
+                colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary),
+                enabled = allCartModels.isNotEmpty()
+            ) { Text("Confirm Booking / Order", fontWeight = FontWeight.Bold, fontSize = 18.sp) }
         }
     }
 }

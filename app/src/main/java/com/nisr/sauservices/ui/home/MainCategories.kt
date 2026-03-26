@@ -7,11 +7,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nisr.sauservices.ui.Screen
-import com.nisr.sauservices.ui.theme.PinkPrimary
 
 data class CategoryItem(val name: String, val icon: ImageVector, val route: String = "")
 
@@ -35,6 +34,8 @@ fun CategoriesGrid(
     onTechClick: () -> Unit = {}
 ) {
     val allCategories = listOf(
+        CategoryItem("Essential Supplies", Icons.Outlined.ShoppingBag, Screen.EssentialSupplies.route),
+        CategoryItem("Bookings", Icons.Outlined.ConfirmationNumber, Screen.BookingsModule.route),
         CategoryItem("Residential Services", Icons.Outlined.Home, Screen.ResidentialCategories.route),
         CategoryItem("Home Essentials", Icons.Outlined.Star),
         CategoryItem("Food & Beverages", Icons.Outlined.Restaurant),
@@ -78,6 +79,8 @@ fun CategoriesGrid(
                         onClick = {
                             when (item.name) {
                                 "More Services" -> navController.navigate(Screen.Categories.route)
+                                "Essential Supplies" -> navController.navigate(Screen.EssentialSupplies.route)
+                                "Bookings" -> navController.navigate(Screen.BookingsModule.route)
                                 "Home Essentials" -> onHomeEssentialsClick()
                                 "Residential Services" -> navController.navigate(item.route)
                                 "Food & Beverages" -> navController.navigate("FOODS_categories")
@@ -103,28 +106,27 @@ fun CategoriesGrid(
 }
 
 @Composable
-fun CategoryCard(item: CategoryItem, modifier: Modifier = Modifier, onClick: () -> Unit = {}) {
+fun CategoryCard(item: CategoryItem, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color(0xFFF8F8F8))
+            .background(Color(0xFFF7F7F7), RoundedCornerShape(12.dp))
             .clickable { onClick() }
-            .padding(vertical = 16.dp, horizontal = 4.dp),
+            .padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
-            item.icon, 
-            null, 
-            tint = PinkPrimary,
+            imageVector = item.icon,
+            contentDescription = item.name,
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(28.dp)
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            item.name, 
-            fontSize = 11.sp, 
+            text = item.name,
+            fontSize = 11.sp,
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center,
-            lineHeight = 13.sp,
+            lineHeight = 14.sp,
             color = Color.DarkGray
         )
     }

@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Assignment
+import androidx.compose.material.icons.automirrored.rounded.Chat
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.*
@@ -85,7 +87,7 @@ fun DeliveryDashboardScreen(
 
 @Composable
 fun DeliveryHomeScreen(viewModel: DeliveryViewModel, onLogout: () -> Unit) {
-    val deliveries by viewModel.deliveries.observeAsState(initial = emptyList())
+    val deliveries by viewModel.deliveries.observeAsState(initial = emptyList<Delivery>())
     var isOnline by remember { mutableStateOf(true) }
 
     LazyColumn(
@@ -170,7 +172,7 @@ fun DeliveryHomeScreen(viewModel: DeliveryViewModel, onLogout: () -> Unit) {
 
 @Composable
 fun DeliveriesListScreen(viewModel: DeliveryViewModel, onLogout: () -> Unit) {
-    val deliveries by viewModel.deliveries.observeAsState(initial = emptyList())
+    val deliveries by viewModel.deliveries.observeAsState(initial = emptyList<Delivery>())
     
     Column(modifier = Modifier.fillMaxSize()) {
         DeliveryDashboardHeader(title = "Deliveries", onLogout = onLogout, showToggle = false)
@@ -552,7 +554,7 @@ fun DeliveryBottomNavigationBar(selectedTab: Int, onTabSelected: (Int) -> Unit) 
             onClick = { onTabSelected(0) }
         )
         NavigationBarItem(
-            icon = { Icon(Icons.Rounded.Assignment, null) },
+            icon = { Icon(Icons.AutoMirrored.Rounded.Assignment, null) },
             label = { Text("Deliveries") },
             selected = selectedTab == 1,
             onClick = { onTabSelected(1) }
@@ -580,7 +582,7 @@ fun DeliveryFloatingChatButton(onClick: () -> Unit) {
         contentColor = Color.White,
         shape = CircleShape
     ) {
-        Icon(Icons.Rounded.Chat, null)
+        Icon(Icons.AutoMirrored.Rounded.Chat, null)
     }
 }
 

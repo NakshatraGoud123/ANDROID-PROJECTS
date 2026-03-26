@@ -14,7 +14,10 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -27,8 +30,10 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.card.MaterialCardView
+import com.nisr.sauservices.data.model.Delivery
 import com.nisr.sauservices.ui.adapters.DeliveryAdapter
 import com.nisr.sauservices.ui.viewmodel.DeliveryViewModel
+import kotlinx.coroutines.launch
 
 class DeliveryDashboardActivity : AppCompatActivity(), OnMapReadyCallback {
 
@@ -107,14 +112,29 @@ class DeliveryDashboardActivity : AppCompatActivity(), OnMapReadyCallback {
             layoutManager = LinearLayoutManager(this@DeliveryDashboardActivity)
         }
         val adapter = DeliveryAdapter(emptyList()) { delivery ->
-            viewModel.updateDeliveryStatus(delivery, delivery.status)
+            viewModel.updateDeliveryStatus(delivery.deliveryId, delivery.status)
         }
         recyclerView.adapter = adapter
         contentLayout.addView(recyclerView)
 
-        viewModel.deliveries.observe(this) { deliveries ->
-            adapter.updateData(deliveries)
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.availableDeliveries.collect { firestoreBookings ->
+                    val deliveries = firestoreBookings.map {
+                        Delivery(
+                            deliveryId = it.bookingId,
+                            customerName = it.customerName,
+                            pickupAddress = "Shop",
+                            dropAddress = it.address,
+                            distance = "2.5 km",
+                            status = it.status
+                        )
+                    }
+                    adapter.updateData(deliveries)
+                }
+            }
         }
+        viewModel.loadAvailableDeliveries()
 
         scrollView.addView(contentLayout)
         root.addView(scrollView)

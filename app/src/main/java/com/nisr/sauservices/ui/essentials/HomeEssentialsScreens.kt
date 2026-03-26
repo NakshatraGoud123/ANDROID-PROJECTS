@@ -1,7 +1,6 @@
 package com.nisr.sauservices.ui.essentials
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,25 +9,18 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.LocationOn
-import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.ShoppingBag
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -37,16 +29,11 @@ import androidx.navigation.NavController
 import com.nisr.sauservices.data.model.HomeCategory
 import com.nisr.sauservices.data.model.HomeEssentialsData
 import com.nisr.sauservices.data.model.HomeProduct
-import com.nisr.sauservices.data.model.HomeSubcategory
 import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.theme.PinkPrimary
 import com.nisr.sauservices.ui.theme.LightPink
-import com.nisr.sauservices.ui.viewmodel.BookingItem
 import com.nisr.sauservices.ui.viewmodel.BookingsViewModel
 import com.nisr.sauservices.ui.viewmodel.CartViewModel
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -118,10 +105,12 @@ fun HomeEssentialsSheetContent(navController: NavController, onDismiss: () -> Un
     }
 }
 
-// --- LEVEL 1: MAIN SCREEN ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeEssentialsMainScreen(navController: NavController, cartViewModel: CartViewModel) {
+    val cartItems by cartViewModel.dbCartItems.collectAsState()
+    val totalCount = cartItems.sumOf { it.quantity }
+
     Scaffold(
         topBar = {
             Column(modifier = Modifier.background(Color.White)) {
@@ -137,11 +126,11 @@ fun HomeEssentialsMainScreen(navController: NavController, cartViewModel: CartVi
                             Text(" Select Location", fontSize = 12.sp, color = Color.Gray)
                         }
                     }
-                    IconButton(onClick = { navController.navigate(Screen.HomeEssentialsCart.route) }) {
+                    IconButton(onClick = { navController.navigate(Screen.Cart.route) }) {
                         BadgedBox(badge = {
-                            if (cartViewModel.homeCartItems.isNotEmpty()) {
+                            if (totalCount > 0) {
                                 Badge(containerColor = PinkPrimary) {
-                                    Text(cartViewModel.homeCartItems.sumOf { it.quantity }.toString(), color = Color.White)
+                                    Text(totalCount.toString(), color = Color.White)
                                 }
                             }
                         }) {
@@ -205,7 +194,6 @@ fun HomeCategoryCard(category: HomeCategory, onClick: () -> Unit) {
     }
 }
 
-// --- LEVEL 2: SUBCATEGORY SCREEN ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeEssentialsCategoryScreen(navController: NavController, categoryId: String) {
@@ -251,12 +239,13 @@ fun HomeEssentialsCategoryScreen(navController: NavController, categoryId: Strin
     }
 }
 
-// --- LEVEL 3: ITEMS SCREEN ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeEssentialsItemsScreen(navController: NavController, subcategoryId: String, cartViewModel: CartViewModel) {
     val subcategory = HomeEssentialsData.subcategories.find { it.id == subcategoryId }
     val products = HomeEssentialsData.products.filter { it.subcategoryId == subcategoryId }
+    val dbCartItems by cartViewModel.dbCartItems.collectAsState()
+    val totalCount = dbCartItems.sumOf { it.quantity }
 
     Scaffold(
         topBar = {
@@ -268,11 +257,11 @@ fun HomeEssentialsItemsScreen(navController: NavController, subcategoryId: Strin
                     }
                 },
                 actions = {
-                    IconButton(onClick = { navController.navigate(Screen.HomeEssentialsCart.route) }) {
+                    IconButton(onClick = { navController.navigate(Screen.Cart.route) }) {
                         BadgedBox(badge = {
-                            if (cartViewModel.homeCartItems.isNotEmpty()) {
+                            if (totalCount > 0) {
                                 Badge(containerColor = PinkPrimary) {
-                                    Text(cartViewModel.homeCartItems.sumOf { it.quantity }.toString(), color = Color.White)
+                                    Text(totalCount.toString(), color = Color.White)
                                 }
                             }
                         }) {
@@ -356,14 +345,13 @@ fun HomeProductCard(
     }
 }
 
-// --- CART SCREEN ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeEssentialsCartScreen(navController: NavController, cartViewModel: CartViewModel) {
-    val cartItems = cartViewModel.homeCartItems
+    val dbCartItems by cartViewModel.dbCartItems.collectAsState()
     val deliveryFee = 30
-    val subtotal = cartItems.sumOf { it.product.price * it.quantity }
-    val grandTotal = if (cartItems.isEmpty()) 0 else subtotal + deliveryFee
+    val subtotal = dbCartItems.sumOf { it.totalPrice }.toInt()
+    val grandTotal = if (dbCartItems.isEmpty()) 0 else subtotal + deliveryFee
 
     Scaffold(
         topBar = {
@@ -377,7 +365,7 @@ fun HomeEssentialsCartScreen(navController: NavController, cartViewModel: CartVi
             )
         },
         bottomBar = {
-            if (cartItems.isNotEmpty()) {
+            if (dbCartItems.isNotEmpty()) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
@@ -404,7 +392,7 @@ fun HomeEssentialsCartScreen(navController: NavController, cartViewModel: CartVi
         },
         containerColor = Color(0xFFFBFBFB)
     ) { padding ->
-        if (cartItems.isEmpty()) {
+        if (dbCartItems.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Text("Your cart is empty", color = Color.Gray)
             }
@@ -414,7 +402,7 @@ fun HomeEssentialsCartScreen(navController: NavController, cartViewModel: CartVi
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(cartItems) { item ->
+                items(dbCartItems) { item ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -422,15 +410,25 @@ fun HomeEssentialsCartScreen(navController: NavController, cartViewModel: CartVi
                     ) {
                         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(item.product.name, fontWeight = FontWeight.Bold)
-                                Text("₹${item.product.price} x ${item.quantity}", color = Color.Gray, fontSize = 12.sp)
+                                Text(item.itemName, fontWeight = FontWeight.Bold)
+                                Text("₹${item.price} x ${item.quantity}", color = Color.Gray, fontSize = 12.sp)
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                IconButton(onClick = { cartViewModel.removeHomeProduct(item.product.id) }) { Icon(Icons.Default.Remove, null) }
+                                IconButton(onClick = { 
+                                    if (item.productId.isNotEmpty()) {
+                                        cartViewModel.removeHomeProduct(item.productId)
+                                    } else {
+                                        cartViewModel.updateQuantity(item.itemId, item.quantity - 1)
+                                    }
+                                }) { Icon(Icons.Default.Remove, null) }
                                 Text(item.quantity.toString(), fontWeight = FontWeight.Bold)
                                 IconButton(onClick = { 
-                                    val prod = HomeEssentialsData.products.find { it.id == item.product.id }
-                                    prod?.let { cartViewModel.addHomeProduct(it) }
+                                    if (item.productId.isNotEmpty()) {
+                                        val prod = HomeEssentialsData.products.find { it.id == item.productId }
+                                        prod?.let { cartViewModel.addHomeProduct(it) }
+                                    } else {
+                                        cartViewModel.updateQuantity(item.itemId, item.quantity + 1)
+                                    }
                                 }) { Icon(Icons.Default.Add, null) }
                             }
                         }
@@ -453,7 +451,6 @@ fun HomeEssentialsCartScreen(navController: NavController, cartViewModel: CartVi
     }
 }
 
-// --- CHECKOUT SCREEN ---
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeEssentialsCheckoutScreen(navController: NavController, cartViewModel: CartViewModel) {
@@ -462,10 +459,29 @@ fun HomeEssentialsCheckoutScreen(navController: NavController, cartViewModel: Ca
     var address by remember { mutableStateOf("") }
     var selectedSlot by remember { mutableStateOf("Morning") }
     var selectedPayment by remember { mutableStateOf("Cash on Delivery") }
+    
+    val orderStatus by cartViewModel.orderStatus.collectAsState()
+
+    LaunchedEffect(orderStatus) {
+        orderStatus?.let {
+            if (it.isSuccess) {
+                navController.navigate(Screen.HomeEssentialsSuccess.route) {
+                    popUpTo(Screen.HomeEssentialsMain.route) { inclusive = false }
+                }
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Checkout", fontWeight = FontWeight.Bold) })
+            TopAppBar(
+                title = { Text("Checkout", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
@@ -498,7 +514,9 @@ fun HomeEssentialsCheckoutScreen(navController: NavController, cartViewModel: Ca
 
             Spacer(Modifier.height(32.dp))
             Button(
-                onClick = { navController.navigate(Screen.HomeEssentialsSuccess.route) },
+                onClick = { 
+                    cartViewModel.placeOrder(address, selectedPayment)
+                },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary),
@@ -510,26 +528,8 @@ fun HomeEssentialsCheckoutScreen(navController: NavController, cartViewModel: Ca
     }
 }
 
-// --- SUCCESS SCREEN ---
 @Composable
 fun HomeEssentialsSuccessScreen(navController: NavController, cartViewModel: CartViewModel, bookingsViewModel: BookingsViewModel) {
-    // Add to bookings on entry
-    LaunchedEffect(Unit) {
-        val cartItems = cartViewModel.homeCartItems
-        cartItems.forEach { item ->
-            bookingsViewModel.addBooking(
-                BookingItem(
-                    id = "ESS_${System.currentTimeMillis()}_${item.product.id}",
-                    serviceName = item.product.name,
-                    date = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date()),
-                    time = "Today",
-                    status = "Upcoming",
-                    price = "₹${item.product.price * item.quantity}"
-                )
-            )
-        }
-    }
-
     Surface(modifier = Modifier.fillMaxSize(), color = Color.White) {
         Column(
             modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -546,9 +546,9 @@ fun HomeEssentialsSuccessScreen(navController: NavController, cartViewModel: Car
             Spacer(Modifier.height(48.dp))
             Button(
                 onClick = { 
-                    cartViewModel.clearHomeCart()
+                    cartViewModel.resetOrderStatus()
                     navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Home.route) { inclusive = true }
+                        popUpTo(0) { inclusive = true }
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),

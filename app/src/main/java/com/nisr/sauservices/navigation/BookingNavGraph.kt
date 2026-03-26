@@ -59,11 +59,13 @@ fun NavGraphBuilder.bookingNavGraph(
             techViewModel = techViewModel,
             mensGroomingViewModel = mensGroomingViewModel,
             womensBeautyViewModel = womensBeautyViewModel,
-            healthcareViewModel = healthcareViewModel
+            healthcareViewModel = healthcareViewModel,
+            foodCartViewModel = foodCartViewModel,
+            homeCartViewModel = homeCartViewModel
         )
     }
 
     composable(Routes.SERVICE_BOOKING_SUCCESS) {
-        com.nisr.sauservices.ui.home.BookingSuccessScreen(navController)
+        BookingSuccessScreen(navController)
     }
 }

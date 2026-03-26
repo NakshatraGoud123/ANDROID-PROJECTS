@@ -8,6 +8,7 @@ import com.nisr.sauservices.data.repository.FirebaseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class FirebaseAuthViewModel : ViewModel() {
     private val repository = FirebaseRepository()
@@ -25,29 +26,27 @@ class FirebaseAuthViewModel : ViewModel() {
     fun register(email: String, pass: String, name: String, phone: String, role: String) {
         viewModelScope.launch {
             _isLoading.value = true
+            _errorMessage.value = null
             try {
-                auth.createUserWithEmailAndPassword(email, pass).addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        val uid = task.result?.user?.uid ?: ""
-                        val newUser = FirebaseUser(
-                            userId = uid,
-                            name = name,
-                            email = email,
-                            phone = phone,
-                            role = role,
-                            status = if (role == "CUSTOMER") "APPROVED" else "PENDING"
-                        )
-                        viewModelScope.launch {
-                            repository.registerUser(newUser).onSuccess {
-                                _userState.value = newUser
-                            }.onFailure {
-                                _errorMessage.value = it.message
-                            }
-                        }
-                    } else {
-                        _errorMessage.value = task.exception?.message
+                val authResult = auth.createUserWithEmailAndPassword(email, pass).await()
+                val uid = authResult.user?.uid ?: ""
+                val newUser = FirebaseUser(
+                    userId = uid,
+                    name = name,
+                    email = email,
+                    phone = phone,
+                    role = role,
+                    status = if (role == "CUSTOMER") "APPROVED" else "PENDING"
+                )
+                
+                repository.registerUser(newUser).fold(
+                    onSuccess = {
+                        _userState.value = newUser
+                    },
+                    onFailure = { throwable ->
+                        _errorMessage.value = throwable.message
                     }
-                }
+                )
             } catch (e: Exception) {
                 _errorMessage.value = e.message
             } finally {
@@ -59,19 +58,22 @@ class FirebaseAuthViewModel : ViewModel() {
     fun login(email: String, pass: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            auth.signInWithEmailAndPassword(email, pass).addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    val uid = task.result?.user?.uid ?: ""
-                    viewModelScope.launch {
-                        repository.getUserProfile(uid).onSuccess {
-                            _userState.value = it
-                        }.onFailure {
-                            _errorMessage.value = it.message
-                        }
+            _errorMessage.value = null
+            try {
+                val authResult = auth.signInWithEmailAndPassword(email, pass).await()
+                val uid = authResult.user?.uid ?: ""
+                
+                repository.getUserProfile(uid).fold(
+                    onSuccess = { user ->
+                        _userState.value = user
+                    },
+                    onFailure = { throwable ->
+                        _errorMessage.value = throwable.message
                     }
-                } else {
-                    _errorMessage.value = task.exception?.message
-                }
+                )
+            } catch (e: Exception) {
+                _errorMessage.value = e.message
+            } finally {
                 _isLoading.value = false
             }
         }

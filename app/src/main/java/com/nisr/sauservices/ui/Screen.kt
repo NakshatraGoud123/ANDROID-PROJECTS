@@ -7,7 +7,18 @@ sealed class Screen(val route: String) {
     object Bookings : Screen("bookings")
     object Cart : Screen("cart")
     object Profile : Screen("profile")
+    object MyOrders : Screen("my_orders")
     
+    // New Modules
+    object EssentialSupplies : Screen("essential_supplies")
+    object BookingsModule : Screen("bookings_module")
+
+    // Map & Location Routes
+    object MapPicker : Screen("map_picker")
+    object OrderTracking : Screen("order_tracking/{orderId}") {
+        fun createRoute(orderId: String) = "order_tracking/$orderId"
+    }
+
     // Profile System Routes
     object EditProfile : Screen("profile/edit")
     object Notifications : Screen("profile/notifications")
@@ -32,14 +43,6 @@ sealed class Screen(val route: String) {
     object HomeEssentialsCheckout : Screen("home_checkout")
     object HomeEssentialsSuccess : Screen("home_success")
 
-    // Legacy Home Essentials (Keeping for compatibility if needed, but using new flow)
-    object ProductTypes : Screen("product_types/{categoryId}") {
-        fun createRoute(categoryId: String) = "product_types/$categoryId"
-    }
-    object ProductList : Screen("product_list/{typeId}") {
-        fun createRoute(typeId: String) = "product_list/$typeId"
-    }
-
     object Login : Screen("login/{role}") {
         fun createRoute(role: String) = "login/$role"
     }
@@ -48,10 +51,26 @@ sealed class Screen(val route: String) {
     object ServiceList : Screen("service_list")
     object ServiceDetail : Screen("service_detail")
     object BookingSummary : Screen("booking_summary")
-    object BookingSuccess : Screen("booking_success")
+    object BookingSuccess : Screen("service_booking_success") // Matched with Routes.kt
     object Payment : Screen("payment")
     
-    // Residential Services Hierarchy
+    // Role Selection & Auth
+    object RoleSelection : Screen("role_selection")
+    object AuthOptions : Screen("auth_options/{role}") {
+        fun createRoute(role: String) = "auth_options/$role"
+    }
+    object ShopkeeperRegister : Screen("shopkeeper_register")
+    object ServiceWorkerRegister : Screen("service_worker_register")
+    object DeliveryPartnerRegister : Screen("delivery_partner_register")
+    object ShopkeeperDashboard : Screen("shopkeeper_dashboard")
+    object ServiceWorkerDashboard : Screen("service_worker_dashboard")
+    object DeliveryDashboard : Screen("delivery_dashboard")
+    object ForgotPassword : Screen("forgot_password")
+    object SignUp : Screen("signup/{role}") {
+        fun createRoute(role: String) = "signup/$role"
+    }
+
+    // Residential Services Hierarchy (Matched with Routes.kt)
     object ResidentialCategories : Screen("res_categories")
     object ResidentialSubcategories : Screen("res_subcategories/{categoryId}") {
         fun createRoute(categoryId: String) = "res_subcategories/$categoryId"
@@ -59,10 +78,10 @@ sealed class Screen(val route: String) {
     object ResidentialServiceList : Screen("res_services/{categoryId}/{subcategoryId}") {
         fun createRoute(categoryId: String, subcategoryId: String) = "res_services/$categoryId/$subcategoryId"
     }
-    object ResidentialCart : Screen("res_cart")
-    object ResidentialBookingDetails : Screen("res_booking_details")
-    object ResidentialPayment : Screen("res_payment_selection")
-    object ResidentialOrderSummary : Screen("res_order_summary")
+    object ResidentialCart : Screen("cart")
+    object ResidentialBookingDetails : Screen("service_booking_details")
+    object ResidentialPayment : Screen("service_payment")
+    object ResidentialOrderSummary : Screen("service_order_summary")
     
     // Food & Beverages Hierarchy (STRICT ROUTES)
     object FoodCategories : Screen("FOODS_categories")
@@ -179,20 +198,4 @@ sealed class Screen(val route: String) {
     object HealthcareOrderSummary : Screen("health_order_summary")
     object HealthcareOrderTracking : Screen("health_order_tracking")
     object HealthcareSuccess : Screen("health_success")
-
-    // Role Selection & Auth
-    object RoleSelection : Screen("role_selection")
-    object AuthOptions : Screen("auth_options/{role}") {
-        fun createRoute(role: String) = "auth_options/$role"
-    }
-    object ShopkeeperRegister : Screen("shopkeeper_register")
-    object ServiceWorkerRegister : Screen("service_worker_register")
-    object DeliveryPartnerRegister : Screen("delivery_partner_register")
-    object ShopkeeperDashboard : Screen("shopkeeper_dashboard")
-    object ServiceWorkerDashboard : Screen("service_worker_dashboard")
-    object DeliveryDashboard : Screen("delivery_dashboard")
-    object ForgotPassword : Screen("forgot_password")
-    object SignUp : Screen("signup/{role}") {
-        fun createRoute(role: String) = "signup/$role"
-    }
 }

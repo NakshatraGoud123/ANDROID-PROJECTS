@@ -2,7 +2,7 @@ package com.nisr.sauservices.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nisr.sauservices.data.model.Booking
+import com.nisr.sauservices.data.model.FirestoreBooking
 import com.nisr.sauservices.data.model.FirebaseUser
 import com.nisr.sauservices.data.repository.FirebaseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 class AdminViewModel : ViewModel() {
     private val repository = FirebaseRepository()
 
-    private val _allBookings = MutableStateFlow<List<Booking>>(emptyList())
+    private val _allBookings = MutableStateFlow<List<FirestoreBooking>>(emptyList())
     val allBookings = _allBookings.asStateFlow()
 
     private val _allUsers = MutableStateFlow<List<FirebaseUser>>(emptyList())
