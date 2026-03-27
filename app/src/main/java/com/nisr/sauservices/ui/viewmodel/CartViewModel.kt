@@ -6,13 +6,15 @@ import androidx.lifecycle.viewModelScope
 import com.nisr.sauservices.data.model.CartModel
 import com.nisr.sauservices.data.model.HomeProduct
 import com.nisr.sauservices.data.model.OrderModel
+import com.nisr.sauservices.data.repository.FirebaseRepository
 import com.nisr.sauservices.data.repository.CartRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class CartViewModel : ViewModel() {
-    private val repository = CartRepository()
+    private val cartRepository = CartRepository()
+    private val firebaseRepository = FirebaseRepository()
 
     private val _dbCartItems = MutableStateFlow<List<CartModel>>(emptyList())
     val dbCartItems = _dbCartItems.asStateFlow()
@@ -22,7 +24,7 @@ class CartViewModel : ViewModel() {
 
     init {
         viewModelScope.launch {
-            repository.getCartItems().collect {
+            cartRepository.getCartItems().collect {
                 _dbCartItems.value = it
                 Log.d("CartViewModel", "Cart updated: ${it.size} items")
             }
@@ -46,7 +48,7 @@ class CartViewModel : ViewModel() {
             }
             
             if (existingItem != null) {
-                repository.updateQuantity(existingItem.itemId, existingItem.quantity + quantity)
+                cartRepository.updateQuantity(existingItem.itemId, existingItem.quantity + quantity)
             } else {
                 val item = CartModel(
                     productId = productId,
@@ -60,24 +62,24 @@ class CartViewModel : ViewModel() {
                     date = date,
                     time = time
                 )
-                repository.addToCart(item)
+                cartRepository.addToCart(item)
             }
         }
     }
 
     fun updateQuantity(itemId: String, newQuantity: Int) {
         viewModelScope.launch {
-            repository.updateQuantity(itemId, newQuantity)
+            cartRepository.updateQuantity(itemId, newQuantity)
         }
     }
 
     fun removeItem(itemId: String) {
         viewModelScope.launch {
-            repository.removeItem(itemId)
+            cartRepository.removeItem(itemId)
         }
     }
 
-    fun placeOrder(address: String, paymentMethod: String) {
+    fun placeOrder(address: String, paymentMethod: String, deliveryDate: String = "", deliveryTime: String = "") {
         viewModelScope.launch {
             if (_dbCartItems.value.isEmpty()) {
                 _orderStatus.value = Result.failure(Exception("Cart is empty"))
@@ -89,19 +91,22 @@ class CartViewModel : ViewModel() {
             val tax = itemTotal * 0.05
             val total = itemTotal + deliveryCharge + tax
             
-            val order = OrderModel(
-                serviceName = if (_dbCartItems.value.size > 1) "${_dbCartItems.value[0].itemName} + ${_dbCartItems.value.size - 1} items" else _dbCartItems.value[0].itemName,
+            // Create Order as per required structure in Part 3
+            val order = com.nisr.sauservices.data.model.OrderModel(
+                userId = firebaseRepository.getCurrentUserId() ?: "",
                 items = _dbCartItems.value,
-                amount = total,
+                totalAmount = total.toString(),
                 address = address,
-                paymentMethod = paymentMethod,
-                status = "success",
-                timestamp = System.currentTimeMillis()
+                deliveryDate = deliveryDate,
+                deliveryTime = deliveryTime,
+                paymentStatus = if (paymentMethod == "COD") "pending" else "success",
+                status = "pending",
+                deliveryStatus = "order_placed"
             )
             
-            val result = repository.placeOrder(order)
+            val result = firebaseRepository.saveOrder(order)
             if (result.isSuccess) {
-                repository.clearCart()
+                cartRepository.clearCart()
             }
             _orderStatus.value = result
         }
@@ -110,8 +115,6 @@ class CartViewModel : ViewModel() {
     fun resetOrderStatus() {
         _orderStatus.value = null
     }
-
-    // --- Compatibility Helpers for Home Essentials ---
 
     fun getHomeItemQuantity(productId: String): Int {
         return _dbCartItems.value.find { it.productId == productId }?.quantity ?: 0
@@ -137,7 +140,7 @@ class CartViewModel : ViewModel() {
 
     fun clearHomeCart() {
         viewModelScope.launch {
-            repository.clearCart()
+            cartRepository.clearCart()
         }
     }
 

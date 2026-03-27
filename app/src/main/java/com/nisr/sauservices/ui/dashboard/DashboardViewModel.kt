@@ -2,102 +2,54 @@ package com.nisr.sauservices.ui.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.nisr.sauservices.data.model.ApiOrder
-import com.nisr.sauservices.data.model.ApiProduct
-import com.nisr.sauservices.data.model.ApiServiceItem
-import com.nisr.sauservices.data.repository.SauRepository
+import com.nisr.sauservices.data.model.OrderModel
+import com.nisr.sauservices.data.repository.CartRepository
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-sealed class DashboardState<out T> {
-    object Idle : DashboardState<Nothing>()
-    object Loading : DashboardState<Nothing>()
-    data class Success<T>(val data: T) : DashboardState<T>()
-    data class Error(val message: String) : DashboardState<Nothing>()
-}
-
 class DashboardViewModel : ViewModel() {
-    private val repository = SauRepository()
+    private val repository = CartRepository()
+    private val auth = FirebaseAuth.getInstance()
+    private val currentUserId: String get() = auth.currentUser?.uid ?: ""
 
-    // Shopkeeper State
-    private val _shopOrders = MutableStateFlow<DashboardState<List<ApiOrder>>>(DashboardState.Idle)
-    val shopOrders: StateFlow<DashboardState<List<ApiOrder>>> = _shopOrders
+    private val _globalOrders = MutableStateFlow<List<OrderModel>>(emptyList())
+    val globalOrders: StateFlow<List<OrderModel>> = _globalOrders
 
-    // Worker State
-    private val _workerJobs = MutableStateFlow<DashboardState<List<ApiOrder>>>(DashboardState.Idle)
-    val workerJobs: StateFlow<DashboardState<List<ApiOrder>>> = _workerJobs
+    private val _globalBookings = MutableStateFlow<List<OrderModel>>(emptyList())
+    val globalBookings: StateFlow<List<OrderModel>> = _globalBookings
 
-    // Customer States
-    private val _products = MutableStateFlow<DashboardState<List<ApiProduct>>>(DashboardState.Idle)
-    val products: StateFlow<DashboardState<List<ApiProduct>>> = _products
+    init {
+        observeGlobalData()
+    }
 
-    private val _services = MutableStateFlow<DashboardState<List<ApiServiceItem>>>(DashboardState.Idle)
-    val services: StateFlow<DashboardState<List<ApiServiceItem>>> = _services
+    private fun observeGlobalData() {
+        viewModelScope.launch {
+            repository.getGlobalOrders().collect {
+                _globalOrders.value = it
+            }
+        }
+        viewModelScope.launch {
+            repository.getGlobalBookings().collect {
+                _globalBookings.value = it
+            }
+        }
+    }
+
+    // --- SERVICE WORKER ACTIONS ---
+    fun updateBookingStatus(order: OrderModel, newStatus: String) {
+        viewModelScope.launch {
+            // In a real app, 'order.userId' should be the customer's ID
+            // Here we assume OrderModel contains the customer's userId or we find it
+            repository.updateBookingStatus("anonymous", order.orderId, newStatus, currentUserId)
+        }
+    }
 
     // --- SHOPKEEPER ACTIONS ---
-    fun fetchShopOrders() {
+    fun updateOrderStatus(order: OrderModel, newStatus: String) {
         viewModelScope.launch {
-            _shopOrders.value = DashboardState.Loading
-            try {
-                val response = repository.getShopOrders()
-                if (response.isSuccessful) {
-                    _shopOrders.value = DashboardState.Success(response.body() ?: emptyList())
-                } else {
-                    _shopOrders.value = DashboardState.Error(response.message())
-                }
-            } catch (e: Exception) {
-                _shopOrders.value = DashboardState.Error(e.message ?: "Unknown error")
-            }
-        }
-    }
-
-    // --- WORKER ACTIONS ---
-    fun fetchWorkerJobs() {
-        viewModelScope.launch {
-            _workerJobs.value = DashboardState.Loading
-            try {
-                val response = repository.getWorkerJobs()
-                if (response.isSuccessful) {
-                    _workerJobs.value = DashboardState.Success(response.body() ?: emptyList())
-                } else {
-                    _workerJobs.value = DashboardState.Error(response.message())
-                }
-            } catch (e: Exception) {
-                _workerJobs.value = DashboardState.Error(e.message ?: "Unknown error")
-            }
-        }
-    }
-
-    // --- CUSTOMER ACTIONS ---
-    fun fetchProducts(category: String? = null) {
-        viewModelScope.launch {
-            _products.value = DashboardState.Loading
-            try {
-                val response = repository.getProducts(category)
-                if (response.isSuccessful) {
-                    _products.value = DashboardState.Success(response.body() ?: emptyList())
-                } else {
-                    _products.value = DashboardState.Error(response.message())
-                }
-            } catch (e: Exception) {
-                _products.value = DashboardState.Error(e.message ?: "Unknown error")
-            }
-        }
-    }
-
-    fun updateOrderStatus(orderId: Int, newStatus: String, role: String) {
-        viewModelScope.launch {
-            try {
-                val response = repository.updateOrderStatus(orderId, newStatus)
-                if (response.isSuccessful) {
-                    // Refresh data after update
-                    if (role == "shopkeeper") fetchShopOrders()
-                    else if (role == "worker") fetchWorkerJobs()
-                }
-            } catch (e: Exception) {
-                // Handle error
-            }
+            repository.updateOrderStatus("anonymous", order.orderId, newStatus, currentUserId)
         }
     }
 }

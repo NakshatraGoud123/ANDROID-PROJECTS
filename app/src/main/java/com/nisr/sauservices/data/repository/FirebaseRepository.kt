@@ -1,166 +1,151 @@
 package com.nisr.sauservices.data.repository
 
+import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
-import com.nisr.sauservices.data.model.*
+import com.google.firebase.database.*
+import com.nisr.sauservices.data.model.BookingModel
+import com.nisr.sauservices.data.model.OrderModel
+import com.nisr.sauservices.data.model.LiveLocation
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
 class FirebaseRepository {
+    private val dbUrl = "https://sau-services-default-rtdb.asia-southeast1.firebasedatabase.app/"
+    private val database = FirebaseDatabase.getInstance(dbUrl)
     private val auth = FirebaseAuth.getInstance()
-    private val db = FirebaseFirestore.getInstance()
 
     fun getCurrentUserId(): String? = auth.currentUser?.uid
 
-    suspend fun getUserProfile(uid: String): Result<FirebaseUser?> = try {
-        val snapshot = db.collection("users").document(uid).get().await()
-        Result.success(snapshot.toObject(FirebaseUser::class.java))
+    // --- CUSTOMER ACTIONS ---
+
+    suspend fun saveBooking(booking: BookingModel): Result<String> = try {
+        val ref = database.getReference("bookings").push()
+        val id = ref.key ?: throw Exception("Failed to generate key")
+        val finalBooking = booking.copy(bookingId = id, userId = getCurrentUserId() ?: "anonymous")
+        ref.setValue(finalBooking).await()
+        Result.success(id)
     } catch (e: Exception) {
         Result.failure(e)
     }
 
-    suspend fun registerUser(user: FirebaseUser): Result<Unit> = try {
-        db.collection("users").document(user.userId).set(user).await()
-        Result.success(Unit)
+    suspend fun saveOrder(order: OrderModel): Result<String> = try {
+        val ref = database.getReference("orders").push()
+        val id = ref.key ?: throw Exception("Failed to generate key")
+        val finalOrder = order.copy(orderId = id, userId = getCurrentUserId() ?: "anonymous")
+        ref.setValue(finalOrder).await()
+        Result.success(id)
     } catch (e: Exception) {
         Result.failure(e)
     }
 
-    suspend fun createBooking(booking: FirestoreBooking): Result<String> = try {
-        val docRef = db.collection("bookings").document()
-        val finalBooking = booking.copy(
-            bookingId = docRef.id,
-            status = "pending",
-            assigned = false,
-            timestamp = System.currentTimeMillis()
+    // --- SERVICE WORKER DASHBOARD ---
+
+    fun observePendingBookings(): Flow<List<BookingModel>> = callbackFlow {
+        val ref = database.getReference("bookings").orderByChild("status").equalTo("pending")
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val list = snapshot.children.mapNotNull { it.getValue(BookingModel::class.java) }
+                trySend(list)
+            }
+            override fun onCancelled(error: DatabaseError) { close(error.toException()) }
+        }
+        ref.addValueEventListener(listener)
+        awaitClose { ref.removeEventListener(listener) }
+    }
+
+    suspend fun updateWorkerBookingStatus(bookingId: String, status: String, workerStatus: String, workerId: String): Result<Unit> = try {
+        val updates = mapOf(
+            "status" to status,
+            "assignedWorker" to workerId,
+            "workerStatus" to workerStatus
         )
-        docRef.set(finalBooking).await()
-        Result.success(docRef.id)
+        database.getReference("bookings").child(bookingId).updateChildren(updates).await()
+        Result.success(Unit)
     } catch (e: Exception) {
         Result.failure(e)
     }
 
-    fun observeMyBookings(role: String, userId: String): Flow<List<FirestoreBooking>> = callbackFlow {
-        val field = when (role.lowercase()) {
-            "worker" -> "workerId"
-            "shopkeeper" -> "shopkeeperId"
-            "delivery" -> "deliveryBoyId"
-            else -> "customerId"
-        }
-        
-        val listener = db.collection("bookings")
-            .whereEqualTo(field, userId)
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
-                    return@addSnapshotListener
-                }
-                val items = snapshot?.toObjects(FirestoreBooking::class.java) ?: emptyList()
-                trySend(items)
+    // --- SHOPKEEPER DASHBOARD ---
+
+    fun observePendingOrders(): Flow<List<OrderModel>> = callbackFlow {
+        val ref = database.getReference("orders").orderByChild("status").equalTo("pending")
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val list = snapshot.children.mapNotNull { it.getValue(OrderModel::class.java) }
+                trySend(list)
             }
-        awaitClose { listener.remove() }
+            override fun onCancelled(error: DatabaseError) { close(error.toException()) }
+        }
+        ref.addValueEventListener(listener)
+        awaitClose { ref.removeEventListener(listener) }
     }
 
-    fun observeAvailableBookings(role: String, serviceType: String? = null): Flow<List<FirestoreBooking>> = callbackFlow {
-        var query = db.collection("bookings")
-            .whereEqualTo("roleTarget", role.lowercase())
-            .whereEqualTo("assigned", false)
-
-        if (role.lowercase() == "worker" && serviceType != null) {
-            query = query.whereEqualTo("serviceType", serviceType)
-        }
-
-        val listener = query.orderBy("timestamp", Query.Direction.DESCENDING)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
-                    return@addSnapshotListener
-                }
-                val items = snapshot?.toObjects(FirestoreBooking::class.java) ?: emptyList()
-                trySend(items)
-            }
-        awaitClose { listener.remove() }
-    }
-
-    suspend fun acceptBooking(bookingId: String, role: String, userId: String): Result<Unit> = try {
-        val updates = mutableMapOf<String, Any>(
-            "assigned" to true,
-            "status" to "accepted"
+    suspend fun shopkeeperAcceptOrder(orderId: String, shopkeeperId: String): Result<Unit> = try {
+        val updates = mapOf(
+            "status" to "accepted",
+            "assignedShopkeeper" to shopkeeperId
         )
-        when (role.lowercase()) {
-            "worker" -> updates["workerId"] = userId
-            "shopkeeper" -> updates["shopkeeperId"] = userId
-            "delivery" -> updates["deliveryBoyId"] = userId
-        }
-        db.collection("bookings").document(bookingId).update(updates).await()
+        database.getReference("orders").child(orderId).updateChildren(updates).await()
         Result.success(Unit)
     } catch (e: Exception) {
         Result.failure(e)
     }
 
-    suspend fun updateBookingStatus(
-        bookingId: String, 
-        status: String, 
-        workerId: String? = null,
-        shopkeeperId: String? = null,
-        deliveryBoyId: String? = null
-    ): Result<Unit> = try {
-        val updates = mutableMapOf<String, Any>("status" to status)
-        workerId?.let { updates["workerId"] = it }
-        shopkeeperId?.let { updates["shopkeeperId"] = it }
-        deliveryBoyId?.let { updates["deliveryBoyId"] = it }
-        
-        if (status == "accepted" || workerId != null || shopkeeperId != null || deliveryBoyId != null) {
-            updates["assigned"] = true
-        }
-
-        db.collection("bookings").document(bookingId).update(updates).await()
+    suspend fun assignDeliveryBoy(orderId: String, deliveryBoyId: String): Result<Unit> = try {
+        val updates = mapOf(
+            "assignedDeliveryBoy" to deliveryBoyId,
+            "deliveryStatus" to "assigned"
+        )
+        database.getReference("orders").child(orderId).updateChildren(updates).await()
         Result.success(Unit)
     } catch (e: Exception) {
         Result.failure(e)
     }
 
-    fun observeAllBookings(): Flow<List<FirestoreBooking>> = callbackFlow {
-        val listener = db.collection("bookings")
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
-                    return@addSnapshotListener
-                }
-                val items = snapshot?.toObjects(FirestoreBooking::class.java) ?: emptyList()
-                trySend(items)
+    // --- DELIVERY BOY DASHBOARD ---
+
+    fun observeMyDeliveries(deliveryBoyId: String): Flow<List<OrderModel>> = callbackFlow {
+        val ref = database.getReference("orders").orderByChild("assignedDeliveryBoy").equalTo(deliveryBoyId)
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val list = snapshot.children.mapNotNull { it.getValue(OrderModel::class.java) }
+                trySend(list)
             }
-        awaitClose { listener.remove() }
+            override fun onCancelled(error: DatabaseError) { close(error.toException()) }
+        }
+        ref.addValueEventListener(listener)
+        awaitClose { ref.removeEventListener(listener) }
     }
 
-    suspend fun getAllUsers(): List<FirebaseUser> = try {
-        val snapshot = db.collection("users").get().await()
-        snapshot.toObjects(FirebaseUser::class.java)
-    } catch (e: Exception) {
-        emptyList()
-    }
-
-    suspend fun deleteUser(uid: String): Result<Unit> = try {
-        db.collection("users").document(uid).delete().await()
+    suspend fun updateDeliveryStatus(orderId: String, deliveryStatus: String, overallStatus: String? = null): Result<Unit> = try {
+        val updates = mutableMapOf<String, Any>("deliveryStatus" to deliveryStatus)
+        overallStatus?.let { updates["status"] = it }
+        database.getReference("orders").child(orderId).updateChildren(updates).await()
         Result.success(Unit)
     } catch (e: Exception) {
         Result.failure(e)
     }
 
-    fun observeBookingStatus(bookingId: String): Flow<String?> = callbackFlow {
-        val listener = db.collection("bookings").document(bookingId)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
-                    return@addSnapshotListener
-                }
-                trySend(snapshot?.getString("status"))
+    // --- LIVE LOCATION ---
+
+    suspend fun updateLiveLocation(deliveryBoyId: String, location: LiveLocation): Result<Unit> = try {
+        database.getReference("liveLocation").child(deliveryBoyId).setValue(location).await()
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    fun observeLiveLocation(deliveryBoyId: String): Flow<LiveLocation?> = callbackFlow {
+        val ref = database.getReference("liveLocation").child(deliveryBoyId)
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                trySend(snapshot.getValue(LiveLocation::class.java))
             }
-        awaitClose { listener.remove() }
+            override fun onCancelled(error: DatabaseError) { close(error.toException()) }
+        }
+        ref.addValueEventListener(listener)
+        awaitClose { ref.removeEventListener(listener) }
     }
 }

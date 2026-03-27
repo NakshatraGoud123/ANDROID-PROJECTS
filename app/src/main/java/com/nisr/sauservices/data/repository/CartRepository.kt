@@ -89,21 +89,29 @@ class CartRepository {
             val orderRef = database.getReference("orders").child(uid).push()
             val orderId = orderRef.key ?: throw Exception("ID Gen Failed")
             
-            val finalOrder = order.copy(orderId = orderId)
+            val finalOrder = order.copy(orderId = orderId, status = "ordered")
             orderRef.setValue(finalOrder).await()
+            
+            // Also add to global orders pool for shopkeepers/workers
+            database.getReference("global_orders").child(orderId).setValue(finalOrder).await()
+            
             Log.d("CartRepository", "Order placed: $orderId")
             
             // If it contains bookings, also store in /bookings for the unified list
             order.items?.filter { it.unit == "Booking" }?.forEach { booking ->
                 val bRef = database.getReference("bookings").child(uid).push()
-                bRef.setValue(finalOrder.copy(
-                    orderId = bRef.key ?: "",
+                val bId = bRef.key ?: ""
+                val bookingData = finalOrder.copy(
+                    orderId = bId,
                     serviceName = booking.itemName,
                     scheduleDate = booking.date,
                     scheduleTime = booking.time,
                     amount = booking.totalPrice,
-                    items = null
-                )).await()
+                    items = null,
+                    status = "pending"
+                )
+                bRef.setValue(bookingData).await()
+                database.getReference("global_bookings").child(bId).setValue(bookingData).await()
             }
 
             Result.success(orderId)
@@ -111,5 +119,59 @@ class CartRepository {
             Log.e("CartRepository", "Place order failed: ${e.message}")
             Result.failure(e)
         }
+    }
+
+    // --- Staff Action Methods ---
+
+    suspend fun updateOrderStatus(userId: String, orderId: String, newStatus: String, staffId: String? = null): Result<Unit> = try {
+        val updates = mutableMapOf<String, Any?>("status" to newStatus)
+        staffId?.let { updates["assignedStaffId"] = it }
+
+        // Update in user's node
+        database.getReference("orders").child(userId).child(orderId).updateChildren(updates).await()
+        // Update in global node
+        database.getReference("global_orders").child(orderId).updateChildren(updates).await()
+        
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun updateBookingStatus(userId: String, bookingId: String, newStatus: String, workerId: String? = null): Result<Unit> = try {
+        val updates = mutableMapOf<String, Any?>("status" to newStatus)
+        workerId?.let { updates["assignedWorker"] = it }
+
+        database.getReference("bookings").child(userId).child(bookingId).updateChildren(updates).await()
+        database.getReference("global_bookings").child(bookingId).updateChildren(updates).await()
+        
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    fun getGlobalOrders(): Flow<List<OrderModel>> = callbackFlow {
+        val ref = database.getReference("global_orders")
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val orders = snapshot.children.mapNotNull { it.getValue(OrderModel::class.java) }
+                trySend(orders)
+            }
+            override fun onCancelled(error: DatabaseError) { close(error.toException()) }
+        }
+        ref.addValueEventListener(listener)
+        awaitClose { ref.removeEventListener(listener) }
+    }
+
+    fun getGlobalBookings(): Flow<List<OrderModel>> = callbackFlow {
+        val ref = database.getReference("global_bookings")
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val bookings = snapshot.children.mapNotNull { it.getValue(OrderModel::class.java) }
+                trySend(bookings)
+            }
+            override fun onCancelled(error: DatabaseError) { close(error.toException()) }
+        }
+        ref.addValueEventListener(listener)
+        awaitClose { ref.removeEventListener(listener) }
     }
 }
