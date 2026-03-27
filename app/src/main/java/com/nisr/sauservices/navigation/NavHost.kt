@@ -279,7 +279,7 @@ fun AppNavHost(navController: NavHostController) {
         ) { backStackEntry ->
             val cat = backStackEntry.arguments?.getString("categoryId") ?: ""
             val sub = backStackEntry.arguments?.getString("subcategoryId") ?: ""
-            ResidentialServiceListScreen(navController, cat, sub, residentialViewModel)
+            ResidentialServiceListScreen(navController, cat, sub, residentialViewModel, cartViewModel)
         }
         
         // Business

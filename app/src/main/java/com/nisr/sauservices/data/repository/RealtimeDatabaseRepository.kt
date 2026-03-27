@@ -5,17 +5,16 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import com.nisr.sauservices.data.model.BookingRequest
 import com.nisr.sauservices.data.model.OrderModel
 import com.nisr.sauservices.data.model.SupplyOrder
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.tasks.await
 
 class RealtimeDatabaseRepository {
-    private val database = FirebaseDatabase.getInstance()
+    private val databaseUrl = "https://sau-services-default-rtdb.asia-southeast1.firebasedatabase.app/"
+    private val database = FirebaseDatabase.getInstance(databaseUrl)
     private val auth = FirebaseAuth.getInstance()
 
     fun getCurrentUserId(): String? = auth.currentUser?.uid
@@ -35,7 +34,14 @@ class RealtimeDatabaseRepository {
         val userId = getCurrentUserId() ?: "anonymous"
         val ref = database.getReference("orders").child(userId).push()
         val id = ref.key ?: throw Exception("Failed to get reference key")
-        ref.setValue(order.copy(orderId = id)).await()
+        val finalOrder = order.copy(orderId = id)
+        ref.setValue(finalOrder).await()
+        
+        // Also store under /bookings if it has a schedule
+        if (order.scheduleDate != null) {
+            database.getReference("bookings").child(userId).child(id).setValue(finalOrder).await()
+        }
+
         Result.success(id)
     } catch (e: Exception) {
         Result.failure(e)

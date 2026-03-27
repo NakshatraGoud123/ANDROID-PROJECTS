@@ -1,5 +1,6 @@
 package com.nisr.sauservices.ui.home
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -145,9 +147,16 @@ fun ResidentialSubcategoryScreen(navController: NavController, categoryId: Strin
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ResidentialServiceListScreen(navController: NavController, categoryId: String, subcategoryId: String, viewModel: ResidentialViewModel) {
+fun ResidentialServiceListScreen(
+    navController: NavController, 
+    categoryId: String, 
+    subcategoryId: String, 
+    viewModel: ResidentialViewModel,
+    cartViewModel: CartViewModel
+) {
     val sub = ResidentialData.subcategories.find { it.id == subcategoryId }
     val services = ResidentialData.services.filter { it.subcategory == subcategoryId }
+    val dbCartItems by cartViewModel.dbCartItems.collectAsState()
 
     Scaffold(
         topBar = {
@@ -163,7 +172,8 @@ fun ResidentialServiceListScreen(navController: NavController, categoryId: Strin
         },
         containerColor = Color.White,
         bottomBar = {
-            if (viewModel.cartItems.isNotEmpty()) {
+            val totalCount = dbCartItems.sumOf { it.quantity }
+            if (totalCount > 0) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shadowElevation = 8.dp,
@@ -180,7 +190,8 @@ fun ResidentialServiceListScreen(navController: NavController, categoryId: Strin
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("${viewModel.cartItems.sumOf { it.quantity }} Items | ₹${viewModel.calculateTotal()}", fontWeight = FontWeight.Bold)
+                            val totalPrice = dbCartItems.sumOf { it.totalPrice }
+                            Text("$totalCount Items | ₹$totalPrice", fontWeight = FontWeight.Bold)
                             Text("View Cart", fontWeight = FontWeight.Bold)
                         }
                     }
@@ -194,12 +205,28 @@ fun ResidentialServiceListScreen(navController: NavController, categoryId: Strin
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(services) { service ->
+                val cartItem = dbCartItems.find { it.productId == service.id }
+                val quantity = cartItem?.quantity ?: 0
+                
                 ResidentialServiceCard(
                     service = service,
-                    quantity = viewModel.getItemQuantity(service.id),
-                    onAdd = { viewModel.addToCart(service) },
-                    onIncrease = { viewModel.updateQty(service.id, true) },
-                    onDecrease = { viewModel.updateQty(service.id, false) }
+                    quantity = quantity,
+                    onAdd = { 
+                        cartViewModel.addItemToCart(
+                            name = service.name,
+                            price = service.price.toDouble(),
+                            category = "Residential",
+                            subcategory = subcategoryId,
+                            unit = "Service",
+                            productId = service.id
+                        )
+                    },
+                    onIncrease = { 
+                        cartItem?.let { cartViewModel.updateQuantity(it.itemId, it.quantity + 1) }
+                    },
+                    onDecrease = { 
+                        cartItem?.let { cartViewModel.updateQuantity(it.itemId, it.quantity - 1) }
+                    }
                 )
             }
         }
@@ -312,11 +339,11 @@ fun ResidentialBookingDetailsScreen(navController: NavController, viewModel: Res
             }
             Spacer(Modifier.height(32.dp))
             Button(
-                onClick = { if(address.isNotBlank() && phone.isNotBlank() && selectedSlot.isNotBlank()) navController.navigate(Screen.ResidentialPayment.route) },
+                onClick = { if(address.isNotBlank() && phone.isNotBlank()) navController.navigate(Screen.ResidentialPayment.route) },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary)
-            ) { Text("Proceed", fontWeight = FontWeight.Bold, fontSize = 16.sp) }
+            ) { Text("Proceed to Payment", fontWeight = FontWeight.Bold, fontSize = 16.sp) }
         }
     }
 }
@@ -404,6 +431,7 @@ fun ResidentialOrderSummaryScreen(
 ) {
     val bookingInfo = viewModel.bookingDetails.value
     val dbCartItems by homeCartViewModel.dbCartItems.collectAsState()
+    val context = LocalContext.current
     
     val resItems = viewModel.cartItems
     val bizItems = businessViewModel.cartItems
@@ -432,10 +460,13 @@ fun ResidentialOrderSummaryScreen(
 
     val total = allCartModels.sumOf { it.totalPrice }
     val bookingResult by bookingsViewModel.bookingResult.collectAsState()
+    var showSuccess by remember { mutableStateOf(false) }
+    var lastOrderId by remember { mutableStateOf("") }
 
     LaunchedEffect(bookingResult) {
         bookingResult?.let {
             if (it.isSuccess) {
+                lastOrderId = it.getOrNull() ?: ""
                 viewModel.clearCart()
                 businessViewModel.clearCart()
                 lifestyleViewModel.clearCart()
@@ -447,9 +478,10 @@ fun ResidentialOrderSummaryScreen(
                 educationViewModel.clearCart()
                 homeCartViewModel.clearHomeCart()
                 bookingsViewModel.resetResult()
-                navController.navigate(Screen.BookingSuccess.route) {
-                    popUpTo(Screen.Home.route) { inclusive = false }
-                }
+                showSuccess = true
+            } else {
+                Toast.makeText(context, "Order failed: ${it.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
+                bookingsViewModel.resetResult()
             }
         }
     }
@@ -538,5 +570,23 @@ fun ResidentialOrderSummaryScreen(
                 enabled = allCartModels.isNotEmpty()
             ) { Text("Confirm Booking / Order", fontWeight = FontWeight.Bold, fontSize = 18.sp) }
         }
+    }
+
+    if (showSuccess) {
+        OrderSuccessDialog(
+            orderId = lastOrderId,
+            onViewOrder = {
+                showSuccess = false
+                navController.navigate(Screen.MyOrders.route) {
+                    popUpTo(Screen.Home.route) { inclusive = false }
+                }
+            },
+            onGoHome = {
+                showSuccess = false
+                navController.navigate(Screen.Home.route) {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
+        )
     }
 }

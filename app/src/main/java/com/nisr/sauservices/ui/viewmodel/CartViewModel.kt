@@ -1,5 +1,6 @@
 package com.nisr.sauservices.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nisr.sauservices.data.model.CartModel
@@ -23,49 +24,57 @@ class CartViewModel : ViewModel() {
         viewModelScope.launch {
             repository.getCartItems().collect {
                 _dbCartItems.value = it
+                Log.d("CartViewModel", "Cart updated: ${it.size} items")
             }
         }
     }
 
-    fun addItemToCart(name: String, price: Double, category: String, subcategory: String, unit: String, productId: String = "") {
-        val existingItem = _dbCartItems.value.find { 
-            (productId.isNotEmpty() && it.productId == productId) || (it.itemName == name && it.unit == unit) 
-        }
-        
-        if (existingItem != null) {
-            updateQuantity(existingItem.itemId, existingItem.quantity + 1)
-        } else {
-            val item = CartModel(
-                productId = productId,
-                itemName = name,
-                price = price,
-                quantity = 1,
-                category = category,
-                subcategory = subcategory,
-                unit = unit,
-                totalPrice = price
-            )
-            repository.addToCart(item)
+    fun addItemToCart(
+        name: String, 
+        price: Double, 
+        category: String, 
+        subcategory: String, 
+        unit: String, 
+        productId: String = "",
+        date: String? = null,
+        time: String? = null,
+        quantity: Int = 1
+    ) {
+        viewModelScope.launch {
+            val existingItem = _dbCartItems.value.find { 
+                it.productId == productId && it.itemName == name && it.date == date && it.time == time
+            }
+            
+            if (existingItem != null) {
+                repository.updateQuantity(existingItem.itemId, existingItem.quantity + quantity)
+            } else {
+                val item = CartModel(
+                    productId = productId,
+                    itemName = name,
+                    price = price,
+                    quantity = quantity,
+                    category = category,
+                    subcategory = subcategory,
+                    unit = unit,
+                    totalPrice = price * quantity,
+                    date = date,
+                    time = time
+                )
+                repository.addToCart(item)
+            }
         }
     }
 
     fun updateQuantity(itemId: String, newQuantity: Int) {
-        if (newQuantity <= 0) {
-            repository.removeItem(itemId)
-        } else {
-            val item = _dbCartItems.value.find { it.itemId == itemId }
-            item?.let {
-                val updatedItem = it.copy(
-                    quantity = newQuantity,
-                    totalPrice = it.price * newQuantity
-                )
-                repository.updateItem(updatedItem)
-            }
+        viewModelScope.launch {
+            repository.updateQuantity(itemId, newQuantity)
         }
     }
 
     fun removeItem(itemId: String) {
-        repository.removeItem(itemId)
+        viewModelScope.launch {
+            repository.removeItem(itemId)
+        }
     }
 
     fun placeOrder(address: String, paymentMethod: String) {
@@ -75,9 +84,13 @@ class CartViewModel : ViewModel() {
                 return@launch
             }
 
-            val total = _dbCartItems.value.sumOf { it.totalPrice } + 30.0 // Delivery charge
+            val itemTotal = _dbCartItems.value.sumOf { it.totalPrice }
+            val deliveryCharge = 30.0
+            val tax = itemTotal * 0.05
+            val total = itemTotal + deliveryCharge + tax
+            
             val order = OrderModel(
-                serviceName = "Essential Supplies",
+                serviceName = if (_dbCartItems.value.size > 1) "${_dbCartItems.value[0].itemName} + ${_dbCartItems.value.size - 1} items" else _dbCartItems.value[0].itemName,
                 items = _dbCartItems.value,
                 amount = total,
                 address = address,
@@ -98,31 +111,35 @@ class CartViewModel : ViewModel() {
         _orderStatus.value = null
     }
 
-    val cartCount get() = _dbCartItems.value.sumOf { it.quantity }
-    val itemTotal: Double get() = _dbCartItems.value.sumOf { it.totalPrice }
-    
-    // --- Compatibility ---
-    
+    // --- Compatibility Helpers for Home Essentials ---
+
     fun getHomeItemQuantity(productId: String): Int {
-        return _dbCartItems.value.find { it.productId == productId || it.itemId == productId }?.quantity ?: 0
+        return _dbCartItems.value.find { it.productId == productId }?.quantity ?: 0
     }
 
     fun addHomeProduct(product: HomeProduct) {
-        addItemToCart(product.name, product.price.toDouble(), product.category, product.subcategoryId, product.unit, product.id)
+        addItemToCart(
+            name = product.name,
+            price = product.price.toDouble(),
+            category = "Home Essentials",
+            subcategory = product.subcategoryId,
+            unit = product.unit,
+            productId = product.id
+        )
     }
 
     fun removeHomeProduct(productId: String) {
-        val item = _dbCartItems.value.find { it.productId == productId || it.itemId == productId }
+        val item = _dbCartItems.value.find { it.productId == productId }
         item?.let { 
-            if (it.quantity > 1) {
-                updateQuantity(it.itemId, it.quantity - 1)
-            } else {
-                repository.removeItem(it.itemId)
-            }
+            updateQuantity(it.itemId, it.quantity - 1)
         }
     }
 
     fun clearHomeCart() {
-        repository.clearCart()
+        viewModelScope.launch {
+            repository.clearCart()
+        }
     }
+
+    val cartCount get() = _dbCartItems.value.sumOf { it.quantity }
 }

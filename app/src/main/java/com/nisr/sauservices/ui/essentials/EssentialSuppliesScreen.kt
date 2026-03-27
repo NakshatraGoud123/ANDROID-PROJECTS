@@ -1,6 +1,7 @@
 package com.nisr.sauservices.ui.essentials
 
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,7 +11,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -43,7 +45,7 @@ fun EssentialSuppliesScreen(navController: NavController, viewModel: CartViewMod
                 title = { Text("Essential Supplies", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
@@ -63,16 +65,16 @@ fun EssentialSuppliesScreen(navController: NavController, viewModel: CartViewMod
             )
         }
     ) { padding ->
-        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
+        Box(modifier = Modifier.padding(padding).fillMaxSize().background(Color(0xFFF8F8F8))) {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 contentPadding = PaddingValues(16.dp),
                 modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(categories) { category ->
-                    CategoryCard(category) {
+                    CategoryCardSmall(category) {
                         selectedCategory = category
                     }
                 }
@@ -95,7 +97,7 @@ fun EssentialSuppliesScreen(navController: NavController, viewModel: CartViewMod
         }
 
         if (selectedCategory != null) {
-            SubcategoryPopup(
+            SubcategoryPopupSmall(
                 category = selectedCategory!!,
                 onDismiss = { selectedCategory = null },
                 onAddToCart = { sub ->
@@ -116,28 +118,31 @@ fun EssentialSuppliesScreen(navController: NavController, viewModel: CartViewMod
 }
 
 @Composable
-fun CategoryCard(category: SupplyCategory, onClick: () -> Unit) {
+fun CategoryCardSmall(category: SupplyCategory, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(120.dp)
+            .height(100.dp)
             .clickable { onClick() },
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize().padding(12.dp)) {
             Text(
                 text = category.name,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                textAlign = TextAlign.Center,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(8.dp)
+                fontSize = 14.sp,
+                color = Color.Black,
+                lineHeight = 18.sp
             )
         }
     }
 }
 
 @Composable
-fun SubcategoryPopup(
+fun SubcategoryPopupSmall(
     category: SupplyCategory,
     onDismiss: () -> Unit,
     onAddToCart: (SupplySubcategory) -> Unit
@@ -145,35 +150,41 @@ fun SubcategoryPopup(
     val context = LocalContext.current
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surface,
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.7f)
+                .wrapContentHeight()
+                .padding(vertical = 24.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(20.dp)) {
                 Text(
                     text = category.name,
-                    fontSize = 20.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    color = Color.Black,
+                    modifier = Modifier.padding(bottom = 20.dp)
                 )
                 
-                LazyColumn(modifier = Modifier.weight(1f)) {
+                LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
                     items(category.subcategories) { sub ->
-                        SubcategoryItem(sub) {
+                        SubcategoryItemSmall(sub) {
                             onAddToCart(sub)
                             Toast.makeText(context, "${sub.name} added to cart", Toast.LENGTH_SHORT).show()
                         }
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
                     }
                 }
                 
+                Spacer(Modifier.height(12.dp))
+                
                 Button(
                     onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary)
                 ) {
-                    Text("Close")
+                    Text("Close", fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -181,18 +192,24 @@ fun SubcategoryPopup(
 }
 
 @Composable
-fun SubcategoryItem(sub: SupplySubcategory, onAdd: () -> Unit) {
+fun SubcategoryItemSmall(sub: SupplySubcategory, onAdd: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = sub.name, fontWeight = FontWeight.SemiBold)
-            Text(text = sub.priceRange, color = Color.Gray, fontSize = 14.sp)
+        Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+            Text(text = sub.name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = Color.Black)
+            Text(text = sub.priceRange, color = Color.Gray, fontSize = 13.sp)
         }
-        Button(onClick = onAdd, shape = RoundedCornerShape(8.dp)) {
-            Text("Add to Cart")
+        Button(
+            onClick = onAdd,
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+            modifier = Modifier.height(36.dp)
+        ) {
+            Text("Add to Cart", fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }
     }
 }

@@ -95,13 +95,18 @@ fun UnifiedCartScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
                             onClick = { 
-                                navController.navigate(Screen.ResidentialBookingDetails.route)
+                                if (dbCartItems.any { it.unit != "Booking" }) {
+                                    navController.navigate(Screen.HomeEssentialsCheckout.route)
+                                } else {
+                                    navController.navigate(Screen.ResidentialBookingDetails.route)
+                                }
                             },
                             modifier = Modifier.fillMaxWidth().height(56.dp),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary)
                         ) {
-                            Text("Proceed to Checkout", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            val buttonText = if (dbCartItems.any { it.unit != "Booking" }) "Checkout Essentials" else "Proceed to Checkout"
+                            Text(buttonText, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         }
                     }
                 }
@@ -150,11 +155,25 @@ fun UnifiedCartScreen(
                 }
 
                 if (dbCartItems.isNotEmpty()) {
-                    item { Text("Essentials & Supplies", fontWeight = FontWeight.Bold, color = PinkPrimary) }
-                    items(dbCartItems) { item ->
-                        CartItemRow(item.itemName, item.price.toInt(), item.quantity, 
-                            { homeCartViewModel.updateQuantity(item.itemId, item.quantity + 1) }, 
-                            { homeCartViewModel.updateQuantity(item.itemId, item.quantity - 1) })
+                    val supplyItems = dbCartItems.filter { it.unit != "Booking" }
+                    val bookingItems = dbCartItems.filter { it.unit == "Booking" }
+
+                    if (supplyItems.isNotEmpty()) {
+                        item { Text("Essential Supplies", fontWeight = FontWeight.Bold, color = PinkPrimary) }
+                        items(supplyItems) { item ->
+                            CartItemRow(item.itemName, item.price.toInt(), item.quantity, 
+                                { homeCartViewModel.updateQuantity(item.itemId, item.quantity + 1) }, 
+                                { homeCartViewModel.updateQuantity(item.itemId, item.quantity - 1) })
+                        }
+                    }
+
+                    if (bookingItems.isNotEmpty()) {
+                        item { Text("Service Bookings", fontWeight = FontWeight.Bold, color = PinkPrimary) }
+                        items(bookingItems) { item ->
+                            CartItemRow("${item.itemName} (${item.date} ${item.time})", item.price.toInt(), item.quantity, 
+                                { homeCartViewModel.updateQuantity(item.itemId, item.quantity + 1) }, 
+                                { homeCartViewModel.updateQuantity(item.itemId, item.quantity - 1) })
+                        }
                     }
                 }
 

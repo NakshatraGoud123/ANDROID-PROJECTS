@@ -24,7 +24,9 @@ fun NavGraphBuilder.servicesNavGraph(
     techViewModel: TechServicesViewModel,
     mensGroomingViewModel: MensGroomingViewModel,
     womensBeautyViewModel: WomensBeautyViewModel,
-    healthViewModel: HealthcareViewModel
+    healthViewModel: HealthcareViewModel,
+    homeCartViewModel: CartViewModel,
+    educationCartViewModel: EducationCartViewModel
 ) {
     // --- RESIDENTIAL SERVICES ---
     composable(Routes.RESIDENTIAL_CATEGORIES) {
@@ -46,7 +48,7 @@ fun NavGraphBuilder.servicesNavGraph(
     ) { backStackEntry ->
         val cat = backStackEntry.arguments?.getString("categoryId") ?: ""
         val sub = backStackEntry.arguments?.getString("subcategoryId") ?: ""
-        ResidentialServiceListScreen(navController, cat, sub, residentialViewModel)
+        ResidentialServiceListScreen(navController, cat, sub, residentialViewModel, homeCartViewModel)
     }
 
     // --- BUSINESS SERVICES ---
@@ -158,13 +160,13 @@ fun NavGraphBuilder.servicesNavGraph(
         arguments = listOf(navArgument("subcategory") { type = NavType.StringType })
     ) { backStackEntry ->
         val sub = backStackEntry.arguments?.getString("subcategory") ?: ""
-        EducationCoursesScreen(navController, sub, viewModel())
+        EducationCoursesScreen(navController, sub, educationCartViewModel)
     }
     composable(Routes.EDUCATION_CART) { 
-        EducationCartScreen(navController, viewModel()) 
+        EducationCartScreen(navController, educationCartViewModel) 
     }
     composable(Routes.EDUCATION_BOOKING) { 
-        TutorBookingScreen(navController, viewModel())
+        TutorBookingScreen(navController, educationCartViewModel)
     }
     composable(Routes.EDUCATION_SUCCESS) { 
         EducationSuccessScreen(navController) 

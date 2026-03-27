@@ -15,9 +15,9 @@ class ResidentialViewModel : ViewModel() {
         private set
 
     fun addToCart(service: ResidentialServiceItem) {
-        val existingItem = _cartItems.find { it.service.id == service.id }
-        if (existingItem != null) {
-            existingItem.quantity++
+        val index = _cartItems.indexOfFirst { it.service.id == service.id }
+        if (index != -1) {
+            _cartItems[index] = _cartItems[index].copy(quantity = _cartItems[index].quantity + 1)
         } else {
             _cartItems.add(ResidentialCartItem(service, 1))
         }

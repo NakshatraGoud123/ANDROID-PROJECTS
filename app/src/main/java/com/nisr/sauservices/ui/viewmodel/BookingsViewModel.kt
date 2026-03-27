@@ -73,7 +73,6 @@ class BookingsViewModel : ViewModel() {
                 items = items,
                 amount = amount,
                 paymentMethod = paymentMethod,
-                address = address,
                 status = "success",
                 timestamp = System.currentTimeMillis()
             )
@@ -83,7 +82,7 @@ class BookingsViewModel : ViewModel() {
     }
 
     fun addBooking(booking: BookingItem) {
-        // Kept for binary compatibility with old code, does nothing now as we rely on DB
+        // Kept for binary compatibility with old code
     }
 
     fun resetResult() {

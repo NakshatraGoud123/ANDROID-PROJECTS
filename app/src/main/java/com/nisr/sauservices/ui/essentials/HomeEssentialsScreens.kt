@@ -379,7 +379,7 @@ fun HomeEssentialsCartScreen(navController: NavController, cartViewModel: CartVi
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
-                            onClick = { navController.navigate(Screen.HomeEssentialsCheckout.route) },
+                            onClick = { navController.navigate(Screen.Cart.route) },
                             modifier = Modifier.fillMaxWidth().height(56.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary)

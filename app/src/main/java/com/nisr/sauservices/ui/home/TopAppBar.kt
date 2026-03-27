@@ -43,11 +43,13 @@ fun TopAppBarUI(navController: NavController, sessionManager: SessionManager) {
     val cartViewModel: CartViewModel = viewModel()
     val cartItems by cartViewModel.dbCartItems.collectAsState()
     val cartCount = cartItems.sumOf { it.quantity }
+    
+    val databaseUrl = "https://sau-services-default-rtdb.asia-southeast1.firebasedatabase.app/"
 
     // Real-time listener for address
     LaunchedEffect(userId) {
         userId?.let { uid ->
-            val ref = FirebaseDatabase.getInstance().reference.child("users").child(uid).child("selectedLocation").child("address")
+            val ref = FirebaseDatabase.getInstance(databaseUrl).reference.child("users").child(uid).child("selectedLocation").child("address")
             ref.addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     userAddress = snapshot.getValue(String::class.java) ?: "Set Location"
