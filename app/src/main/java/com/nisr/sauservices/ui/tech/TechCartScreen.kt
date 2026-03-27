@@ -41,7 +41,7 @@ fun TechCartScreen(navController: NavController, viewModel: TechServicesViewMode
         bottomBar = {
             if (viewModel.cartItems.isNotEmpty()) {
                 TechCartBottomBar(viewModel) {
-                    navController.navigate(Screen.TechBooking.route)
+                    navController.navigate(Screen.Cart.route)
                 }
             }
         },
@@ -122,7 +122,7 @@ fun TechCartBottomBar(viewModel: TechServicesViewModel, onProceed: () -> Unit) {
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.height(48.dp)
             ) {
-                Text("Proceed to Booking", fontWeight = FontWeight.Bold)
+                Text("Go to Unified Cart", fontWeight = FontWeight.Bold)
                 Spacer(Modifier.width(8.dp))
                 Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
             }

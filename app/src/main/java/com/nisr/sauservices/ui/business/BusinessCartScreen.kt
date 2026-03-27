@@ -41,7 +41,7 @@ fun BusinessCartScreen(navController: NavController, viewModel: BusinessViewMode
         bottomBar = {
             if (viewModel.cartItems.isNotEmpty()) {
                 BusinessCartBottomBar(viewModel) {
-                    navController.navigate(Screen.BusinessBooking.route)
+                    navController.navigate(Screen.Cart.route)
                 }
             }
         },
@@ -122,7 +122,7 @@ fun BusinessCartBottomBar(viewModel: BusinessViewModel, onProceed: () -> Unit) {
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.height(48.dp)
             ) {
-                Text("Select Date & Time", fontWeight = FontWeight.Bold)
+                Text("Go to Unified Cart", fontWeight = FontWeight.Bold)
                 Spacer(Modifier.width(8.dp))
                 Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
             }

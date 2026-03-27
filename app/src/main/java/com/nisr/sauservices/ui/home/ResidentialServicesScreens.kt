@@ -399,7 +399,8 @@ fun ResidentialOrderSummaryScreen(
     womensBeautyViewModel: WomensBeautyViewModel,
     healthcareViewModel: HealthcareViewModel,
     foodCartViewModel: FoodCartViewModel,
-    homeCartViewModel: CartViewModel
+    homeCartViewModel: CartViewModel,
+    educationViewModel: EducationCartViewModel
 ) {
     val bookingInfo = viewModel.bookingDetails.value
     val dbCartItems by homeCartViewModel.dbCartItems.collectAsState()
@@ -412,8 +413,9 @@ fun ResidentialOrderSummaryScreen(
     val wItems = womensBeautyViewModel.cartItems
     val hItems = healthcareViewModel.cartItems
     val fItems = foodCartViewModel.cartItems
+    val eItems = educationViewModel.cartItems
 
-    val allCartModels = remember(resItems, bizItems, lifeItems, tItems, mItems, wItems, hItems, fItems, dbCartItems) {
+    val allCartModels = remember(resItems, bizItems, lifeItems, tItems, mItems, wItems, hItems, fItems, dbCartItems, eItems) {
         val list = mutableListOf<CartModel>()
         resItems.forEach { list.add(CartModel(itemName = it.service.name, price = it.service.price.toDouble(), quantity = it.quantity, totalPrice = it.service.price * it.quantity.toDouble(), category = "Residential")) }
         bizItems.forEach { list.add(CartModel(itemName = it.name, price = it.price.toDouble(), quantity = it.quantity, totalPrice = it.price * it.quantity.toDouble(), category = "Business")) }
@@ -423,6 +425,7 @@ fun ResidentialOrderSummaryScreen(
         wItems.forEach { list.add(CartModel(itemName = it.name, price = it.price.toDouble(), quantity = it.quantity, totalPrice = it.price * it.quantity.toDouble(), category = "Womens")) }
         hItems.forEach { list.add(CartModel(itemName = it.name, price = it.price.toDouble(), quantity = it.quantity, totalPrice = it.price * it.quantity.toDouble(), category = "Healthcare")) }
         fItems.forEach { list.add(CartModel(itemName = it.name, price = it.price.toDouble(), quantity = it.quantity, totalPrice = it.price * it.quantity.toDouble(), category = "Food")) }
+        eItems.forEach { list.add(CartModel(itemName = it.name, price = it.price.toDouble(), quantity = it.quantity, totalPrice = it.price * it.quantity.toDouble(), category = "Education")) }
         list.addAll(dbCartItems)
         list
     }
@@ -441,6 +444,7 @@ fun ResidentialOrderSummaryScreen(
                 womensBeautyViewModel.clearCart()
                 healthcareViewModel.clearCart()
                 foodCartViewModel.clearCart()
+                educationViewModel.clearCart()
                 homeCartViewModel.clearHomeCart()
                 bookingsViewModel.resetResult()
                 navController.navigate(Screen.BookingSuccess.route) {

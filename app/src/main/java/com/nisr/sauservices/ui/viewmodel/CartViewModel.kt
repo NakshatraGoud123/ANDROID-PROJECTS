@@ -101,27 +101,8 @@ class CartViewModel : ViewModel() {
     val cartCount get() = _dbCartItems.value.sumOf { it.quantity }
     val itemTotal: Double get() = _dbCartItems.value.sumOf { it.totalPrice }
     
-    // --- Compatibility with HomeEssentials ---
+    // --- Compatibility ---
     
-    data class HomeCartItemCompat(
-        val product: HomeProduct,
-        val quantity: Int
-    )
-
-    val homeCartItems: List<HomeCartItemCompat> get() = _dbCartItems.value.map {
-        HomeCartItemCompat(
-            product = HomeProduct(
-                id = it.productId.ifEmpty { it.itemId },
-                name = it.itemName,
-                price = it.price.toInt(),
-                subcategoryId = it.subcategory,
-                unit = it.unit,
-                category = it.category
-            ),
-            quantity = it.quantity
-        )
-    }
-
     fun getHomeItemQuantity(productId: String): Int {
         return _dbCartItems.value.find { it.productId == productId || it.itemId == productId }?.quantity ?: 0
     }

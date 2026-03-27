@@ -5,6 +5,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -28,8 +30,10 @@ fun BottomNavBar(
     val navBackStackEntry = navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry.value?.destination?.route
     
+    val dbCartItems by cartViewModel.dbCartItems.collectAsState()
+    
     // Total badge count from all carts
-    val cartCount = cartViewModel.homeCartItems.sumOf { it.quantity } + 
+    val cartCount = dbCartItems.sumOf { it.quantity } +
                     foodCartViewModel.cartItems.sumOf { it.quantity } +
                     residentialViewModel.cartItems.sumOf { it.quantity }
 

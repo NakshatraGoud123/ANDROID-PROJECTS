@@ -17,7 +17,8 @@ fun NavGraphBuilder.bookingNavGraph(
     healthcareViewModel: HealthcareViewModel,
     bookingsViewModel: BookingsViewModel,
     foodCartViewModel: FoodCartViewModel,
-    homeCartViewModel: CartViewModel
+    homeCartViewModel: CartViewModel,
+    educationCartViewModel: EducationCartViewModel
 ) {
     // Unified Bookings List
     composable(Routes.BOOKINGS) {
@@ -36,7 +37,8 @@ fun NavGraphBuilder.bookingNavGraph(
             womensBeautyViewModel = womensBeautyViewModel,
             healthcareViewModel = healthcareViewModel,
             foodCartViewModel = foodCartViewModel,
-            homeCartViewModel = homeCartViewModel
+            homeCartViewModel = homeCartViewModel,
+            educationViewModel = educationCartViewModel
         )
     }
 
@@ -61,7 +63,8 @@ fun NavGraphBuilder.bookingNavGraph(
             womensBeautyViewModel = womensBeautyViewModel,
             healthcareViewModel = healthcareViewModel,
             foodCartViewModel = foodCartViewModel,
-            homeCartViewModel = homeCartViewModel
+            homeCartViewModel = homeCartViewModel,
+            educationViewModel = educationCartViewModel
         )
     }
 

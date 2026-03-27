@@ -16,12 +16,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.viewmodel.FoodCartItem
 import com.nisr.sauservices.ui.viewmodel.FoodCartViewModel
+import com.nisr.sauservices.ui.viewmodel.BookingsViewModel
 
 private val PrimaryOrange = Color(0xFFFF6F00)
 
@@ -31,7 +33,7 @@ fun FoodCartScreen(navController: NavController, viewModel: FoodCartViewModel) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("My Cart", fontWeight = FontWeight.Bold) },
+                title = { Text("My Food Cart", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -50,7 +52,7 @@ fun FoodCartScreen(navController: NavController, viewModel: FoodCartViewModel) {
                     Text("Your cart is empty", fontSize = 18.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
                     Spacer(modifier = Modifier.height(24.dp))
                     Button(
-                        onClick = { navController.navigate("FOODS_categories") },
+                        onClick = { navController.navigate(Screen.FoodCategories.route) },
                         colors = ButtonDefaults.buttonColors(containerColor = PrimaryOrange),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -83,12 +85,12 @@ fun FoodCartScreen(navController: NavController, viewModel: FoodCartViewModel) {
                         }
                         Spacer(modifier = Modifier.height(20.dp))
                         Button(
-                            onClick = { navController.navigate("FOODS_checkout") },
+                            onClick = { navController.navigate(Screen.Cart.route) },
                             modifier = Modifier.fillMaxWidth().height(56.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = PrimaryOrange)
                         ) {
-                            Text("Proceed to Checkout", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            Text("Go to Unified Cart", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -142,6 +144,7 @@ fun FoodCartItemRow(item: FoodCartItem, viewModel: FoodCartViewModel) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FoodCheckoutScreen(navController: NavController, viewModel: FoodCartViewModel) {
+    // Legacy checkout - redirected in new flow
     var address by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var paymentMethod by remember { mutableStateOf("Cash on Delivery") }
@@ -149,7 +152,7 @@ fun FoodCheckoutScreen(navController: NavController, viewModel: FoodCartViewMode
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Checkout", fontWeight = FontWeight.Bold) },
+                title = { Text("Food Checkout", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -207,7 +210,7 @@ fun FoodCheckoutScreen(navController: NavController, viewModel: FoodCartViewMode
             Button(
                 onClick = { 
                     viewModel.clearCart()
-                    navController.navigate("FOODS_order_success") 
+                    navController.navigate(Screen.FoodOrderSuccess.route) 
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(12.dp),

@@ -58,12 +58,12 @@ fun BeautyCartScreen(navController: NavController, viewModel: WomensBeautyViewMo
                         }
                         Spacer(modifier = Modifier.height(20.dp))
                         Button(
-                            onClick = { navController.navigate(Screen.WomensBeautyBooking.route) },
+                            onClick = { navController.navigate(Screen.Cart.route) },
                             modifier = Modifier.fillMaxWidth().height(56.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC2185B))
                         ) {
-                            Text("Checkout Now", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            Text("Go to Unified Cart", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }

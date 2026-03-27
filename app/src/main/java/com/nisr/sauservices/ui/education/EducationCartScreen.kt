@@ -31,7 +31,7 @@ fun EducationCartScreen(navController: NavController, viewModel: EducationCartVi
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("My Education Cart", fontWeight = FontWeight.Bold) },
+                title = { Text("Education Cart", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -42,7 +42,7 @@ fun EducationCartScreen(navController: NavController, viewModel: EducationCartVi
         bottomBar = {
             if (viewModel.cartItems.isNotEmpty()) {
                 EducationCartBottomBar(viewModel) {
-                    navController.navigate(Screen.EducationBooking.route)
+                    navController.navigate(Screen.Cart.route)
                 }
             }
         },
@@ -145,7 +145,7 @@ fun EducationCartBottomBar(viewModel: EducationCartViewModel, onProceed: () -> U
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.height(48.dp).padding(horizontal = 8.dp)
             ) {
-                Text("Proceed to Book", fontWeight = FontWeight.Bold)
+                Text("Go to Unified Cart", fontWeight = FontWeight.Bold)
                 Spacer(Modifier.width(8.dp))
                 Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
             }

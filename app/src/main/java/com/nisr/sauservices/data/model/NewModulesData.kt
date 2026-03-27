@@ -44,7 +44,7 @@ object NewModulesData {
             SupplySubcategory("ess_29", "Bandages", "₹10–₹40", "Health"),
             SupplySubcategory("ess_30", "Sanitizers", "₹20–₹80", "Health"),
             SupplySubcategory("ess_31", "Masks", "₹5–₹20", "Health"),
-            SupplySubcategory("ess_32", "Nutrition Drinks", "₹100–₹300", "Health"),
+            SupplySubcategory("blob_32", "Nutrition Drinks", "₹100–₹300", "Health"),
             SupplySubcategory("ess_33", "Fitness Bands", "₹200–₹600", "Health")
         )),
         SupplyCategory("esc_7", "Home Decor & Small Items", listOf(
@@ -80,105 +80,105 @@ object NewModulesData {
     val bookings = listOf(
         BookingCategory("bc_1", "Ticket Bookings", listOf(
             BookingSubcategory("bs_1", "Bus Tickets", listOf(
-                BookingItem("AC Sleeper", "₹800–₹1500"),
-                BookingItem("Non-AC Sleeper", "₹400–₹800"),
-                BookingItem("Volvo", "₹1200–₹2000"),
-                BookingItem("Semi Sleeper", "₹500–₹1000")
+                BookingItem("AC Sleeper", "₹800–₹1500", "bt_1"),
+                BookingItem("Non-AC Sleeper", "₹400–₹800", "bt_2"),
+                BookingItem("Volvo", "₹1200–₹2000", "bt_3"),
+                BookingItem("Semi Sleeper", "₹500–₹1000", "bt_4")
             )),
             BookingSubcategory("bs_2", "Train Tickets", listOf(
-                BookingItem("General", "₹50–₹150"),
-                BookingItem("Sleeper", "₹200–₹500"),
-                BookingItem("3AC", "₹600–₹1200"),
-                BookingItem("2AC", "₹1200–₹2000"),
-                BookingItem("1AC", "₹2000–₹3500")
+                BookingItem("General", "₹50–₹150", "tt_1"),
+                BookingItem("Sleeper", "₹200–₹500", "tt_2"),
+                BookingItem("3AC", "₹600–₹1200", "tt_3"),
+                BookingItem("2AC", "₹1200–₹2000", "tt_4"),
+                BookingItem("1AC", "₹2000–₹3500", "tt_5")
             )),
             BookingSubcategory("bs_3", "Flight Tickets", listOf(
-                BookingItem("Domestic Economy", "₹2500–₹8000"),
-                BookingItem("Premium Economy", "₹6000–₹15000"),
-                BookingItem("Business Class", "₹20000–₹45000"),
-                BookingItem("International", "₹15000–₹60000")
+                BookingItem("Domestic Economy", "₹2500–₹8000", "ft_1"),
+                BookingItem("Premium Economy", "₹6000–₹15000", "ft_2"),
+                BookingItem("Business Class", "₹20000–₹45000", "ft_3"),
+                BookingItem("International", "₹15000–₹60000", "ft_4")
             )),
             BookingSubcategory("bs_4", "Event Tickets", listOf(
-                BookingItem("Movies", "₹100–₹300"),
-                BookingItem("Concerts", "₹500–₹2500"),
-                BookingItem("Stand-Up Comedy", "₹300–₹800"),
-                BookingItem("Sports Matches", "₹200–₹2000"),
-                BookingItem("Exhibitions", "₹50–₹200")
+                BookingItem("Movies", "₹100–₹300", "et_1"),
+                BookingItem("Concerts", "₹500–₹2500", "et_2"),
+                BookingItem("Stand-Up Comedy", "₹300–₹800", "et_3"),
+                BookingItem("Sports Matches", "₹200–₹2000", "et_4"),
+                BookingItem("Exhibitions", "₹50–₹200", "et_5")
             )),
             BookingSubcategory("bs_5", "Local Experience Tickets", listOf(
-                BookingItem("Zoo", "₹30–₹100"),
-                BookingItem("Boat Ride", "₹50–₹200"),
-                BookingItem("Theme Park", "₹300–₹1500"),
-                BookingItem("Museum", "₹50–₹150"),
-                BookingItem("Water Park", "₹400–₹1000")
+                BookingItem("Zoo", "₹30–₹100", "let_1"),
+                BookingItem("Boat Ride", "₹50–₹200", "let_2"),
+                BookingItem("Theme Park", "₹300–₹1500", "let_3"),
+                BookingItem("Museum", "₹50–₹150", "let_4"),
+                BookingItem("Water Park", "₹400–₹1000", "let_5")
             ))
         )),
         BookingCategory("bc_2", "Hotel Bookings", listOf(
             BookingSubcategory("bs_6", "Hotel Types", listOf(
-                BookingItem("Budget Hotel", "₹600–₹1500/night"),
-                BookingItem("Standard Hotel", "₹1500–₹3000/night"),
-                BookingItem("Premium Hotel", "₹3000–₹6000/night"),
-                BookingItem("Resort", "₹4000–₹12000/night"),
-                BookingItem("5-Star", "₹8000–₹25000/night")
+                BookingItem("Budget Hotel", "₹600–₹1500/night", "ht_1"),
+                BookingItem("Standard Hotel", "₹1500–₹3000/night", "ht_2"),
+                BookingItem("Premium Hotel", "₹3000–₹6000/night", "ht_3"),
+                BookingItem("Resort", "₹4000–₹12000/night", "ht_4"),
+                BookingItem("5-Star", "₹8000–₹25000/night", "ht_5")
             )),
             BookingSubcategory("bs_7", "Room Types", listOf(
-                BookingItem("Single Room", "₹600–₹1500"),
-                BookingItem("Double Room", "₹1200–₹2500"),
-                BookingItem("Deluxe Room", "₹2500–₹4500"),
-                BookingItem("Family Room", "₹3000–₹6000"),
-                BookingItem("Suite", "₹6000–₹15000")
+                BookingItem("Single Room", "₹600–₹1500", "rt_1"),
+                BookingItem("Double Room", "₹1200–₹2500", "rt_2"),
+                BookingItem("Deluxe Room", "₹2500–₹4500", "rt_3"),
+                BookingItem("Family Room", "₹3000–₹6000", "rt_4"),
+                BookingItem("Suite", "₹6000–₹15000", "rt_5")
             )),
             BookingSubcategory("bs_8", "Add-ons", listOf(
-                BookingItem("Breakfast", "+₹300–₹600"),
-                BookingItem("Extra Bed", "+₹300–₹500"),
-                BookingItem("AC/Non-AC", "+₹200–₹400"),
-                BookingItem("Early Check-In", "₹200–₹500")
+                BookingItem("Breakfast", "+₹300–₹600", "ao_1"),
+                BookingItem("Extra Bed", "+₹300–₹500", "ao_2"),
+                BookingItem("AC/Non-AC", "+₹200–₹400", "ao_3"),
+                BookingItem("Early Check-In", "₹200–₹500", "ao_4")
             ))
         )),
         BookingCategory("bc_3", "Travel Bookings", listOf(
             BookingSubcategory("bs_9", "Cab Booking", listOf(
-                BookingItem("Auto", "₹30–₹150"),
-                BookingItem("Sedan", "₹10–₹14 per km"),
-                BookingItem("SUV", "₹15–₹20 per km"),
-                BookingItem("Outstation Cab", "₹12–₹25 per km")
+                BookingItem("Auto", "₹30–₹150", "cb_1"),
+                BookingItem("Sedan", "₹10–₹14 per km", "cb_2"),
+                BookingItem("SUV", "₹15–₹20 per km", "cb_3"),
+                BookingItem("Outstation Cab", "₹12–₹25 per km", "cb_4")
             )),
             BookingSubcategory("bs_10", "Vehicle Rentals", listOf(
-                BookingItem("Scooter", "₹300–₹500/day"),
-                BookingItem("Bike", "₹400–₹900/day"),
-                BookingItem("Car", "₹1500–₹3500/day")
+                BookingItem("Scooter", "₹300–₹500/day", "vr_1"),
+                BookingItem("Bike", "₹400–₹900/day", "vr_2"),
+                BookingItem("Car", "₹1500–₹3500/day", "vr_3")
             )),
             BookingSubcategory("bs_11", "Travel Packages", listOf(
-                BookingItem("One-Day Trips", "₹500–₹2000"),
-                BookingItem("Weekend Trips", "₹2000–₹6000"),
-                BookingItem("Family Packages", "₹5000–₹15000"),
-                BookingItem("Adventure Trips", "₹1500–₹5000")
+                BookingItem("One-Day Trips", "₹500–₹2000", "tp_1"),
+                BookingItem("Weekend Trips", "₹2000–₹6000", "tp_2"),
+                BookingItem("Family Packages", "₹5000–₹15000", "tp_3"),
+                BookingItem("Adventure Trips", "₹1500–₹5000", "tp_4")
             ))
         )),
         BookingCategory("bc_4", "Appointment Bookings", listOf(
             BookingSubcategory("bs_12", "Doctor", listOf(
-                BookingItem("Physician", "₹200–₹500"),
-                BookingItem("Dentist", "₹300–₹800"),
-                BookingItem("Eye Checkup", "₹200–₹600"),
-                BookingItem("Skin Specialist", "₹400–₹1000")
+                BookingItem("Physician", "₹200–₹500", "dr_1"),
+                BookingItem("Dentist", "₹300–₹800", "dr_2"),
+                BookingItem("Eye Checkup", "₹200–₹600", "dr_3"),
+                BookingItem("Skin Specialist", "₹400–₹1000", "dr_4")
             ))
         )),
         BookingCategory("bc_5", "Repair & Delivery Bookings", listOf(
             BookingSubcategory("bs_13", "Repairs", listOf(
-                BookingItem("Mobile", "₹200–₹1500"),
-                BookingItem("Laptop", "₹400–₹2500"),
-                BookingItem("Appliance", "₹200–₹1200")
+                BookingItem("Mobile", "₹200–₹1500", "rp_1"),
+                BookingItem("Laptop", "₹400–₹2500", "rp_2"),
+                BookingItem("Appliance", "₹200–₹1200", "rp_3")
             )),
             BookingSubcategory("bs_14", "Delivery", listOf(
-                BookingItem("Parcel Pickup", "₹50–₹150"),
-                BookingItem("Delivery", "₹50–₹200"),
-                BookingItem("Local Courier", "₹50–₹120")
+                BookingItem("Parcel Pickup", "₹50–₹150", "dl_1"),
+                BookingItem("Delivery", "₹50–₹200", "dl_2"),
+                BookingItem("Local Courier", "₹50–₹120", "dl_3")
             ))
         )),
         BookingCategory("bc_6", "Business Bookings", listOf(
             BookingSubcategory("bs_15", "Business Spaces", listOf(
-                BookingItem("Meeting Room", "₹200–₹800/hour"),
-                BookingItem("Co-working", "₹200–₹500/day"),
-                BookingItem("Conference Hall", "₹1000–₹4000/day")
+                BookingItem("Meeting Room", "₹200–₹800/hour", "bs_1"),
+                BookingItem("Co-working", "₹200–₹500/day", "bs_2"),
+                BookingItem("Conference Hall", "₹1000–₹4000/day", "bs_3")
             ))
         ))
     )

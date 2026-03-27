@@ -61,7 +61,7 @@ fun AppNavHost(navController: NavHostController) {
             EssentialSuppliesScreen(navController, cartViewModel)
         }
         composable(Screen.BookingsModule.route) {
-            BookingsModuleScreen(navController, newBookingsViewModel)
+            BookingsModuleScreen(navController, cartViewModel)
         }
         composable(Screen.MyOrders.route) {
             MyOrdersScreen(navController)
@@ -173,7 +173,8 @@ fun AppNavHost(navController: NavHostController) {
             healthcareViewModel = healthViewModel,
             bookingsViewModel = bookingsViewModel,
             foodCartViewModel = foodCartViewModel,
-            homeCartViewModel = cartViewModel
+            homeCartViewModel = cartViewModel,
+            educationCartViewModel = educationCartViewModel
         )
         
         // --- PROFILE SYSTEM ---

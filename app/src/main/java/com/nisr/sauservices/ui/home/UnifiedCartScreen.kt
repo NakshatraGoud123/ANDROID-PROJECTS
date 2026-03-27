@@ -35,7 +35,8 @@ fun UnifiedCartScreen(
     womensBeautyViewModel: WomensBeautyViewModel,
     healthcareViewModel: HealthcareViewModel,
     foodCartViewModel: FoodCartViewModel,
-    homeCartViewModel: CartViewModel
+    homeCartViewModel: CartViewModel,
+    educationViewModel: EducationCartViewModel
 ) {
     val resItems = residentialViewModel.cartItems
     val businessItems = businessViewModel.cartItems
@@ -45,12 +46,13 @@ fun UnifiedCartScreen(
     val womensItems = womensBeautyViewModel.cartItems
     val healthItems = healthcareViewModel.cartItems
     val foodItems = foodCartViewModel.cartItems
+    val eduItems = educationViewModel.cartItems
     val dbCartItems by homeCartViewModel.dbCartItems.collectAsState()
 
     val isEmpty = resItems.isEmpty() && businessItems.isEmpty() && 
                   lifestyleItems.isEmpty() && techItems.isEmpty() &&
                   mensItems.isEmpty() && womensItems.isEmpty() && healthItems.isEmpty() &&
-                  foodItems.isEmpty() && dbCartItems.isEmpty()
+                  foodItems.isEmpty() && dbCartItems.isEmpty() && eduItems.isEmpty()
     
     val subtotal = residentialViewModel.calculateTotal() + 
                    businessViewModel.getTotalPrice() +
@@ -60,6 +62,7 @@ fun UnifiedCartScreen(
                    womensBeautyViewModel.calculateTotal() +
                    healthcareViewModel.calculateTotal() +
                    foodCartViewModel.getTotal().toDouble() +
+                   educationViewModel.getTotal().toDouble() +
                    dbCartItems.sumOf { it.totalPrice }
     
     val deliveryFee = if (isEmpty) 0.0 else 30.0
@@ -134,6 +137,15 @@ fun UnifiedCartScreen(
                         CartItemRow(item.name, item.price, item.quantity, 
                             { foodCartViewModel.increaseQty(item.id) }, 
                             { foodCartViewModel.decreaseQty(item.id) })
+                    }
+                }
+
+                if (eduItems.isNotEmpty()) {
+                    item { Text("Education Services", fontWeight = FontWeight.Bold, color = PinkPrimary) }
+                    items(eduItems) { item ->
+                        CartItemRow(item.name, item.price, item.quantity, 
+                            { educationViewModel.increaseQty(item.id) }, 
+                            { educationViewModel.decreaseQty(item.id) })
                     }
                 }
 

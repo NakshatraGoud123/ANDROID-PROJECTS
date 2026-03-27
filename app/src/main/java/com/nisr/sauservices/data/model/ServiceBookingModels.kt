@@ -30,5 +30,6 @@ data class BookingSubcategory(
 
 data class BookingItem(
     val name: String = "",
-    val priceRange: String = ""
+    val priceRange: String = "",
+    val id: String = ""
 )

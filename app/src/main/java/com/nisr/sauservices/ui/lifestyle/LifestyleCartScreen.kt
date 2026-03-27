@@ -41,7 +41,7 @@ fun LifestyleCartScreen(navController: NavController, viewModel: LifestyleViewMo
         bottomBar = {
             if (viewModel.cartItems.isNotEmpty()) {
                 LifestyleCartBottomBar(viewModel) {
-                    navController.navigate(Screen.LifestyleBooking.route)
+                    navController.navigate(Screen.Cart.route)
                 }
             }
         },
@@ -122,7 +122,7 @@ fun LifestyleCartBottomBar(viewModel: LifestyleViewModel, onProceed: () -> Unit)
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.height(48.dp)
             ) {
-                Text("Select Date & Time", fontWeight = FontWeight.Bold)
+                Text("Go to Unified Cart", fontWeight = FontWeight.Bold)
                 Spacer(Modifier.width(8.dp))
                 Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
             }

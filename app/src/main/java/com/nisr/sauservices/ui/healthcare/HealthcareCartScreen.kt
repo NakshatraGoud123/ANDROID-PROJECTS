@@ -59,17 +59,13 @@ fun HealthcareCartScreen(navController: NavController, viewModel: HealthcareView
                         Spacer(modifier = Modifier.height(20.dp))
                         Button(
                             onClick = { 
-                                if (viewModel.needsPrescription()) {
-                                    navController.navigate(Screen.HealthcarePrescription.route)
-                                } else {
-                                    navController.navigate(Screen.HealthcareBooking.route)
-                                }
+                                navController.navigate(Screen.Cart.route)
                             },
                             modifier = Modifier.fillMaxWidth().height(56.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
                         ) {
-                            Text("Proceed to Checkout", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            Text("Go to Unified Cart", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -111,7 +107,7 @@ fun HealthcareCartScreen(navController: NavController, viewModel: HealthcareView
                             shape = RoundedCornerShape(8.dp)
                         ) {
                             Text(
-                                "⚠️ One or more items in your cart requires a prescription upload.",
+                                "⚠️ One or more items in your cart requires a prescription upload. You can upload it in the next step.",
                                 modifier = Modifier.padding(12.dp),
                                 fontSize = 12.sp,
                                 color = Color(0xFFF57F17),

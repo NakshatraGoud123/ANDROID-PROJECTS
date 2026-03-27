@@ -31,36 +31,23 @@ import com.nisr.sauservices.data.model.BookingItem
 import com.nisr.sauservices.data.model.BookingSubcategory
 import com.nisr.sauservices.data.model.NewModulesData
 import com.nisr.sauservices.ui.Screen
-import com.nisr.sauservices.ui.viewmodel.NewBookingsViewModel
+import com.nisr.sauservices.ui.viewmodel.CartViewModel
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BookingsModuleScreen(navController: NavController, viewModel: NewBookingsViewModel) {
+fun BookingsModuleScreen(navController: NavController, cartViewModel: CartViewModel) {
     val categories = NewModulesData.bookings
     var selectedCategory by remember { mutableStateOf<BookingCategory?>(null) }
     var selectedSubcategory by remember { mutableStateOf<BookingSubcategory?>(null) }
     var itemToBook by remember { mutableStateOf<BookingItem?>(null) }
     
-    val bookingStatus by viewModel.bookingStatus.collectAsState()
     val context = LocalContext.current
-
-    LaunchedEffect(bookingStatus) {
-        bookingStatus?.let {
-            if (it.isSuccess) {
-                Toast.makeText(context, "Booking initiated!", Toast.LENGTH_SHORT).show()
-                viewModel.resetStatus()
-                // In this flow, we might want to go to a checkout or just show success if dummy
-                // But instructions say "Checkout screen must have... For BOOKINGS: Service summary..."
-                // So let's store the pending booking in a "checkout" state or pass it to checkout
-            }
-        }
-    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Bookings") },
+                title = { Text("Service Bookings") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -95,7 +82,6 @@ fun BookingsModuleScreen(navController: NavController, viewModel: NewBookingsVie
 
         if (selectedSubcategory != null) {
             BookingItemsPopup(
-                categoryName = selectedCategory?.name ?: "",
                 subcategory = selectedSubcategory!!,
                 onDismiss = { selectedSubcategory = null },
                 onBookNow = { item ->
@@ -107,16 +93,26 @@ fun BookingsModuleScreen(navController: NavController, viewModel: NewBookingsVie
         if (itemToBook != null) {
             SchedulingPopup(
                 item = itemToBook!!,
-                category = selectedCategory?.name ?: "",
-                subcategory = selectedSubcategory?.name ?: "",
                 onDismiss = { itemToBook = null },
                 onConfirm = { date, time, qty ->
-                    // Navigate to checkout with booking details
-                    // For now, we'll use a simple navigation or store in a shared ViewModel
-                    // Since the user wants a CheckoutActivity/Screen, let's navigate
-                    navController.navigate(
-                        Screen.BookingSummary.route + "?name=${itemToBook!!.name}&date=$date&time=$time&qty=$qty&price=${itemToBook!!.priceRange}&cat=${selectedCategory?.name}&sub=${selectedSubcategory?.name}"
-                    )
+                    val priceStr = itemToBook!!.priceRange.replace("₹", "").split("–").first().trim()
+                    val price = priceStr.filter { it.isDigit() || it == '.' }.toDoubleOrNull() ?: 0.0
+                    
+                    // Add to Cart instead of direct checkout
+                    repeat(qty) {
+                        cartViewModel.addItemToCart(
+                            name = itemToBook!!.name,
+                            price = price,
+                            category = selectedCategory?.name ?: "Booking",
+                            subcategory = selectedSubcategory?.name ?: "",
+                            unit = "Booking",
+                            productId = itemToBook!!.id
+                        )
+                    }
+                    
+                    Toast.makeText(context, "${itemToBook!!.name} added to cart", Toast.LENGTH_SHORT).show()
+                    navController.navigate(Screen.Cart.route)
+                    
                     itemToBook = null
                     selectedSubcategory = null
                     selectedCategory = null
@@ -129,8 +125,6 @@ fun BookingsModuleScreen(navController: NavController, viewModel: NewBookingsVie
 @Composable
 fun SchedulingPopup(
     item: BookingItem,
-    category: String,
-    subcategory: String,
     onDismiss: () -> Unit,
     onConfirm: (String, String, Int) -> Unit
 ) {
@@ -221,7 +215,7 @@ fun SchedulingPopup(
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text("BOOK NOW")
+                    Text("ADD TO CART")
                 }
             }
         }
@@ -236,7 +230,7 @@ fun BookingCategoryCard(category: BookingCategory, onClick: () -> Unit) {
             .height(120.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD))
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F7FF))
     ) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
             Text(
@@ -287,7 +281,6 @@ fun BookingSubcategoryPopup(
 
 @Composable
 fun BookingItemsPopup(
-    categoryName: String,
     subcategory: BookingSubcategory,
     onDismiss: () -> Unit,
     onBookNow: (BookingItem) -> Unit
@@ -300,7 +293,7 @@ fun BookingItemsPopup(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "${subcategory.name}",
+                    text = subcategory.name,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 16.dp)
