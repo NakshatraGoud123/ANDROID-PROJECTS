@@ -21,7 +21,7 @@
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="YOUR_GOOGLE_MAPS_API_KEY_HERE" />
+            android:value="AIzaSyAXEye1SuD2PZyiHzXxyyCOfC361yDVIlM" />
 
         <activity
             android:name=".MainActivity"
@@ -41,6 +41,7 @@
         <activity android:name=".ui.dashboard.ShopkeeperDashboardActivity" />
         <activity android:name=".ui.dashboard.ServiceWorkerDashboardActivity" />
         <activity android:name=".ui.dashboard.DeliveryDashboardActivity" />
+        <activity android:name=".ui.location.MapActivity" />
 
         <!-- Location Service for Delivery Tracking -->
         <service
