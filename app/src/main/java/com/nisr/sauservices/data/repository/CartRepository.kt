@@ -3,6 +3,7 @@ package com.nisr.sauservices.data.repository
 import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
+import com.nisr.sauservices.data.model.BookingModel
 import com.nisr.sauservices.data.model.CartModel
 import com.nisr.sauservices.data.model.OrderModel
 import kotlinx.coroutines.channels.awaitClose
@@ -86,32 +87,34 @@ class CartRepository {
     suspend fun placeOrder(order: OrderModel): Result<String> {
         return try {
             val uid = getUserId()
-            val orderRef = database.getReference("orders").child(uid).push()
+            val orderRef = database.getReference("orders").push()
             val orderId = orderRef.key ?: throw Exception("ID Gen Failed")
             
-            val finalOrder = order.copy(orderId = orderId, status = "ordered")
+            val finalOrder = order.copy(
+                orderId = orderId, 
+                customerId = uid,
+                orderStatus = "pending"
+            )
             orderRef.setValue(finalOrder).await()
-            
-            // Also add to global orders pool for shopkeepers/workers
-            database.getReference("global_orders").child(orderId).setValue(finalOrder).await()
             
             Log.d("CartRepository", "Order placed: $orderId")
             
-            // If it contains bookings, also store in /bookings for the unified list
-            order.items?.filter { it.unit == "Booking" }?.forEach { booking ->
-                val bRef = database.getReference("bookings").child(uid).push()
+            // If it contains bookings, also store in /bookings separately
+            order.items.filter { it.unit == "Booking" }.forEach { cartItem ->
+                val bRef = database.getReference("bookings").push()
                 val bId = bRef.key ?: ""
-                val bookingData = finalOrder.copy(
-                    orderId = bId,
-                    serviceName = booking.itemName,
-                    scheduleDate = booking.date,
-                    scheduleTime = booking.time,
-                    amount = booking.totalPrice,
-                    items = null,
-                    status = "pending"
+                val bookingData = BookingModel(
+                    bookingId = bId,
+                    customerId = uid,
+                    serviceId = cartItem.productId,
+                    serviceName = cartItem.itemName,
+                    scheduledDate = cartItem.date ?: "",
+                    scheduledTime = cartItem.time ?: "",
+                    status = "pending",
+                    address = finalOrder.address,
+                    timestamp = System.currentTimeMillis()
                 )
                 bRef.setValue(bookingData).await()
-                database.getReference("global_bookings").child(bId).setValue(bookingData).await()
             }
 
             Result.success(orderId)
@@ -123,34 +126,28 @@ class CartRepository {
 
     // --- Staff Action Methods ---
 
-    suspend fun updateOrderStatus(userId: String, orderId: String, newStatus: String, staffId: String? = null): Result<Unit> = try {
-        val updates = mutableMapOf<String, Any?>("status" to newStatus)
-        staffId?.let { updates["assignedStaffId"] = it }
+    suspend fun updateOrderStatus(orderId: String, newStatus: String, staffId: String? = null): Result<Unit> = try {
+        val updates = mutableMapOf<String, Any?>("orderStatus" to newStatus)
+        staffId?.let { updates["assignedDeliveryBoy"] = it }
 
-        // Update in user's node
-        database.getReference("orders").child(userId).child(orderId).updateChildren(updates).await()
-        // Update in global node
-        database.getReference("global_orders").child(orderId).updateChildren(updates).await()
-        
+        database.getReference("orders").child(orderId).updateChildren(updates).await()
         Result.success(Unit)
     } catch (e: Exception) {
         Result.failure(e)
     }
 
-    suspend fun updateBookingStatus(userId: String, bookingId: String, newStatus: String, workerId: String? = null): Result<Unit> = try {
+    suspend fun updateBookingStatus(bookingId: String, newStatus: String, workerId: String? = null): Result<Unit> = try {
         val updates = mutableMapOf<String, Any?>("status" to newStatus)
-        workerId?.let { updates["assignedWorker"] = it }
+        workerId?.let { updates["workerId"] = it }
 
-        database.getReference("bookings").child(userId).child(bookingId).updateChildren(updates).await()
-        database.getReference("global_bookings").child(bookingId).updateChildren(updates).await()
-        
+        database.getReference("bookings").child(bookingId).updateChildren(updates).await()
         Result.success(Unit)
     } catch (e: Exception) {
         Result.failure(e)
     }
 
     fun getGlobalOrders(): Flow<List<OrderModel>> = callbackFlow {
-        val ref = database.getReference("global_orders")
+        val ref = database.getReference("orders")
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val orders = snapshot.children.mapNotNull { it.getValue(OrderModel::class.java) }
@@ -162,11 +159,11 @@ class CartRepository {
         awaitClose { ref.removeEventListener(listener) }
     }
 
-    fun getGlobalBookings(): Flow<List<OrderModel>> = callbackFlow {
-        val ref = database.getReference("global_bookings")
+    fun getGlobalBookings(): Flow<List<BookingModel>> = callbackFlow {
+        val ref = database.getReference("bookings")
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val bookings = snapshot.children.mapNotNull { it.getValue(OrderModel::class.java) }
+                val bookings = snapshot.children.mapNotNull { it.getValue(BookingModel::class.java) }
                 trySend(bookings)
             }
             override fun onCancelled(error: DatabaseError) { close(error.toException()) }

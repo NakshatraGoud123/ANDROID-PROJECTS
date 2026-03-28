@@ -1,6 +1,7 @@
 package com.nisr.sauservices.ui.dashboard
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
@@ -28,18 +29,22 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.card.MaterialCardView
 import com.nisr.sauservices.data.model.Delivery
+import com.nisr.sauservices.service.LocationService
 import com.nisr.sauservices.ui.adapters.DeliveryAdapter
-import com.nisr.sauservices.ui.viewmodel.DeliveryViewModel
+import com.nisr.sauservices.ui.viewmodels.DeliveryBoyViewModel
 import kotlinx.coroutines.launch
 
 class DeliveryDashboardActivity : AppCompatActivity(), OnMapReadyCallback {
 
-    private lateinit var viewModel: DeliveryViewModel
+    private lateinit var viewModel: DeliveryBoyViewModel
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var googleMap: GoogleMap? = null
+    private var myMarker: Marker? = null
+    private val customerMarkers = mutableMapOf<String, Marker>()
     private val LOCATION_PERMISSION_REQUEST_CODE = 1003
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,8 +56,12 @@ class DeliveryDashboardActivity : AppCompatActivity(), OnMapReadyCallback {
             return
         }
 
-        viewModel = ViewModelProvider(this)[DeliveryViewModel::class.java]
+        viewModel = ViewModelProvider(this)[DeliveryBoyViewModel::class.java]
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
+        // Start Foreground Location Service
+        val serviceIntent = Intent(this, LocationService::class.java)
+        startForegroundService(serviceIntent)
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -82,8 +91,8 @@ class DeliveryDashboardActivity : AppCompatActivity(), OnMapReadyCallback {
             orientation = LinearLayout.HORIZONTAL
             weightSum = 2f
         }
-        summaryLayout.addView(createSummaryCard("Today Deliveries", "8", 1f))
-        summaryLayout.addView(createSummaryCard("Earnings", "$85.50", 1f))
+        summaryLayout.addView(createSummaryCard("Assigned", "0", 1f))
+        summaryLayout.addView(createSummaryCard("Earnings", "₹0", 1f))
         contentLayout.addView(summaryLayout)
 
         // Map Section
@@ -100,7 +109,7 @@ class DeliveryDashboardActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Deliveries List
         val deliveriesTitle = TextView(this).apply {
-            text = "Deliveries"
+            text = "Active Deliveries"
             textSize = 18f
             setTypeface(null, Typeface.BOLD)
             setPadding(0, 32, 0, 16)
@@ -112,29 +121,50 @@ class DeliveryDashboardActivity : AppCompatActivity(), OnMapReadyCallback {
             layoutManager = LinearLayoutManager(this@DeliveryDashboardActivity)
         }
         val adapter = DeliveryAdapter(emptyList()) { delivery ->
-            viewModel.updateDeliveryStatus(delivery.deliveryId, delivery.status)
+            if (delivery.status == "Delivered") {
+                viewModel.markDelivered(delivery.deliveryId)
+            }
         }
         recyclerView.adapter = adapter
         contentLayout.addView(recyclerView)
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.availableDeliveries.collect { firestoreBookings ->
-                    val deliveries = firestoreBookings.map {
+                viewModel.assignedOrders.collect { orderModels ->
+                    val deliveries = orderModels.map { 
                         Delivery(
-                            deliveryId = it.bookingId,
-                            customerName = it.customerName,
+                            deliveryId = it.orderId,
+                            customerName = "Customer",
                             pickupAddress = "Shop",
                             dropAddress = it.address,
-                            distance = "2.5 km",
-                            status = it.status
+                            distance = "Calculating...",
+                            status = it.orderStatus
                         )
                     }
                     adapter.updateData(deliveries)
+                    updateCustomerMarkers(orderModels)
                 }
             }
         }
-        viewModel.loadAvailableDeliveries()
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.currentLocation.collect { latLng ->
+                    latLng?.let {
+                        if (myMarker == null) {
+                            myMarker = googleMap?.addMarker(MarkerOptions()
+                                .position(it)
+                                .title("My Location")
+                                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)))
+                        } else {
+                            myMarker?.position = it
+                        }
+                    }
+                }
+            }
+        }
+
+        viewModel.observeAssignedOrders()
 
         scrollView.addView(contentLayout)
         root.addView(scrollView)
@@ -143,6 +173,33 @@ class DeliveryDashboardActivity : AppCompatActivity(), OnMapReadyCallback {
         val mapFragment = SupportMapFragment.newInstance()
         supportFragmentManager.beginTransaction().add(View_ID_MAP, mapFragment).commit()
         mapFragment.getMapAsync(this)
+    }
+
+    private fun updateCustomerMarkers(orders: List<com.nisr.sauservices.data.model.OrderModel>) {
+        googleMap?.let { map ->
+            // Clear markers not in current orders
+            val orderIds = orders.map { it.orderId }.toSet()
+            customerMarkers.filter { it.key !in orderIds }.forEach { (id, marker) ->
+                marker.remove()
+                customerMarkers.remove(id)
+            }
+
+            // Add or update markers for current orders
+            orders.forEach { order ->
+                val pos = LatLng(order.customerLocation.lat, order.customerLocation.lng)
+                if (pos.latitude != 0.0) {
+                    if (customerMarkers.containsKey(order.orderId)) {
+                        customerMarkers[order.orderId]?.position = pos
+                    } else {
+                        val marker = map.addMarker(MarkerOptions()
+                            .position(pos)
+                            .title("Customer: ${order.orderId}")
+                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)))
+                        marker?.let { customerMarkers[order.orderId] = it }
+                    }
+                }
+            }
+        }
     }
 
     private fun createSummaryCard(title: String, value: String, weight: Float): MaterialCardView {
@@ -170,12 +227,6 @@ class DeliveryDashboardActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
         checkLocationPermission()
-
-        // Mock Pickup and Drop markers
-        val pickup = LatLng(12.9720, 77.5950)
-        val drop = LatLng(12.9800, 77.6000)
-        googleMap?.addMarker(MarkerOptions().position(pickup).title("Pickup").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)))
-        googleMap?.addMarker(MarkerOptions().position(drop).title("Drop").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)))
     }
 
     private fun checkLocationPermission() {
@@ -193,6 +244,7 @@ class DeliveryDashboardActivity : AppCompatActivity(), OnMapReadyCallback {
                 location?.let {
                     val latLng = LatLng(it.latitude, it.longitude)
                     googleMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 13f))
+                    viewModel.updateLocation(it.latitude, it.longitude)
                 }
             }
         }

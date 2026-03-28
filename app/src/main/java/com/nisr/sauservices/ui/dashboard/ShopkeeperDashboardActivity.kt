@@ -12,7 +12,10 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -21,18 +24,23 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
+import com.nisr.sauservices.data.model.Order
 import com.nisr.sauservices.ui.adapters.OrdersAdapter
-import com.nisr.sauservices.ui.viewmodel.ShopkeeperViewModel
+import com.nisr.sauservices.ui.viewmodels.ShopkeeperViewModel
+import kotlinx.coroutines.launch
 
 class ShopkeeperDashboardActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var viewModel: ShopkeeperViewModel
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var googleMap: GoogleMap? = null
+    private var deliveryBoyMarker: Marker? = null
     private val LOCATION_PERMISSION_REQUEST_CODE = 1001
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -92,20 +100,9 @@ class ShopkeeperDashboardActivity : AppCompatActivity(), OnMapReadyCallback {
         mapCard.addView(mapFrame)
         contentLayout.addView(mapCard)
 
-        val updateLocBtn = MaterialButton(this).apply {
-            text = "Update Location"
-            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-                topMargin = 16
-            }
-            cornerRadius = (24 * resources.displayMetrics.density).toInt()
-            setBackgroundColor(Color.parseColor("#2E7D6B"))
-        }
-        updateLocBtn.setOnClickListener { checkLocationPermission() }
-        contentLayout.addView(updateLocBtn)
-
         // Orders List
         val ordersTitle = TextView(this).apply {
-            text = "Orders"
+            text = "Active Orders"
             textSize = 18f
             setTypeface(null, Typeface.BOLD)
             setPadding(0, 32, 0, 16)
@@ -122,8 +119,32 @@ class ShopkeeperDashboardActivity : AppCompatActivity(), OnMapReadyCallback {
         recyclerView.adapter = adapter
         contentLayout.addView(recyclerView)
 
-        viewModel.orders.observe(this) { orders ->
-            adapter.updateData(orders)
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.pendingOrders.collect { orderModels ->
+                    val orders = orderModels.map { 
+                        Order(it.orderId, "Customer", "", it.totalPrice.toString(), it.orderStatus)
+                    }
+                    adapter.updateData(orders)
+                }
+            }
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.deliveryBoyLocation.collect { latLng ->
+                    latLng?.let {
+                        if (deliveryBoyMarker == null) {
+                            deliveryBoyMarker = googleMap?.addMarker(MarkerOptions()
+                                .position(it)
+                                .title("Delivery Partner")
+                                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)))
+                        } else {
+                            deliveryBoyMarker?.position = it
+                        }
+                    }
+                }
+            }
         }
 
         scrollView.addView(contentLayout)
@@ -175,7 +196,6 @@ class ShopkeeperDashboardActivity : AppCompatActivity(), OnMapReadyCallback {
             fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                 location?.let {
                     val latLng = LatLng(it.latitude, it.longitude)
-                    googleMap?.addMarker(MarkerOptions().position(latLng).title("Shop Location"))
                     googleMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
                 }
             }

@@ -58,6 +58,7 @@ class ServiceWorkerViewModel : ViewModel() {
 
     fun loadAvailableJobs(serviceType: String?) {
         viewModelScope.launch {
+            // Fix: Pass 'serviceType' as the second argument to 'observeAvailableBookings'
             repository.observeAvailableBookings("worker", serviceType)
                 .catch { e -> _errorMessage.value = e.message }
                 .collect {

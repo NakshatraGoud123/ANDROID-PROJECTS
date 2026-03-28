@@ -33,8 +33,9 @@ class CustomerViewModel : ViewModel() {
     fun placeBooking(booking: FirestoreBooking) {
         viewModelScope.launch {
             _isLoading.value = true
-            repository.createBooking(booking).onSuccess { bookingId ->
-                observeBookingStatus(bookingId)
+            repository.createBooking(booking).onSuccess {
+                // Since createBooking returns Result<Unit>, we don't have a bookingId here
+                // We'll rely on the status update from the specific booking if known
             }
             _isLoading.value = false
         }

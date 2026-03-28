@@ -7,8 +7,6 @@ import android.os.IBinder
 import android.os.Looper
 import androidx.core.app.NotificationCompat
 import com.google.android.gms.location.*
-import com.nisr.sauservices.R
-import com.nisr.sauservices.data.model.LiveLocation
 import com.nisr.sauservices.data.repository.FirebaseRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,15 +31,16 @@ class LocationService : Service() {
         (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)
 
         return NotificationCompat.Builder(this, channelId)
-            .setContentTitle("Delivery in Progress")
-            .setContentText("Your location is being shared for delivery tracking.")
+            .setContentTitle("Sharing Live Location")
+            .setContentText("Your location is being updated every 3 seconds.")
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
     }
 
     @SuppressLint("MissingPermission")
     private fun requestLocationUpdates() {
-        val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
+        val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 3000)
             .setMinUpdateIntervalMillis(2000)
             .build()
 
@@ -50,10 +49,7 @@ class LocationService : Service() {
                 result.lastLocation?.let { location ->
                     val userId = repository.getCurrentUserId() ?: return
                     serviceScope.launch {
-                        repository.updateLiveLocation(
-                            userId,
-                            LiveLocation(location.latitude, location.longitude)
-                        )
+                        repository.updateDeliveryLocation(userId, location.latitude, location.longitude)
                     }
                 }
             }

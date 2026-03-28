@@ -17,3 +17,13 @@ data class Booking(
     val notes: String? = null,
     val rating: Float? = null
 )
+
+data class FirestoreBooking(
+    val bookingId: String = "",
+    val customerName: String = "",
+    val customerPhone: String = "",
+    val serviceType: String? = null,
+    val address: String = "",
+    val status: String = "pending",
+    val price: String = ""
+)

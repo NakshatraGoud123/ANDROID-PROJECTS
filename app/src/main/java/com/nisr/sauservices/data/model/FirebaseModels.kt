@@ -2,39 +2,67 @@ package com.nisr.sauservices.data.model
 
 import com.google.firebase.database.IgnoreExtraProperties
 
+data class OperationResult(
+    val isSuccess: Boolean,
+    val message: String? = null,
+    val exception: Throwable? = null
+) {
+    fun getOrNull(): String? = message
+}
+
 @IgnoreExtraProperties
 data class BookingModel(
     val bookingId: String = "",
-    val userId: String = "",
-    val category: String = "",
-    val subCategory: String = "",
-    val price: String = "",
-    val date: String = "",
-    val time: String = "",
-    val address: String = "",
-    val status: String = "pending", // pending, accepted, rejected, completed
-    val assignedWorker: String = "",
-    val workerStatus: String = "waiting" // waiting, on_the_way, completed
+    val customerId: String = "",
+    val serviceId: String = "",
+    val serviceName: String = "",
+    val scheduledDate: String = "",
+    val scheduledTime: String = "",
+    val status: String = "pending", // pending, accepted, completed
+    val workerId: String = "",
+    val timestamp: Long = System.currentTimeMillis(),
+    val address: String = ""
 )
 
 @IgnoreExtraProperties
 data class OrderModel(
     val orderId: String = "",
-    val userId: String = "",
-    val items: List<CartModel>? = null,
-    val totalAmount: String = "",
+    val customerId: String = "",
+    val items: List<CartModel> = emptyList(),
+    val totalPrice: Double = 0.0,
     val address: String = "",
-    val deliveryDate: String = "",
-    val deliveryTime: String = "",
-    val paymentStatus: String = "pending", // pending, success, failed
-    val status: String = "pending", // pending, accepted, rejected, completed
-    val assignedShopkeeper: String = "",
+    val customerLocation: LiveLocation = LiveLocation(),
+    val paymentStatus: String = "pending",
+    val orderStatus: String = "pending", // pending, accepted, assigned, delivered, rejected
     val assignedDeliveryBoy: String = "",
-    val deliveryStatus: String = "order_placed" // order_placed, assigned, out_for_delivery, delivered
+    val timestamp: Long = System.currentTimeMillis(),
+    val liveLocation: LiveLocation = LiveLocation(),
+    
+    // Fields for Service Bookings / Direct Orders
+    val serviceName: String = "",
+    val category: String = "",
+    val subcategory: String = "",
+    val scheduleDate: String? = null,
+    val scheduleTime: String? = null,
+    val amount: Double = 0.0,
+    val paymentMethod: String = "",
+    val status: String = ""
 )
 
+@IgnoreExtraProperties
 data class LiveLocation(
     val lat: Double = 0.0,
     val lng: Double = 0.0,
-    val lastUpdated: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis()
+)
+
+@IgnoreExtraProperties
+data class FirebaseUser(
+    val userId: String = "",
+    val uid: String = "",
+    val name: String = "",
+    val email: String = "",
+    val phone: String = "",
+    val role: String = "",
+    val status: String = "active"
 )
