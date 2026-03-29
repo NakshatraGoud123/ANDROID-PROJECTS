@@ -1,5 +1,6 @@
 package com.nisr.sauservices.data.repository
 
+import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import com.nisr.sauservices.data.model.*
@@ -53,7 +54,12 @@ class FirebaseRepository {
         val ref = database.getReference("orders").child(orderId)
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                trySend(snapshot.getValue(OrderModel::class.java))
+                try {
+                    trySend(snapshot.getValue(OrderModel::class.java))
+                } catch (e: Exception) {
+                    Log.e("FirebaseRepo", "Error parsing OrderModel: ${e.message}")
+                    trySend(null)
+                }
             }
             override fun onCancelled(error: DatabaseError) { close(error.toException()) }
         }
@@ -71,8 +77,14 @@ class FirebaseRepository {
         val ref = database.getReference("orders")
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val list = snapshot.children.mapNotNull { it.getValue(OrderModel::class.java) }
-                    .filter { it.orderStatus in statuses }
+                val list = snapshot.children.mapNotNull { child ->
+                    try {
+                        child.getValue(OrderModel::class.java)
+                    } catch (e: Exception) {
+                        Log.e("FirebaseRepo", "Skipping malformed order at ${child.key}: ${e.message}")
+                        null
+                    }
+                }.filter { it.orderStatus in statuses }
                 trySend(list)
             }
             override fun onCancelled(error: DatabaseError) { close(error.toException()) }
@@ -83,6 +95,18 @@ class FirebaseRepository {
 
     suspend fun updateOrderStatus(orderId: String, status: String): Result<Unit> = try {
         database.getReference("orders").child(orderId).child("orderStatus").setValue(status).await()
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    suspend fun acceptOrder(orderId: String, shopkeeperId: String): Result<Unit> = try {
+        val updates = mapOf(
+            "orderStatus" to "accepted",
+            "acceptedBy" to shopkeeperId,
+            "acceptedAt" to ServerValue.TIMESTAMP
+        )
+        database.getReference("orders").child(orderId).updateChildren(updates).await()
         Result.success(Unit)
     } catch (e: Exception) {
         Result.failure(e)
@@ -108,8 +132,14 @@ class FirebaseRepository {
         val ref = database.getReference("bookings")
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val list = snapshot.children.mapNotNull { it.getValue(BookingModel::class.java) }
-                    .filter { it.status in statuses }
+                val list = snapshot.children.mapNotNull { child ->
+                    try {
+                        child.getValue(BookingModel::class.java)
+                    } catch (e: Exception) {
+                        Log.e("FirebaseRepo", "Skipping malformed booking at ${child.key}: ${e.message}")
+                        null
+                    }
+                }.filter { it.status in statuses }
                 trySend(list)
             }
             override fun onCancelled(error: DatabaseError) { close(error.toException()) }
@@ -133,7 +163,14 @@ class FirebaseRepository {
         val ref = database.getReference("orders").orderByChild("assignedDeliveryBoy").equalTo(deliveryBoyId)
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                trySend(snapshot.children.mapNotNull { it.getValue(OrderModel::class.java) })
+                trySend(snapshot.children.mapNotNull { child ->
+                    try {
+                        child.getValue(OrderModel::class.java)
+                    } catch (e: Exception) {
+                        Log.e("FirebaseRepo", "Skipping malformed assigned order at ${child.key}: ${e.message}")
+                        null
+                    }
+                })
             }
             override fun onCancelled(error: DatabaseError) { close(error.toException()) }
         }
@@ -164,7 +201,12 @@ class FirebaseRepository {
         val ref = database.getReference("delivery_locations").child(deliveryBoyId)
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                trySend(snapshot.getValue(LiveLocation::class.java))
+                try {
+                    trySend(snapshot.getValue(LiveLocation::class.java))
+                } catch (e: Exception) {
+                    Log.e("FirebaseRepo", "Error parsing LiveLocation: ${e.message}")
+                    trySend(null)
+                }
             }
             override fun onCancelled(error: DatabaseError) { close(error.toException()) }
         }
@@ -179,7 +221,14 @@ class FirebaseRepository {
         val ref = database.getReference("bookings").orderByChild(field).equalTo(userId)
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                trySend(snapshot.children.mapNotNull { it.getValue(BookingModel::class.java) })
+                trySend(snapshot.children.mapNotNull { child ->
+                    try {
+                        child.getValue(BookingModel::class.java)
+                    } catch (e: Exception) {
+                        Log.e("FirebaseRepo", "Skipping malformed my booking at ${child.key}: ${e.message}")
+                        null
+                    }
+                })
             }
             override fun onCancelled(error: DatabaseError) { close(error.toException()) }
         }
@@ -191,7 +240,14 @@ class FirebaseRepository {
         val ref = database.getReference("bookings")
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                trySend(snapshot.children.mapNotNull { it.getValue(FirestoreBooking::class.java) })
+                trySend(snapshot.children.mapNotNull { child ->
+                    try {
+                        child.getValue(FirestoreBooking::class.java)
+                    } catch (e: Exception) {
+                        Log.e("FirebaseRepo", "Skipping malformed firestore booking at ${child.key}: ${e.message}")
+                        null
+                    }
+                })
             }
             override fun onCancelled(error: DatabaseError) { close(error.toException()) }
         }
@@ -201,7 +257,14 @@ class FirebaseRepository {
 
     suspend fun getAllUsers(): List<FirebaseUser> = try {
         val snapshot = database.getReference("users").get().await()
-        snapshot.children.mapNotNull { it.getValue(FirebaseUser::class.java) }
+        snapshot.children.mapNotNull { child ->
+            try {
+                child.getValue(FirebaseUser::class.java)
+            } catch (e: Exception) {
+                Log.e("FirebaseRepo", "Skipping malformed user at ${child.key}: ${e.message}")
+                null
+            }
+        }
     } catch (e: Exception) {
         emptyList()
     }
@@ -219,7 +282,13 @@ class FirebaseRepository {
     fun observeBookingStatus(bookingId: String): Flow<String?> = callbackFlow {
         val ref = database.getReference("bookings").child(bookingId).child("status")
         val listener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) { trySend(snapshot.getValue(String::class.java)) }
+            override fun onDataChange(snapshot: DataSnapshot) { 
+                try {
+                    trySend(snapshot.getValue(String::class.java)) 
+                } catch (e: Exception) {
+                    trySend(null)
+                }
+            }
             override fun onCancelled(error: DatabaseError) { close(error.toException()) }
         }
         ref.addValueEventListener(listener)

@@ -94,4 +94,21 @@ object Routes {
     // New Modules
     const val ESSENTIAL_SUPPLIES = "essential_supplies"
     const val BOOKINGS_MODULE = "bookings_module"
+
+    // Property & Lifestyle Services (PLS)
+    const val PLS_MAIN = "PLS_main"
+    const val PLS_SUBCATEGORIES = "PLS_subcategories/{category}"
+    const val PLS_SERVICES = "PLS_services/{subcategory}"
+    const val PLS_BOOKING = "PLS_booking/{serviceId}"
+    const val PLS_CHECKOUT = "PLS_checkout"
+    const val PLS_SUCCESS = "PLS_success"
+
+    // Admin Panel
+    const val ADMIN_DASHBOARD = "ADMIN_dashboard"
+    const val ADMIN_BOOKINGS = "ADMIN_bookings"
+    const val ADMIN_SERVICES = "ADMIN_services"
+
+    // Worker Side (PLS)
+    const val WORKER_DASHBOARD = "WORKER_dashboard"
+    const val WORKER_JOBS = "WORKER_jobs"
 }

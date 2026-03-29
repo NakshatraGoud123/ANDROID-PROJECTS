@@ -48,9 +48,10 @@ class ShopkeeperViewModel : ViewModel() {
         }
     }
 
-    fun acceptOrder(orderId: String) {
+    fun accept(orderId: String) {
+        val shopkeeperId = repository.getCurrentUserId() ?: return
         viewModelScope.launch {
-            repository.updateOrderStatus(orderId, "accepted")
+            repository.acceptOrder(orderId, shopkeeperId)
         }
     }
 

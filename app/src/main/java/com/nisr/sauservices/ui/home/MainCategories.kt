@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.nisr.sauservices.navigation.Routes
 import com.nisr.sauservices.ui.Screen
 
 data class CategoryItem(val name: String, val icon: ImageVector, val route: String = "")
@@ -37,6 +38,7 @@ fun CategoriesGrid(
         CategoryItem("Essential Supplies", Icons.Outlined.ShoppingBag, Screen.EssentialSupplies.route),
         CategoryItem("Bookings", Icons.Outlined.ConfirmationNumber, Screen.BookingsModule.route),
         CategoryItem("Residential Services", Icons.Outlined.Home, Screen.ResidentialCategories.route),
+        CategoryItem("Property & Lifestyle", Icons.Outlined.Cabin, Routes.PLS_MAIN),
         CategoryItem("Home Essentials", Icons.Outlined.Star),
         CategoryItem("Food & Beverages", Icons.Outlined.Restaurant),
         CategoryItem("Education Services", Icons.Outlined.School),
@@ -83,6 +85,7 @@ fun CategoriesGrid(
                                 "Bookings" -> navController.navigate(Screen.BookingsModule.route)
                                 "Home Essentials" -> onHomeEssentialsClick()
                                 "Residential Services" -> navController.navigate(item.route)
+                                "Property & Lifestyle" -> navController.navigate(Routes.PLS_MAIN)
                                 "Food & Beverages" -> navController.navigate("FOODS_categories")
                                 "Education Services" -> onEducationClick()
                                 "Business & Professional" -> onBusinessClick()

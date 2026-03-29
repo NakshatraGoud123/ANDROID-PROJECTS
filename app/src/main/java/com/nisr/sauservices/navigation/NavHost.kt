@@ -145,19 +145,13 @@ fun AppNavHost(navController: NavHostController) {
         composable(Screen.ServiceWorkerDashboard.route) { ServiceWorkerDashboardScreen(navController, sessionManager, viewModel()) }
         composable(Screen.DeliveryDashboard.route) { DeliveryDashboardScreen(navController, sessionManager, viewModel()) }
 
-        // --- CUSTOMER MAIN ---
-        composable(Screen.Home.route) { 
-            val role = sessionManager.getUserRole()
-            if (role == "customer" && sessionManager.isLoggedIn()) {
-                CustomerHomeScreen(navController, sessionManager, bookingsViewModel, residentialViewModel)
-            } else {
-                LaunchedEffect(Unit) {
-                    navController.navigate(Screen.Login.createRoute("customer")) {
-                        popUpTo(Screen.Home.route) { inclusive = true }
-                    }
-                }
-            }
-        }
+        // Integrate HomeNavGraph (Includes Customer Home and PLS)
+        homeNavGraph(
+            navController = navController,
+            sessionManager = sessionManager,
+            bookingsViewModel = bookingsViewModel,
+            residentialViewModel = residentialViewModel
+        )
 
         composable(Screen.Categories.route) { CategoriesScreen(navController) }
         
