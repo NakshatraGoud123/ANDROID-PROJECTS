@@ -123,7 +123,14 @@ class ShopkeeperDashboardActivity : AppCompatActivity(), OnMapReadyCallback {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.pendingOrders.collect { orderModels ->
                     val orders = orderModels.map { 
-                        Order(it.orderId, "Customer", "", it.totalPrice.toString(), it.orderStatus)
+                        Order(
+                            orderId = it.orderId,
+                            customerName = "Customer",
+                            customerPhone = "",
+                            amount = "₹${it.totalPrice}",
+                            totalPrice = it.totalPrice,
+                            status = it.orderStatus
+                        )
                     }
                     adapter.updateData(orders)
                 }

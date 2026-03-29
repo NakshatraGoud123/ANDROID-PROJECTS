@@ -2,6 +2,7 @@ package com.nisr.sauservices.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nisr.sauservices.data.model.BookingModel
 import com.nisr.sauservices.data.model.FirestoreBooking
 import com.nisr.sauservices.data.repository.FirebaseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,7 +12,7 @@ import kotlinx.coroutines.launch
 class CustomerViewModel : ViewModel() {
     private val repository = FirebaseRepository()
 
-    private val _myBookings = MutableStateFlow<List<FirestoreBooking>>(emptyList())
+    private val _myBookings = MutableStateFlow<List<BookingModel>>(emptyList())
     val myBookings = _myBookings.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
@@ -30,15 +31,26 @@ class CustomerViewModel : ViewModel() {
         }
     }
 
-    fun placeBooking(booking: FirestoreBooking) {
+    fun placeBooking(booking: BookingModel) {
         viewModelScope.launch {
             _isLoading.value = true
-            repository.createBooking(booking).onSuccess {
-                // Since createBooking returns Result<Unit>, we don't have a bookingId here
-                // We'll rely on the status update from the specific booking if known
+            repository.bookService(booking).onSuccess {
+                // Success
+            }.onFailure {
+                // Handle error
             }
             _isLoading.value = false
         }
+    }
+
+    // Overload for compatibility with screens passing FirestoreBooking
+    fun placeBooking(booking: FirestoreBooking) {
+        val model = BookingModel(
+            serviceName = booking.serviceType ?: "",
+            address = booking.address,
+            status = "pending"
+        )
+        placeBooking(model)
     }
 
     fun observeBookingStatus(bookingId: String) {

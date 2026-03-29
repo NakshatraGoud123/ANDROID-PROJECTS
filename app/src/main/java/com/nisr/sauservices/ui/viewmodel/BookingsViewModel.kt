@@ -95,10 +95,9 @@ class BookingsViewModel : ViewModel() {
     fun loadUserBookings() {
         val userId = repository.getCurrentUserId() ?: return
         viewModelScope.launch {
-            repository.getBookingsByStatus(listOf("pending", "accepted", "completed")).collect { list ->
-                val userBookings = list.filter { it.customerId == userId }
-                _myBookings.value = userBookings
-                _bookingsFlow.value = userBookings.map { 
+            repository.observeMyBookings("customer", userId).collect { list ->
+                _myBookings.value = list
+                _bookingsFlow.value = list.map {
                     BookingItem(
                         id = it.bookingId,
                         serviceName = it.serviceName,

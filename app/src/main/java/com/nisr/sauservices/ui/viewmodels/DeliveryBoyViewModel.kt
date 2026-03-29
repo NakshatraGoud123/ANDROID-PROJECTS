@@ -18,10 +18,14 @@ class DeliveryBoyViewModel : ViewModel() {
     private val _currentLocation = MutableStateFlow<LatLng?>(null)
     val currentLocation = _currentLocation.asStateFlow()
 
+    init {
+        observeAssignedOrders()
+    }
+
     fun observeAssignedOrders() {
         val userId = repository.getCurrentUserId() ?: return
         viewModelScope.launch {
-            repository.getAssignedOrders(userId).collect {
+            repository.observeAssignedOrders(userId).collect {
                 _assignedOrders.value = it
             }
         }
@@ -32,8 +36,8 @@ class DeliveryBoyViewModel : ViewModel() {
         _currentLocation.value = LatLng(lat, lng)
         viewModelScope.launch {
             repository.updateDeliveryLocation(userId, lat, lng)
-            // Update live location for all assigned orders
-            _assignedOrders.value.forEach { order ->
+            // Update live location for all assigned orders that are not delivered
+            _assignedOrders.value.filter { it.orderStatus != "delivered" }.forEach { order ->
                 repository.updateOrderLiveLocation(order.orderId, lat, lng)
             }
         }

@@ -14,39 +14,42 @@ class ServiceWorkerViewModel : ViewModel() {
     private val _pendingBookings = MutableStateFlow<List<BookingModel>>(emptyList())
     val pendingBookings = _pendingBookings.asStateFlow()
 
-    private val _myBookings = MutableStateFlow<List<BookingModel>>(emptyList())
-    val myBookings = _myBookings.asStateFlow()
+    private val _acceptedBookings = MutableStateFlow<List<BookingModel>>(emptyList())
+    val acceptedBookings = _acceptedBookings.asStateFlow()
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading = _isLoading.asStateFlow()
 
     init {
-        observeBookings()
+        observePendingBookings()
+        observeAcceptedBookings()
     }
 
-    private fun observeBookings() {
+    private fun observePendingBookings() {
         viewModelScope.launch {
-            repository.getBookingsByStatus(listOf("pending")).collect {
-                _pendingBookings.value = it
-            }
-        }
-        
-        repository.getCurrentUserId()?.let { userId ->
-            viewModelScope.launch {
-                repository.getBookingsByStatus(listOf("accepted")).collect { list ->
-                    _myBookings.value = list.filter { it.workerId == userId }
-                }
-            }
+            repository.getPendingBookings().collect { _pendingBookings.value = it }
         }
     }
 
-    fun acceptBooking(bookingId: String) {
-        val userId = repository.getCurrentUserId() ?: return
+    private fun observeAcceptedBookings() {
         viewModelScope.launch {
-            repository.updateBookingStatus(bookingId, "accepted", workerId = userId)
+            repository.getAcceptedBookings().collect { _acceptedBookings.value = it }
+        }
+    }
+
+    fun acceptBooking(bookingId: String, workerId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            repository.updateBookingStatus(bookingId, "accepted", workerId)
+            _isLoading.value = false
         }
     }
 
     fun completeBooking(bookingId: String) {
         viewModelScope.launch {
+            _isLoading.value = true
             repository.updateBookingStatus(bookingId, "completed")
+            _isLoading.value = false
         }
     }
 }

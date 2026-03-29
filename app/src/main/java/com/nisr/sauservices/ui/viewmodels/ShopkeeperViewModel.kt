@@ -25,26 +25,32 @@ class ShopkeeperViewModel : ViewModel() {
     val deliveryBoyLocation = _deliveryBoyLocation.asStateFlow()
 
     init {
-        observeOrders()
+        observePendingOrders()
+        observeAcceptedOrders()
+        observeAssignedOrders()
     }
 
-    private fun observeOrders() {
+    private fun observePendingOrders() {
         viewModelScope.launch {
-            repository.getBookingsByStatus("pending").collect { /* Handle orders if needed */ }
-            // Note: The original code used getOrdersByStatus which was not in FirebaseRepository
-            // I should verify if getOrdersByStatus exists or if I should use something else.
+            repository.getPendingOrders().collect { _pendingOrders.value = it }
+        }
+    }
+
+    private fun observeAcceptedOrders() {
+        viewModelScope.launch {
+            repository.getAcceptedOrders().collect { _acceptedOrders.value = it }
+        }
+    }
+
+    private fun observeAssignedOrders() {
+        viewModelScope.launch {
+            repository.getAssignedOrdersForShop().collect { _assignedOrders.value = it }
         }
     }
 
     fun acceptOrder(orderId: String) {
         viewModelScope.launch {
             repository.updateOrderStatus(orderId, "accepted")
-        }
-    }
-
-    fun rejectOrder(orderId: String) {
-        viewModelScope.launch {
-            repository.updateOrderStatus(orderId, "rejected")
         }
     }
 
@@ -60,13 +66,11 @@ class ShopkeeperViewModel : ViewModel() {
         }
     }
 
-    fun trackDeliveryBoy(deliveryBoyId: String) {
+    fun observeDeliveryBoyLocation(deliveryBoyId: String) {
         viewModelScope.launch {
             repository.observeDeliveryBoyLocation(deliveryBoyId).collect { location ->
                 location?.let {
-                    val lat = it["lat"] as? Double ?: 0.0
-                    val lng = it["lng"] as? Double ?: 0.0
-                    _deliveryBoyLocation.value = LatLng(lat, lng)
+                    _deliveryBoyLocation.value = LatLng(it.lat, it.lng)
                 }
             }
         }
