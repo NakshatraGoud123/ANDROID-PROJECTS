@@ -1,6 +1,7 @@
 package com.nisr.sauservices.navigation
 
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
@@ -73,16 +74,34 @@ fun NavGraphBuilder.homeNavGraph(
         PLSServicesScreen(navController, subcategory, viewModel())
     }
 
+    // Shared ViewModel for PLS booking flow
     composable(
         route = Routes.PLS_BOOKING,
         arguments = listOf(navArgument("serviceId") { type = NavType.StringType })
     ) { backStackEntry ->
         val serviceId = backStackEntry.arguments?.getString("serviceId") ?: ""
-        PLSBookingScreen(navController, serviceId, viewModel(), sessionManager)
+        val parentEntry = remember(backStackEntry) {
+            navController.getBackStackEntry(Routes.PLS_MAIN)
+        }
+        val plsViewModel: PropertyLifestyleViewModel = viewModel(parentEntry)
+        PLSBookingScreen(navController, serviceId, plsViewModel, sessionManager)
     }
 
-    composable(Routes.PLS_CHECKOUT) { PLSCheckoutScreen(navController, viewModel()) }
-    composable(Routes.PLS_SUCCESS) { PLSSuccessScreen(navController, viewModel()) }
+    composable(Routes.PLS_CHECKOUT) { backStackEntry ->
+        val parentEntry = remember(backStackEntry) {
+            navController.getBackStackEntry(Routes.PLS_MAIN)
+        }
+        val plsViewModel: PropertyLifestyleViewModel = viewModel(parentEntry)
+        PLSCheckoutScreen(navController, plsViewModel)
+    }
+
+    composable(Routes.PLS_SUCCESS) { backStackEntry ->
+        val parentEntry = remember(backStackEntry) {
+            navController.getBackStackEntry(Routes.PLS_MAIN)
+        }
+        val plsViewModel: PropertyLifestyleViewModel = viewModel(parentEntry)
+        PLSSuccessScreen(navController, plsViewModel)
+    }
 
     // Admin Panel
     composable(Routes.ADMIN_DASHBOARD) { AdminDashboardScreen(navController, viewModel()) }

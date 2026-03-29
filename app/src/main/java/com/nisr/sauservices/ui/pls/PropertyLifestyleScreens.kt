@@ -1,10 +1,11 @@
 package com.nisr.sauservices.ui.pls
 
 import android.app.DatePickerDialog
-import android.app.TimePickerDialog
+import android.widget.Toast
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -232,8 +233,8 @@ fun PLSBookingScreen(
     var name by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
-    var date by remember { mutableStateOf("") }
-    var timeSlot by remember { mutableStateOf("") }
+    var selectedDate by remember { mutableStateOf("") }
+    var selectedTimeSlot by remember { mutableStateOf("") }
     
     var guests by remember { mutableStateOf("1") }
     var duration by remember { mutableStateOf("1") }
@@ -243,8 +244,19 @@ fun PLSBookingScreen(
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
 
+    val timeSlots = listOf("9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM", "6:00 PM")
+
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Booking Details") }) }
+        topBar = { 
+            TopAppBar(
+                title = { Text("Booking Details") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, null)
+                    }
+                }
+            ) 
+        }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).padding(16.dp).verticalScroll(rememberScrollState())) {
             OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Full Name") }, modifier = Modifier.fillMaxWidth())
@@ -255,27 +267,45 @@ fun PLSBookingScreen(
             Spacer(modifier = Modifier.height(12.dp))
             
             OutlinedTextField(
-                value = date,
+                value = selectedDate,
                 onValueChange = { },
                 label = { Text("Select Date") },
                 readOnly = true,
                 modifier = Modifier.fillMaxWidth().clickable {
-                    DatePickerDialog(context, { _, y, m, d -> date = "$d/${m+1}/$y" }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show()
+                    val datePicker = DatePickerDialog(
+                        context,
+                        { _, year, month, dayOfMonth ->
+                            selectedDate = String.format("%02d/%02d/%d", dayOfMonth, month + 1, year)
+                        },
+                        calendar.get(Calendar.YEAR),
+                        calendar.get(Calendar.MONTH),
+                        calendar.get(Calendar.DAY_OF_MONTH)
+                    )
+                    datePicker.datePicker.minDate = System.currentTimeMillis() - 1000
+                    datePicker.show()
                 },
+                enabled = false,
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                    disabledBorderColor = MaterialTheme.colorScheme.outline,
+                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                ),
                 trailingIcon = { Icon(Icons.Rounded.CalendarToday, null) }
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
-                value = timeSlot,
-                onValueChange = { },
-                label = { Text("Select Time Slot") },
-                readOnly = true,
-                modifier = Modifier.fillMaxWidth().clickable {
-                    TimePickerDialog(context, { _, h, min -> timeSlot = String.format("%02d:%02d", h, min) }, 10, 0, false).show()
-                },
-                trailingIcon = { Icon(Icons.Rounded.AccessTime, null) }
-            )
+            Text("Select Time Slot", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Spacer(modifier = Modifier.height(8.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(timeSlots) { slot ->
+                    FilterChip(
+                        selected = selectedTimeSlot == slot,
+                        onClick = { selectedTimeSlot = slot },
+                        label = { Text(slot) }
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(16.dp))
 
             val sub = service.subcategory.lowercase()
@@ -294,15 +324,19 @@ fun PLSBookingScreen(
             Spacer(modifier = Modifier.height(24.dp))
             Button(
                 onClick = {
-                    if (name.isNotBlank() && phone.length >= 10 && address.isNotBlank() && date.isNotBlank()) {
+                    if (name.isBlank() || phone.isBlank() || address.isBlank() || selectedDate.isBlank() || selectedTimeSlot.isBlank()) {
+                        Toast.makeText(context, "Please select all details including date and time", Toast.LENGTH_SHORT).show()
+                    } else if (phone.length < 10) {
+                        Toast.makeText(context, "Please enter a valid phone number", Toast.LENGTH_SHORT).show()
+                    } else {
                         val booking = PLSBooking(
                             userId = FirebaseAuth.getInstance().currentUser?.uid ?: "",
                             userName = name,
                             userPhone = phone,
                             userAddress = address,
                             serviceName = service.name,
-                            date = date,
-                            timeSlot = timeSlot,
+                            date = selectedDate,
+                            timeSlot = selectedTimeSlot,
                             totalPrice = service.price * (duration.toDoubleOrNull() ?: 1.0),
                             guestsCount = guests.toIntOrNull(),
                             duration = duration.toIntOrNull(),
@@ -328,10 +362,20 @@ fun PLSBookingScreen(
 fun PLSCheckoutScreen(navController: NavController, viewModel: PropertyLifestyleViewModel) {
     val booking by viewModel.currentBooking.collectAsState()
     var paymentMethod by remember { mutableStateOf("Cash") }
+    val context = LocalContext.current
 
     booking?.let { b ->
         Scaffold(
-            topBar = { TopAppBar(title = { Text("Checkout") }) }
+            topBar = { 
+                TopAppBar(
+                    title = { Text("Checkout") },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, null)
+                        }
+                    }
+                ) 
+            }
         ) { padding ->
             Column(modifier = Modifier.padding(padding).padding(16.dp)) {
                 Surface(
@@ -376,7 +420,14 @@ fun PLSCheckoutScreen(navController: NavController, viewModel: PropertyLifestyle
 
                 Spacer(modifier = Modifier.weight(1f))
                 Button(
-                    onClick = { viewModel.placeBooking(b.copy(paymentMethod = paymentMethod)) },
+                    onClick = { 
+                        // Simulate payment validation/processing
+                        if (paymentMethod.isNotEmpty()) {
+                            viewModel.placeBooking(b.copy(paymentMethod = paymentMethod))
+                        } else {
+                            Toast.makeText(context, "Please select a payment method", Toast.LENGTH_SHORT).show()
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
@@ -391,8 +442,11 @@ fun PLSCheckoutScreen(navController: NavController, viewModel: PropertyLifestyle
     LaunchedEffect(result) {
         if (result?.isSuccess == true) {
             navController.navigate(Routes.PLS_SUCCESS) {
-                popUpTo(Routes.HOME) { inclusive = false }
+                popUpTo(Routes.PLS_MAIN) { inclusive = false }
             }
+            viewModel.resetBookingResult()
+        } else if (result?.isFailure == true) {
+            Toast.makeText(context, "Booking Failed: ${result?.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()
             viewModel.resetBookingResult()
         }
     }
@@ -401,6 +455,7 @@ fun PLSCheckoutScreen(navController: NavController, viewModel: PropertyLifestyle
 @Composable
 fun PLSSuccessScreen(navController: NavController, viewModel: PropertyLifestyleViewModel) {
     val booking by viewModel.currentBooking.collectAsState()
+    val bookingId = remember { "PLS" + System.currentTimeMillis() }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -410,8 +465,41 @@ fun PLSSuccessScreen(navController: NavController, viewModel: PropertyLifestyleV
         Icon(Icons.Rounded.CheckCircle, null, tint = Color(0xFF22C55E), modifier = Modifier.size(100.dp))
         Spacer(modifier = Modifier.height(24.dp))
         Text("Booking Confirmed!", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-        Text("Booking ID: PLS-${(10000..99999).random()}", color = Color.Gray)
+        Text("Booking ID: $bookingId", color = Color.Gray, fontWeight = FontWeight.Medium)
         Spacer(modifier = Modifier.height(16.dp))
+        
+        booking?.let { b ->
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                color = Background,
+                border = BorderStroke(1.dp, Border)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Service", color = Color.Gray)
+                        Text(b.serviceName, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Date", color = Color.Gray)
+                        Text(b.date, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Time", color = Color.Gray)
+                        Text(b.timeSlot, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Status", color = Color.Gray)
+                        Text("Confirmed", color = Color(0xFF22C55E), fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(24.dp))
         Text(
             "Our service provider will contact you shortly to confirm the details.",
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -420,7 +508,11 @@ fun PLSSuccessScreen(navController: NavController, viewModel: PropertyLifestyleV
         
         Spacer(modifier = Modifier.height(40.dp))
         Button(
-            onClick = { navController.navigate(Routes.HOME) { popUpTo(0) } },
+            onClick = { 
+                navController.navigate(Routes.HOME) { 
+                    popUpTo(Routes.HOME) { inclusive = true } 
+                } 
+            },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
