@@ -51,7 +51,7 @@ dependencies {
     implementation(libs.play.services.maps)
     implementation(libs.play.services.location)
     implementation(libs.maps.compose)
-    implementation(libs.android.maps.utils)
+    implementation(libs.google.maps.utils)
     implementation(libs.androidx.compose.runtime.livedata)
     
     implementation(platform(libs.androidx.compose.bom))
@@ -68,15 +68,14 @@ dependencies {
     implementation(libs.firebase.messaging)
     implementation(libs.play.services.auth)
     implementation(libs.firebase.ai)
-    implementation(libs.firebase.database)
 
     // Retrofit & Networking
-    implementation(libs.retrofit)
+    implementation(libs.retrofit.core)
     implementation(libs.retrofit.gson)
     implementation(libs.okhttp.logging)
-    implementation(libs.androidx.credentials)
-    implementation(libs.androidx.credentials.play.services.auth)
-    implementation(libs.googleid)
+    implementation(libs.androidx.credentials.core)
+    implementation(libs.androidx.credentials.play)
+    implementation(libs.google.identity.id)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
