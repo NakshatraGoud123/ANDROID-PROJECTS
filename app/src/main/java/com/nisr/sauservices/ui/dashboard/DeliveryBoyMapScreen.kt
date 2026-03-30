@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -16,17 +15,18 @@ fun DeliveryBoyMapScreen(
     order: OrderModel,
     currentLocation: LatLng?
 ) {
-    val context = LocalContext.current
     val customerLatLng = LatLng(order.customerLocation.lat, order.customerLocation.lng)
     
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(currentLocation ?: customerLatLng, 15f)
+        position = CameraPosition.fromLatLngZoom(currentLocation ?: customerLatLng, 16f)
     }
 
+    // Smoothly animate camera to current location
     LaunchedEffect(currentLocation) {
         currentLocation?.let {
             cameraPositionState.animate(
-                com.google.android.gms.maps.CameraUpdateFactory.newLatLng(it)
+                com.google.android.gms.maps.CameraUpdateFactory.newLatLng(it),
+                1000
             )
         }
     }
@@ -35,25 +35,28 @@ fun DeliveryBoyMapScreen(
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
-            uiSettings = MapUiSettings(myLocationButtonEnabled = true),
-            properties = MapProperties(isMyLocationEnabled = true)
+            properties = MapProperties(isMyLocationEnabled = true),
+            uiSettings = MapUiSettings(myLocationButtonEnabled = true, zoomControlsEnabled = false)
         ) {
-            // Customer Marker
+            // Customer Destination Marker
             Marker(
                 state = MarkerState(position = customerLatLng),
-                title = "Customer Location",
+                title = "Delivery Location",
                 snippet = order.address,
                 icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
             )
 
-            // Delivery Boy Marker (if manual tracking needed, else MyLocation layer handles it)
+            // Current Location Marker (Manual marker for smoother visualization if needed, 
+            // otherwise isMyLocationEnabled handles it)
             currentLocation?.let {
                 Marker(
                     state = MarkerState(position = it),
-                    title = "My Location",
+                    title = "My Position",
                     icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
                 )
             }
+            
+            // Note: Polyline route can be added here using Polyline() if route coordinates are available
         }
     }
 }

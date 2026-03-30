@@ -24,6 +24,7 @@ fun ShopkeeperDashboardMapScreen(
         viewModel.observeDeliveryBoyLocation(deliveryBoyId)
     }
 
+    // Auto-update camera when location changes
     LaunchedEffect(deliveryLocation) {
         deliveryLocation?.let {
             cameraPositionState.animate(
@@ -36,12 +37,13 @@ fun ShopkeeperDashboardMapScreen(
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
-            properties = MapProperties(isMyLocationEnabled = false)
+            properties = MapProperties(isMyLocationEnabled = false),
+            uiSettings = MapUiSettings(zoomControlsEnabled = true)
         ) {
             deliveryLocation?.let {
                 Marker(
                     state = MarkerState(position = it),
-                    title = "Delivery Boy",
+                    title = "Delivery Partner",
                     icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
                 )
             }

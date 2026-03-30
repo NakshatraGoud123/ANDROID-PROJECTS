@@ -20,25 +20,9 @@ class CustomerTrackingViewModel : ViewModel() {
 
     fun trackOrder(orderId: String) {
         viewModelScope.launch {
-            repository.observeOrder(orderId).collect { order ->
+            repository.listenToCustomerOrder(orderId).collect { order ->
                 _order.value = order
-                order?.let {
-                    // Update delivery boy marker from the order's liveLocation field
-                    _deliveryBoyLocation.value = LatLng(it.liveLocation.lat, it.liveLocation.lng)
-                    
-                    // Alternatively, observe the delivery_locations node for higher frequency updates
-                    if (it.assignedDeliveryBoy.isNotEmpty()) {
-                        observeDeliveryBoy(it.assignedDeliveryBoy)
-                    }
-                }
-            }
-        }
-    }
-
-    private fun observeDeliveryBoy(deliveryBoyId: String) {
-        viewModelScope.launch {
-            repository.observeDeliveryBoyLocation(deliveryBoyId).collect { location ->
-                location?.let {
+                order?.liveLocation?.let {
                     _deliveryBoyLocation.value = LatLng(it.lat, it.lng)
                 }
             }

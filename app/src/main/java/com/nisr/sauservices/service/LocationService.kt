@@ -8,7 +8,6 @@ import android.os.IBinder
 import android.os.Looper
 import androidx.core.app.NotificationCompat
 import com.google.android.gms.location.*
-import com.nisr.sauservices.R
 import com.nisr.sauservices.data.repository.FirebaseRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,7 +19,8 @@ class LocationService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private val repository = FirebaseRepository()
-    private val CHANNEL_ID = "location_channel"
+    private val CHANNEL_ID = "delivery_location_channel"
+    private var locationCallback: LocationCallback? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -32,17 +32,17 @@ class LocationService : Service() {
         val userId = intent?.getStringExtra("USER_ID") ?: return START_NOT_STICKY
         
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Location Tracking")
-            .setContentText("Updating your live location for deliveries...")
+            .setContentTitle("Live Delivery Tracking")
+            .setContentText("You are online. Your location is being shared for active orders.")
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
             .build()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
+            startForeground(1001, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
         } else {
-            startForeground(1, notification)
+            startForeground(1001, notification)
         }
 
         startLocationUpdates(userId)
@@ -54,7 +54,7 @@ class LocationService : Service() {
             .setMinUpdateIntervalMillis(2000)
             .build()
 
-        val locationCallback = object : LocationCallback() {
+        locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 locationResult.lastLocation?.let { location ->
                     serviceScope.launch {
@@ -67,10 +67,10 @@ class LocationService : Service() {
         try {
             fusedLocationClient.requestLocationUpdates(
                 locationRequest,
-                locationCallback,
+                locationCallback!!,
                 Looper.getMainLooper()
             )
-        } catch (unlikely: SecurityException) {
+        } catch (e: SecurityException) {
             stopSelf()
         }
     }
@@ -79,12 +79,17 @@ class LocationService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val serviceChannel = NotificationChannel(
                 CHANNEL_ID,
-                "Location Service Channel",
+                "Delivery Location Service",
                 NotificationManager.IMPORTANCE_LOW
             )
             val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(serviceChannel)
+            manager?.createNotificationChannel(serviceChannel)
         }
+    }
+
+    override fun onDestroy() {
+        locationCallback?.let { fusedLocationClient.removeLocationUpdates(it) }
+        super.onDestroy()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

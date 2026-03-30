@@ -45,7 +45,7 @@ fun BottomNavBar(
             NavigationItem("Home", Screen.Home.route, Icons.Outlined.Home),
             NavigationItem("Categories", Screen.Categories.route, Icons.Outlined.GridView),
             NavigationItem("Bookings", Screen.Bookings.route, Icons.Outlined.EventNote),
-            NavigationItem("Cart", Screen.Cart.route, Icons.Outlined.ShoppingCart, badgeCount = cartCount),
+            NavigationItem("Tracking", Screen.OrderTracking.route, Icons.Outlined.LocationOn),
             NavigationItem("Profile", Screen.Profile.route, Icons.Outlined.Person)
         )
 
@@ -55,7 +55,9 @@ fun BottomNavBar(
             NavigationBarItem(
                 selected = isSelected,
                 onClick = {
-                    if (currentRoute != item.route) {
+                    if (item.route == Screen.OrderTracking.route) {
+                        navController.navigate(Screen.OrderTracking.createRoute("active_order"))
+                    } else if (currentRoute != item.route) {
                         navController.navigate(item.route) {
                             popUpTo(Screen.Home.route) { saveState = true }
                             launchSingleTop = true

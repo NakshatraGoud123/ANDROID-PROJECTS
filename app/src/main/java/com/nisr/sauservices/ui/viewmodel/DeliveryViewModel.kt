@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nisr.sauservices.data.model.Delivery
 import com.nisr.sauservices.data.model.BookingModel
-import com.nisr.sauservices.data.model.FirestoreBooking
 import com.nisr.sauservices.data.repository.DashboardRepository
 import com.nisr.sauservices.data.repository.FirebaseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,7 +32,7 @@ class DeliveryViewModel : ViewModel() {
     fun loadAvailableDeliveries() {
         viewModelScope.launch {
             repository.observeAvailableBookings("delivery").collect { list ->
-                _availableDeliveries.value = list.map { it.toBookingModel() }
+                _availableDeliveries.value = list
             }
         }
     }
@@ -69,11 +68,4 @@ class DeliveryViewModel : ViewModel() {
             _isLoading.value = false
         }
     }
-
-    private fun FirestoreBooking.toBookingModel() = BookingModel(
-        bookingId = this.bookingId,
-        serviceName = this.serviceType ?: "",
-        status = this.status,
-        address = this.address
-    )
 }

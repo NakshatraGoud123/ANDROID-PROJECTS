@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nisr.sauservices.data.model.BookingModel
 import com.nisr.sauservices.data.model.FirebaseUser
+import com.nisr.sauservices.data.model.OrderModel
 import com.nisr.sauservices.data.repository.FirebaseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,6 +16,9 @@ class AdminViewModel : ViewModel() {
     private val _allBookings = MutableStateFlow<List<BookingModel>>(emptyList())
     val allBookings = _allBookings.asStateFlow()
 
+    private val _allOrders = MutableStateFlow<List<OrderModel>>(emptyList())
+    val allOrders = _allOrders.asStateFlow()
+
     private val _allUsers = MutableStateFlow<List<FirebaseUser>>(emptyList())
     val allUsers = _allUsers.asStateFlow()
 
@@ -22,29 +26,38 @@ class AdminViewModel : ViewModel() {
     val isLoading = _isLoading.asStateFlow()
 
     init {
-        observeAllBookings()
-        loadAllUsers()
+        observeData()
     }
 
-    private fun observeAllBookings() {
+    private fun observeData() {
         viewModelScope.launch {
             _isLoading.value = true
-            repository.observeAllBookings().collect { list ->
-                _allBookings.value = list.map { it.toBookingModel() }
+            repository.listenToAllBookings().collect { list ->
+                _allBookings.value = list
                 _isLoading.value = false
             }
         }
-    }
-
-    fun loadAllUsers() {
         viewModelScope.launch {
-            _allUsers.value = repository.getAllUsers()
+            repository.listenToAllOrders().collect { list ->
+                _allOrders.value = list
+            }
+        }
+        viewModelScope.launch {
+            repository.listenToAllUsers().collect { list ->
+                _allUsers.value = list
+            }
         }
     }
 
     fun updateBookingStatus(bookingId: String, status: String) {
         viewModelScope.launch {
             repository.updateBookingStatus(bookingId, status)
+        }
+    }
+
+    fun updateOrderStatus(orderId: String, status: String) {
+        viewModelScope.launch {
+            repository.updateOrderStatus(orderId, status)
         }
     }
 
@@ -56,16 +69,7 @@ class AdminViewModel : ViewModel() {
 
     fun deleteUser(uid: String) {
         viewModelScope.launch {
-            repository.deleteUser(uid).onSuccess {
-                loadAllUsers()
-            }
+            repository.deleteUser(uid)
         }
     }
-
-    private fun com.nisr.sauservices.data.model.FirestoreBooking.toBookingModel() = BookingModel(
-        bookingId = this.bookingId,
-        serviceName = this.serviceType ?: "",
-        status = this.status,
-        address = this.address
-    )
 }

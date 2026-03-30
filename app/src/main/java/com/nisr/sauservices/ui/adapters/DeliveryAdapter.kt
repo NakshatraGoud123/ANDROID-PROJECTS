@@ -26,17 +26,7 @@ class DeliveryAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DeliveryViewHolder {
         val context = parent.context
-        val cardView = MaterialCardView(context).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply { setMargins(16, 8, 16, 8) }
-            radius = 16f * context.resources.displayMetrics.density
-            cardElevation = 8f * context.resources.displayMetrics.density
-            setCardBackgroundColor(Color.WHITE)
-            setContentPadding(32, 32, 32, 32)
-        }
-
+        
         val layout = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
         }
@@ -60,7 +50,18 @@ class DeliveryAdapter(
         layout.addView(dropTxt)
         layout.addView(distanceTxt)
         layout.addView(btn)
-        cardView.addView(layout)
+
+        val cardView = MaterialCardView(context).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply { setMargins(16, 8, 16, 8) }
+            radius = 16f * context.resources.displayMetrics.density
+            cardElevation = 8f * context.resources.displayMetrics.density
+            setCardBackgroundColor(Color.WHITE)
+            setContentPadding(32, 32, 32, 32)
+            addView(layout)
+        }
 
         return DeliveryViewHolder(cardView)
     }

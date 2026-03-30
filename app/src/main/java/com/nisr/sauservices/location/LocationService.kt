@@ -10,13 +10,14 @@ import androidx.core.app.NotificationCompat
 import com.google.android.gms.location.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ServerValue
 import com.nisr.sauservices.R
 
 class LocationService : Service() {
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
-    private val database = FirebaseDatabase.getInstance().reference
+    private val database = FirebaseDatabase.getInstance("https://sau-services-default-rtdb.asia-southeast1.firebasedatabase.app/").reference
     private val auth = FirebaseAuth.getInstance()
 
     override fun onCreate() {
@@ -38,10 +39,10 @@ class LocationService : Service() {
     }
 
     private fun startLocationUpdates() {
-        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 3000)
             .setWaitForAccurateLocation(false)
-            .setMinUpdateIntervalMillis(5000)
-            .setMaxUpdateDelayMillis(10000)
+            .setMinUpdateIntervalMillis(2000)
+            .setMaxUpdateDelayMillis(5000)
             .build()
 
         try {
@@ -58,18 +59,30 @@ class LocationService : Service() {
     private fun updateLocationToFirebase(location: Location) {
         val userId = auth.currentUser?.uid ?: return
         
-        // We'll need to know the role. This could be stored in SharedPreferences or fetched from Auth/Firestore
-        // For now, let's assume we fetch it or it's passed via intent.
-        val role = getSharedPreferences("AppPrefs", MODE_PRIVATE).getString("user_role", "unknown") ?: "unknown"
-
         val locationData = mapOf(
-            "latitude" to location.latitude,
-            "longitude" to location.longitude,
-            "role" to role,
-            "lastUpdated" to System.currentTimeMillis()
+            "lat" to location.latitude,
+            "lng" to location.longitude,
+            "timestamp" to ServerValue.TIMESTAMP
         )
 
-        database.child("locations").child(userId).updateChildren(locationData)
+        // Update global delivery boy location
+        database.child("deliveryLocations").child(userId).setValue(locationData)
+        
+        // Update location for all orders assigned to this delivery boy
+        database.child("orders").orderByChild("assignedDeliveryBoy").equalTo(userId)
+            .get().addOnSuccessListener { snapshot ->
+                val updates = mutableMapOf<String, Any>()
+                snapshot.children.forEach { orderSnapshot ->
+                    val orderId = orderSnapshot.key
+                    val currentStatus = orderSnapshot.child("orderStatus").getValue(String::class.java)
+                    if (orderId != null && currentStatus != "delivered") {
+                        updates["orders/$orderId/liveLocation"] = locationData
+                    }
+                }
+                if (updates.isNotEmpty()) {
+                    database.updateChildren(updates)
+                }
+            }
     }
 
     private fun createNotificationChannel() {
@@ -86,9 +99,9 @@ class LocationService : Service() {
 
     private fun createNotification(): Notification {
         return NotificationCompat.Builder(this, "location_channel")
-            .setContentTitle("SAU Services")
-            .setContentText("Tracking your live location for service delivery...")
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // Ensure this exists or use default
+            .setContentTitle("Live Delivery Tracking")
+            .setContentText("Your location is being shared for real-time tracking.")
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
     }

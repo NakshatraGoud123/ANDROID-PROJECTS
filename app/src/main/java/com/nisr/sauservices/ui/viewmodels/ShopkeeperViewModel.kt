@@ -3,6 +3,7 @@ package com.nisr.sauservices.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.maps.model.LatLng
+import com.nisr.sauservices.data.model.FirebaseUser
 import com.nisr.sauservices.data.model.OrderModel
 import com.nisr.sauservices.data.repository.FirebaseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,43 +22,37 @@ class ShopkeeperViewModel : ViewModel() {
     private val _assignedOrders = MutableStateFlow<List<OrderModel>>(emptyList())
     val assignedOrders = _assignedOrders.asStateFlow()
 
+    private val _deliveryBoys = MutableStateFlow<List<FirebaseUser>>(emptyList())
+    val deliveryBoys = _deliveryBoys.asStateFlow()
+
     private val _deliveryBoyLocation = MutableStateFlow<LatLng?>(null)
     val deliveryBoyLocation = _deliveryBoyLocation.asStateFlow()
 
     init {
-        observePendingOrders()
-        observeAcceptedOrders()
-        observeAssignedOrders()
+        observeAllOrders()
+        loadDeliveryBoys()
     }
 
-    private fun observePendingOrders() {
+    private fun observeAllOrders() {
         viewModelScope.launch {
-            repository.getPendingOrders().collect { _pendingOrders.value = it }
+            repository.listenToShopkeeperOrders().collect { allOrders ->
+                _pendingOrders.value = allOrders.filter { it.orderStatus == "pending" }
+                _acceptedOrders.value = allOrders.filter { it.orderStatus == "accepted" }
+                _assignedOrders.value = allOrders.filter { it.orderStatus == "assigned" || it.orderStatus == "out_for_delivery" }
+            }
         }
     }
 
-    private fun observeAcceptedOrders() {
+    private fun loadDeliveryBoys() {
         viewModelScope.launch {
-            repository.getAcceptedOrders().collect { _acceptedOrders.value = it }
+            _deliveryBoys.value = repository.getDeliveryBoys()
         }
     }
 
-    private fun observeAssignedOrders() {
-        viewModelScope.launch {
-            repository.getAssignedOrdersForShop().collect { _assignedOrders.value = it }
-        }
-    }
-
-    fun accept(orderId: String) {
+    fun acceptOrder(orderId: String) {
         val shopkeeperId = repository.getCurrentUserId() ?: return
         viewModelScope.launch {
             repository.acceptOrder(orderId, shopkeeperId)
-        }
-    }
-
-    fun updateOrderStatus(orderId: String, status: String) {
-        viewModelScope.launch {
-            repository.updateOrderStatus(orderId, status)
         }
     }
 
@@ -67,10 +62,16 @@ class ShopkeeperViewModel : ViewModel() {
         }
     }
 
+    fun updateOrderStatus(orderId: String, status: String) {
+        viewModelScope.launch {
+            repository.updateOrderStatus(orderId, status)
+        }
+    }
+
     fun observeDeliveryBoyLocation(deliveryBoyId: String) {
         viewModelScope.launch {
-            repository.observeDeliveryBoyLocation(deliveryBoyId).collect { location ->
-                location?.let {
+            repository.observeOrderTracking(deliveryBoyId).collect { order ->
+                order?.liveLocation?.let {
                     _deliveryBoyLocation.value = LatLng(it.lat, it.lng)
                 }
             }

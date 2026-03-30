@@ -33,7 +33,6 @@ import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.card.MaterialCardView
 import com.nisr.sauservices.data.model.Delivery
-import com.nisr.sauservices.service.LocationService
 import com.nisr.sauservices.ui.adapters.DeliveryAdapter
 import com.nisr.sauservices.ui.viewmodels.DeliveryBoyViewModel
 import kotlinx.coroutines.launch
@@ -58,10 +57,6 @@ class DeliveryDashboardActivity : AppCompatActivity(), OnMapReadyCallback {
 
         viewModel = ViewModelProvider(this)[DeliveryBoyViewModel::class.java]
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-
-        // Start Foreground Location Service
-        val serviceIntent = Intent(this, LocationService::class.java)
-        startForegroundService(serviceIntent)
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -121,8 +116,10 @@ class DeliveryDashboardActivity : AppCompatActivity(), OnMapReadyCallback {
             layoutManager = LinearLayoutManager(this@DeliveryDashboardActivity)
         }
         val adapter = DeliveryAdapter(emptyList()) { delivery ->
-            if (delivery.status == "Delivered") {
+            if (delivery.status == "delivered") {
                 viewModel.markDelivered(delivery.deliveryId)
+            } else if (delivery.status == "assigned") {
+                viewModel.startDelivery(this@DeliveryDashboardActivity, delivery.deliveryId)
             }
         }
         recyclerView.adapter = adapter
@@ -138,7 +135,8 @@ class DeliveryDashboardActivity : AppCompatActivity(), OnMapReadyCallback {
                             pickupAddress = "Shop",
                             dropAddress = it.address,
                             distance = "Calculating...",
-                            status = it.orderStatus
+                            status = it.orderStatus,
+                            items = ""
                         )
                     }
                     adapter.updateData(deliveries)
@@ -164,8 +162,6 @@ class DeliveryDashboardActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         }
 
-        viewModel.observeAssignedOrders()
-
         scrollView.addView(contentLayout)
         root.addView(scrollView)
         setContentView(root)
@@ -179,9 +175,13 @@ class DeliveryDashboardActivity : AppCompatActivity(), OnMapReadyCallback {
         googleMap?.let { map ->
             // Clear markers not in current orders
             val orderIds = orders.map { it.orderId }.toSet()
-            customerMarkers.filter { it.key !in orderIds }.forEach { (id, marker) ->
-                marker.remove()
-                customerMarkers.remove(id)
+            val iterator = customerMarkers.entries.iterator()
+            while (iterator.hasNext()) {
+                val entry = iterator.next()
+                if (entry.key !in orderIds) {
+                    entry.value.remove()
+                    iterator.remove()
+                }
             }
 
             // Add or update markers for current orders

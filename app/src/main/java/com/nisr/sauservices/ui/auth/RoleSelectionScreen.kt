@@ -21,6 +21,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.nisr.sauservices.navigation.Routes
 import com.nisr.sauservices.ui.Screen
 
 // Colors updated to match the clean design
@@ -35,7 +36,8 @@ data class RoleOption(
     val description: String,
     val icon: ImageVector,
     val iconColor: Color,
-    val iconBg: Color
+    val iconBg: Color,
+    val route: String? = null
 )
 
 @Composable
@@ -74,6 +76,15 @@ fun RoleSelectionScreen(navController: NavController) {
             icon = Icons.Rounded.LocalShipping,
             iconColor = Color(0xFF16A34A),
             iconBg = Color(0xFFF0FDF4)
+        ),
+        RoleOption(
+            id = "admin",
+            title = "Administrator",
+            description = "Manage users, bookings and system settings.",
+            icon = Icons.Rounded.AdminPanelSettings,
+            iconColor = Color(0xFF4F46E5),
+            iconBg = Color(0xFFEEF2FF),
+            route = Routes.ADMIN_DASHBOARD
         )
     )
 
@@ -132,7 +143,11 @@ fun RoleSelectionScreen(navController: NavController) {
                     HorizontalRoleCard(
                         role = role,
                         onClick = {
-                            navController.navigate(Screen.AuthOptions.createRoute(role.id))
+                            if (role.id == "admin") {
+                                navController.navigate(Routes.ADMIN_DASHBOARD)
+                            } else {
+                                navController.navigate(Screen.AuthOptions.createRoute(role.id))
+                            }
                         }
                     )
                 }

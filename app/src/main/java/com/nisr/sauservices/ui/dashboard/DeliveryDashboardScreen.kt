@@ -1,5 +1,6 @@
 package com.nisr.sauservices.ui.dashboard
 
+import android.content.Context
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -15,12 +16,12 @@ import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -30,9 +31,9 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 import com.nisr.sauservices.data.local.SessionManager
-import com.nisr.sauservices.data.model.Delivery
+import com.nisr.sauservices.data.model.OrderModel
 import com.nisr.sauservices.ui.Screen
-import com.nisr.sauservices.ui.viewmodel.DeliveryViewModel
+import com.nisr.sauservices.ui.viewmodels.DeliveryBoyViewModel
 
 // Clean Palette
 private val PrimaryBlue = Color(0xFF1E3A8A)
@@ -49,7 +50,7 @@ private val ActiveBlue = Color(0xFF3B82F6)
 fun DeliveryDashboardScreen(
     navController: NavController,
     sessionManager: SessionManager,
-    deliveryViewModel: DeliveryViewModel
+    deliveryBoyViewModel: DeliveryBoyViewModel
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     var isChatOpen by remember { mutableStateOf(false) }
@@ -72,8 +73,8 @@ fun DeliveryDashboardScreen(
     ) { padding ->
         Box(modifier = Modifier.padding(padding)) {
             when (selectedTab) {
-                0 -> DeliveryHomeScreen(deliveryViewModel, onLogout)
-                1 -> DeliveriesListScreen(deliveryViewModel, onLogout)
+                0 -> DeliveryHomeScreen(deliveryBoyViewModel, onLogout)
+                1 -> DeliveriesListScreen(deliveryBoyViewModel, onLogout)
                 2 -> DeliveryEarningsScreen(onLogout)
                 3 -> DeliveryProfileScreen(onLogout)
             }
@@ -86,8 +87,10 @@ fun DeliveryDashboardScreen(
 }
 
 @Composable
-fun DeliveryHomeScreen(viewModel: DeliveryViewModel, onLogout: () -> Unit) {
-    val deliveries by viewModel.deliveries.observeAsState(initial = emptyList<Delivery>())
+fun DeliveryHomeScreen(viewModel: DeliveryBoyViewModel, onLogout: () -> Unit) {
+    val assignedOrders by viewModel.assignedOrders.collectAsState()
+    val availableOrders by viewModel.availableOrders.collectAsState()
+    val context = LocalContext.current
     var isOnline by remember { mutableStateOf(true) }
 
     LazyColumn(
@@ -138,41 +141,55 @@ fun DeliveryHomeScreen(viewModel: DeliveryViewModel, onLogout: () -> Unit) {
 
                 // Stats Grid
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    DeliveryStatCard("Ready for Pickup", "4", Icons.Rounded.Inventory2, PendingOrange, Modifier.weight(1f))
-                    DeliveryStatCard("Today's Deliveries", "7", Icons.Rounded.ElectricBike, ActiveBlue, Modifier.weight(1f))
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    DeliveryStatCard("Today's Earnings", "₹1,800", Icons.Rounded.Payments, SuccessGreen, Modifier.weight(1f))
-                    DeliveryStatCard("Distance Covered", "32 km", Icons.Rounded.MyLocation, TextGrey, Modifier.weight(1f))
+                    DeliveryStatCard("Assigned", assignedOrders.size.toString(), Icons.Rounded.Inventory2, PendingOrange, Modifier.weight(1f))
+                    DeliveryStatCard("Available", availableOrders.size.toString(), Icons.Rounded.ElectricBike, ActiveBlue, Modifier.weight(1f))
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                Text("Delivery Tasks", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                Text("Assigned Tasks", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark)
                 Spacer(modifier = Modifier.height(12.dp))
             }
         }
 
-        items(deliveries.take(3)) { delivery ->
-            Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
-                DeliveryTaskCard(delivery)
+        if (assignedOrders.isEmpty()) {
+            item {
+                Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                    Text("No assigned orders", color = TextGrey)
+                }
+            }
+        } else {
+            items(assignedOrders) { order ->
+                Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+                    DeliveryTaskCard(order, onAction = { viewModel.startDelivery(context, order.orderId) })
+                }
             }
         }
-        
+
         item {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Route Preview", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextDark)
-                Spacer(modifier = Modifier.height(12.dp))
-                RoutePreviewCard()
+            Text("Available Orders", modifier = Modifier.padding(16.dp), fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark)
+        }
+
+        if (availableOrders.isEmpty()) {
+            item {
+                Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                    Text("No available orders", color = TextGrey)
+                }
+            }
+        } else {
+            items(availableOrders) { order ->
+                Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+                    DeliveryTaskCard(order, onAction = { })
+                }
             }
         }
     }
 }
 
 @Composable
-fun DeliveriesListScreen(viewModel: DeliveryViewModel, onLogout: () -> Unit) {
-    val deliveries by viewModel.deliveries.observeAsState(initial = emptyList<Delivery>())
+fun DeliveriesListScreen(viewModel: DeliveryBoyViewModel, onLogout: () -> Unit) {
+    val assignedOrders by viewModel.assignedOrders.collectAsState()
+    val context = LocalContext.current
     
     Column(modifier = Modifier.fillMaxSize()) {
         DeliveryDashboardHeader(title = "Deliveries", onLogout = onLogout, showToggle = false)
@@ -181,8 +198,8 @@ fun DeliveriesListScreen(viewModel: DeliveryViewModel, onLogout: () -> Unit) {
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(deliveries) { delivery ->
-                DeliveryTaskCard(delivery)
+            items(assignedOrders) { order ->
+                DeliveryTaskCard(order, onAction = { viewModel.startDelivery(context, order.orderId) })
             }
         }
     }
@@ -408,7 +425,7 @@ fun DeliveryStatCard(label: String, value: String, icon: ImageVector, color: Col
 }
 
 @Composable
-fun DeliveryTaskCard(delivery: Delivery) {
+fun DeliveryTaskCard(order: OrderModel, onAction: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -421,27 +438,29 @@ fun DeliveryTaskCard(delivery: Delivery) {
                     Icon(Icons.Rounded.Storefront, null, tint = PendingOrange, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
-                        Text(delivery.customerName, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextDark)
-                        Text(delivery.items, fontSize = 13.sp, color = TextGrey)
+                        Text("Order #${order.orderId.takeLast(6)}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextDark)
+                        Text(order.orderId, fontSize = 13.sp, color = TextGrey)
                     }
                 }
                 Surface(
-                    color = when(delivery.status.lowercase()) {
-                        "pending" -> PendingOrange.copy(alpha = 0.1f)
-                        "active" -> ActiveBlue.copy(alpha = 0.1f)
-                        else -> SuccessGreen.copy(alpha = 0.1f)
+                    color = when(order.orderStatus.lowercase()) {
+                        "accepted" -> PendingOrange.copy(alpha = 0.1f)
+                        "assigned" -> ActiveBlue.copy(alpha = 0.1f)
+                        "out_for_delivery" -> SuccessGreen.copy(alpha = 0.1f)
+                        else -> Color.Gray.copy(alpha = 0.1f)
                     },
                     shape = RoundedCornerShape(20.dp)
                 ) {
                     Text(
-                        delivery.status.uppercase(),
+                        order.orderStatus.uppercase(),
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = when(delivery.status.lowercase()) {
-                            "pending" -> PendingOrange
-                            "active" -> ActiveBlue
-                            else -> SuccessGreen
+                        color = when(order.orderStatus.lowercase()) {
+                            "accepted" -> PendingOrange
+                            "assigned" -> ActiveBlue
+                            "out_for_delivery" -> SuccessGreen
+                            else -> Color.Gray
                         }
                     )
                 }
@@ -452,89 +471,20 @@ fun DeliveryTaskCard(delivery: Delivery) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Rounded.LocationOn, null, tint = PendingOrange, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(delivery.dropAddress, fontSize = 13.sp, color = TextGrey)
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.Schedule, null, tint = TextGrey, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("${delivery.cartAddedTime} — \uD83D\uDCB3 Cash", fontSize = 13.sp, color = TextGrey)
-            }
-
-            if (delivery.status.lowercase() == "active") {
-                Spacer(modifier = Modifier.height(16.dp))
-                Surface(
-                    color = Background,
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("Status Flow", fontSize = 12.sp, color = TextGrey)
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text("Pickup", color = SuccessGreen, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                        Text(" → ", color = TextGrey)
-                        Text("Out for Delivery", color = ActiveBlue, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                        Text(" → ", color = TextGrey)
-                        Text("Delivered", color = TextGrey, fontSize = 12.sp)
-                    }
-                }
+                Text(order.address, fontSize = 13.sp, color = TextGrey)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
             
-            if (delivery.status.lowercase() == "pending") {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Button(
-                        onClick = { },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Text("Accept")
-                    }
-                    Button(
-                        onClick = { },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = ActiveBlue),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Text("Navigate")
-                    }
-                }
-            } else if (delivery.status.lowercase() == "active") {
+            if (order.orderStatus == "assigned") {
                 Button(
-                    onClick = { },
+                    onClick = onAction,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
                     shape = RoundedCornerShape(10.dp)
                 ) {
-                    Text("Complete Delivery")
+                    Text("Start Delivery")
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun RoutePreviewCard() {
-    Surface(
-        modifier = Modifier.fillMaxWidth().height(180.dp),
-        shape = RoundedCornerShape(16.dp),
-        color = Color(0xFFE5E7EB),
-        border = BorderStroke(1.dp, Border)
-    ) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(
-                    modifier = Modifier.size(40.dp).clip(CircleShape).background(PrimaryBlue),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Rounded.MyLocation, null, tint = Color.White)
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-                Text("You: Sector 10", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                Text("Pickup: Kumar Store", fontSize = 12.sp, color = TextGrey)
-                Text("Drop: Block A, Sector 5", fontSize = 12.sp, color = TextGrey)
             }
         }
     }

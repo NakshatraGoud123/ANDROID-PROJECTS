@@ -35,9 +35,6 @@ import com.nisr.sauservices.data.model.*
 import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.theme.PinkPrimary
 import com.nisr.sauservices.ui.viewmodel.*
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 data class PaymentOptionData(val name: String, val icon: ImageVector)
 
@@ -214,7 +211,7 @@ fun ResidentialServiceListScreen(
                     onAdd = { 
                         cartViewModel.addItemToCart(
                             name = service.name,
-                            price = service.price.toDouble(),
+                            price = service.price,
                             category = "Residential",
                             subcategory = subcategoryId,
                             unit = "Service",
@@ -445,15 +442,15 @@ fun ResidentialOrderSummaryScreen(
 
     val allCartModels = remember(resItems, bizItems, lifeItems, tItems, mItems, wItems, hItems, fItems, dbCartItems, eItems) {
         val list = mutableListOf<CartModel>()
-        resItems.forEach { list.add(CartModel(itemName = it.service.name, price = it.service.price.toDouble(), quantity = it.quantity, totalPrice = it.service.price * it.quantity.toDouble(), category = "Residential")) }
-        bizItems.forEach { list.add(CartModel(itemName = it.name, price = it.price.toDouble(), quantity = it.quantity, totalPrice = it.price * it.quantity.toDouble(), category = "Business")) }
-        lifeItems.forEach { list.add(CartModel(itemName = it.name, price = it.price.toDouble(), quantity = it.quantity, totalPrice = it.price * it.quantity.toDouble(), category = "Lifestyle")) }
-        tItems.forEach { list.add(CartModel(itemName = it.name, price = it.price.toDouble(), quantity = it.quantity, totalPrice = it.price * it.quantity.toDouble(), category = "Tech")) }
-        mItems.forEach { list.add(CartModel(itemName = it.name, price = it.price.toDouble(), quantity = it.quantity, totalPrice = it.price * it.quantity.toDouble(), category = "Mens")) }
-        wItems.forEach { list.add(CartModel(itemName = it.name, price = it.price.toDouble(), quantity = it.quantity, totalPrice = it.price * it.quantity.toDouble(), category = "Womens")) }
-        hItems.forEach { list.add(CartModel(itemName = it.name, price = it.price.toDouble(), quantity = it.quantity, totalPrice = it.price * it.quantity.toDouble(), category = "Healthcare")) }
-        fItems.forEach { list.add(CartModel(itemName = it.name, price = it.price.toDouble(), quantity = it.quantity, totalPrice = it.price * it.quantity.toDouble(), category = "Food")) }
-        eItems.forEach { list.add(CartModel(itemName = it.name, price = it.price.toDouble(), quantity = it.quantity, totalPrice = it.price * it.quantity.toDouble(), category = "Education")) }
+        resItems.forEach { list.add(CartModel(itemName = it.service.name, price = it.service.price, quantity = it.quantity, totalPrice = it.service.price * it.quantity, category = "Residential")) }
+        bizItems.forEach { list.add(CartModel(itemName = it.name, price = it.price, quantity = it.quantity, totalPrice = it.price * it.quantity, category = "Business")) }
+        lifeItems.forEach { list.add(CartModel(itemName = it.name, price = it.price, quantity = it.quantity, totalPrice = it.price * it.quantity, category = "Lifestyle")) }
+        tItems.forEach { list.add(CartModel(itemName = it.name, price = it.price, quantity = it.quantity, totalPrice = it.price * it.quantity, category = "Tech")) }
+        mItems.forEach { list.add(CartModel(itemName = it.name, price = it.price, quantity = it.quantity, totalPrice = it.price * it.quantity, category = "Mens")) }
+        wItems.forEach { list.add(CartModel(itemName = it.name, price = it.price, quantity = it.quantity, totalPrice = it.price * it.quantity, category = "Womens")) }
+        hItems.forEach { list.add(CartModel(itemName = it.name, price = it.price, quantity = it.quantity, totalPrice = it.price * it.quantity, category = "Healthcare")) }
+        fItems.forEach { list.add(CartModel(itemName = it.name, price = it.price.toDouble(), quantity = it.quantity, totalPrice = (it.price * it.quantity).toDouble(), category = "Food")) }
+        eItems.forEach { list.add(CartModel(itemName = it.name, price = it.price.toDouble(), quantity = it.quantity, totalPrice = (it.price * it.quantity).toDouble(), category = "Education")) }
         list.addAll(dbCartItems)
         list
     }

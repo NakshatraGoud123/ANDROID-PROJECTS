@@ -14,10 +14,10 @@ import com.nisr.sauservices.ui.home.*
 import com.nisr.sauservices.ui.pls.*
 import com.nisr.sauservices.ui.viewmodel.BookingsViewModel
 import com.nisr.sauservices.ui.viewmodel.ResidentialViewModel
-import com.nisr.sauservices.ui.viewmodel.ServiceWorkerViewModel
-import com.nisr.sauservices.ui.viewmodel.DeliveryViewModel
+import com.nisr.sauservices.ui.viewmodels.ServiceWorkerViewModel
 import com.nisr.sauservices.ui.viewmodels.ShopkeeperViewModel
 import com.nisr.sauservices.ui.viewmodels.PropertyLifestyleViewModel
+import com.nisr.sauservices.ui.viewmodels.DeliveryBoyViewModel
 
 fun NavGraphBuilder.homeNavGraph(
     navController: NavController,
@@ -53,7 +53,13 @@ fun NavGraphBuilder.homeNavGraph(
     // Partner Dashboards
     composable(Routes.SHOPKEEPER_DASHBOARD) { ShopkeeperDashboardScreen(navController, sessionManager, viewModel<ShopkeeperViewModel>()) }
     composable(Routes.SERVICE_WORKER_DASHBOARD) { ServiceWorkerDashboardScreen(navController, sessionManager, viewModel<ServiceWorkerViewModel>()) }
-    composable(Routes.DELIVERY_DASHBOARD) { DeliveryDashboardScreen(navController, sessionManager, viewModel<DeliveryViewModel>()) }
+    composable(Routes.DELIVERY_DASHBOARD) { 
+        DeliveryDashboardScreen(
+            navController, 
+            sessionManager, 
+            viewModel<DeliveryBoyViewModel>()
+        ) 
+    }
 
     // Property & Lifestyle Services (PLS)
     composable(Routes.PLS_MAIN) { PLSMainScreen(navController) }

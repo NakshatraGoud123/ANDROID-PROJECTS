@@ -15,7 +15,6 @@ import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,12 +25,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nisr.sauservices.data.local.SessionManager
-import com.nisr.sauservices.data.model.Booking
+import com.nisr.sauservices.data.model.BookingModel
 import com.nisr.sauservices.ui.Screen
-import com.nisr.sauservices.ui.viewmodel.ServiceWorkerViewModel
+import com.nisr.sauservices.ui.viewmodels.ServiceWorkerViewModel
 
 // Updated Clean Palette
-private val PrimaryBlue = Color(0xFF1E3A8A) // Darker blue for header
+private val PrimaryBlue = Color(0xFF1E3A8A)
 private val Background = Color(0xFFF9FAFB)
 private val Surface = Color(0xFFFFFFFF)
 private val Border = Color(0xFFF1F5F9)
@@ -52,7 +51,7 @@ fun ServiceWorkerDashboardScreen(
 
     val onLogout = {
         sessionManager.logout()
-        navController.navigate(Screen.RoleSelection.route) {
+        navController.navigate("role_selection") {
             popUpTo(0) { inclusive = true }
         }
     }
@@ -83,7 +82,9 @@ fun ServiceWorkerDashboardScreen(
 
 @Composable
 fun HomeScreen(viewModel: ServiceWorkerViewModel, onLogout: () -> Unit) {
-    val bookings by viewModel.bookings.observeAsState(initial = emptyList())
+    val pendingBookings by viewModel.pendingBookings.collectAsState()
+    val acceptedBookings by viewModel.acceptedBookings.collectAsState()
+    val completedBookings by viewModel.completedBookings.collectAsState()
     var isOnline by remember { mutableStateOf(true) }
 
     LazyColumn(
@@ -91,15 +92,11 @@ fun HomeScreen(viewModel: ServiceWorkerViewModel, onLogout: () -> Unit) {
         contentPadding = PaddingValues(bottom = 24.dp)
     ) {
         item {
-            DashboardHeader(
-                title = "Service Worker",
-                onLogout = onLogout
-            )
+            DashboardHeader(title = "Service Dashboard", onLogout = onLogout)
         }
 
         item {
             Column(modifier = Modifier.padding(16.dp)) {
-                // Availability Card
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
@@ -112,9 +109,9 @@ fun HomeScreen(viewModel: ServiceWorkerViewModel, onLogout: () -> Unit) {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column {
-                            Text("Availability", fontWeight = FontWeight.Bold, color = TextDark)
+                            Text("Work Status", fontWeight = FontWeight.Bold, color = TextDark)
                             Text(
-                                if (isOnline) "Online — Accepting jobs" else "Offline — Not accepting jobs",
+                                if (isOnline) "Online — Receiving requests" else "Offline — Not receiving",
                                 fontSize = 12.sp,
                                 color = if (isOnline) SuccessGreen else TextGrey
                             )
@@ -122,35 +119,36 @@ fun HomeScreen(viewModel: ServiceWorkerViewModel, onLogout: () -> Unit) {
                         Switch(
                             checked = isOnline,
                             onCheckedChange = { isOnline = it },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.White,
-                                checkedTrackColor = PrimaryBlue
-                            )
+                            colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = SuccessGreen)
                         )
                     }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Stats Grid
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    StatCard("Pending Jobs", "3", Icons.Rounded.Schedule, PendingOrange, Modifier.weight(1f))
-                    StatCard("Accepted", "2", Icons.Rounded.WorkOutline, ActiveBlue, Modifier.weight(1f))
+                    StatCard("Requests", pendingBookings.size.toString(), Icons.Rounded.Schedule, PendingOrange, Modifier.weight(1f))
+                    StatCard("Accepted", acceptedBookings.size.toString(), Icons.Rounded.WorkOutline, ActiveBlue, Modifier.weight(1f))
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    StatCard("Completed", "8", Icons.Rounded.CheckCircleOutline, SuccessGreen, Modifier.weight(1f))
-                    StatCard("Today's Earnings", "₹2,400", Icons.Rounded.Payments, Color(0xFFEAB308), Modifier.weight(1f))
+                    StatCard("Completed", completedBookings.size.toString(), Icons.Rounded.CheckCircleOutline, SuccessGreen, Modifier.weight(1f))
+                    StatCard("Earnings", "₹---", Icons.Rounded.Payments, Color(0xFFEAB308), Modifier.weight(1f))
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
-
-                Text("Today's Jobs", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                Text("Ongoing & New Jobs", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark)
                 Spacer(modifier = Modifier.height(12.dp))
             }
         }
 
-        items(bookings.take(3)) { booking ->
+        items(acceptedBookings) { booking ->
+            Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+                JobCard(booking, viewModel)
+            }
+        }
+
+        items(pendingBookings) { booking ->
             Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
                 JobCard(booking, viewModel)
             }
@@ -159,7 +157,7 @@ fun HomeScreen(viewModel: ServiceWorkerViewModel, onLogout: () -> Unit) {
         item {
             Spacer(modifier = Modifier.height(16.dp))
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                Text("Customer Location", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                Text("Location Preview", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextDark)
                 Spacer(modifier = Modifier.height(12.dp))
                 MiniMapCard()
             }
@@ -169,18 +167,18 @@ fun HomeScreen(viewModel: ServiceWorkerViewModel, onLogout: () -> Unit) {
 
 @Composable
 fun TasksScreen(viewModel: ServiceWorkerViewModel, onLogout: () -> Unit) {
-    val bookings by viewModel.bookings.observeAsState(initial = emptyList())
+    val pending by viewModel.pendingBookings.collectAsState()
+    val accepted by viewModel.acceptedBookings.collectAsState()
     
     Column(modifier = Modifier.fillMaxSize()) {
-        DashboardHeader(title = "Tasks", onLogout = onLogout)
+        DashboardHeader(title = "Task List", onLogout = onLogout)
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(bookings) { booking ->
-                JobCard(booking, viewModel)
-            }
+            items(accepted) { booking -> JobCard(booking, viewModel) }
+            items(pending) { booking -> JobCard(booking, viewModel) }
         }
     }
 }
@@ -189,76 +187,8 @@ fun TasksScreen(viewModel: ServiceWorkerViewModel, onLogout: () -> Unit) {
 fun EarningsScreen(onLogout: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
         DashboardHeader(title = "Earnings", onLogout = onLogout)
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Weekly Trend Chart Placeholder
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                color = Surface,
-                border = BorderStroke(1.dp, Border)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Weekly Trend", fontSize = 14.sp, color = TextGrey)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth().height(120.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.Bottom
-                    ) {
-                        val heights = listOf(0.4f, 0.7f, 0.5f, 0.8f, 0.6f, 0.9f, 0.5f)
-                        heights.forEach { h ->
-                            Box(
-                                modifier = Modifier
-                                    .width(32.dp)
-                                    .fillMaxHeight(h)
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(PrimaryBlue)
-                            )
-                        }
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        listOf("M", "T", "W", "T", "F", "S", "S").forEach { 
-                            Text(it, fontSize = 12.sp, color = TextGrey)
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-            Text("Job History", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark)
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // History List
-            val history = listOf(
-                Triple("AC Repair", "Amit Sharma • Today", "₹800"),
-                Triple("Plumbing", "Priya Verma • Today", "₹600"),
-                Triple("Cleaning", "Neha Gupta • Yesterday", "₹1,000"),
-                Triple("Electrical", "Rajesh Kumar • Yesterday", "₹500")
-            )
-
-            history.forEach { (type, details, price) ->
-                Surface(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    color = Surface,
-                    border = BorderStroke(1.dp, Border)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text(type, fontWeight = FontWeight.Bold, color = TextDark)
-                            Text(details, fontSize = 12.sp, color = TextGrey)
-                        }
-                        Text(price, fontWeight = FontWeight.Bold, color = SuccessGreen, fontSize = 16.sp)
-                    }
-                }
-            }
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("Detailed earnings summary coming soon")
         }
     }
 }
@@ -266,130 +196,24 @@ fun EarningsScreen(onLogout: () -> Unit) {
 @Composable
 fun ProfileScreen(onLogout: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
-        DashboardHeader(title = "Profile", onLogout = onLogout)
-        Column(
-            modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Profile Info Card
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                color = Surface,
-                border = BorderStroke(1.dp, Border)
-            ) {
-                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier.size(64.dp).clip(RoundedCornerShape(12.dp)).background(PrimaryBlue),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("RS", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 24.sp)
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column {
-                        Text("Ravi Shankar", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextDark)
-                        Text("Service Worker • ID: SW-1024", fontSize = 13.sp, color = TextGrey)
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Rounded.Star, null, tint = Color(0xFFEAB308), modifier = Modifier.size(14.dp))
-                            Text(" 4.8 (120 reviews)", fontSize = 12.sp, color = TextGrey)
-                        }
-                    }
-                }
-            }
-
-            // Skills Card
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                color = Surface,
-                border = BorderStroke(1.dp, Border)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Skills", fontWeight = FontWeight.Bold, color = TextDark)
-                    Spacer(modifier = Modifier.height(12.dp))
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        val skills = listOf("AC Repair", "Plumbing", "Electrical", "Cleaning", "Painting")
-                        skills.forEach { skill ->
-                            Surface(
-                                color = Background,
-                                shape = RoundedCornerShape(20.dp),
-                                border = BorderStroke(1.dp, Border)
-                            ) {
-                                Text(skill, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), fontSize = 12.sp, color = TextDark)
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Verification Card
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                color = Surface,
-                border = BorderStroke(1.dp, Border)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Verification Status", fontWeight = FontWeight.Bold, color = TextDark)
-                        Text("Completed", color = SuccessGreen, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    VerificationItem("Aadhaar Verified", Icons.Rounded.CheckCircleOutline)
-                    VerificationItem("ID Proof Uploaded", Icons.AutoMirrored.Rounded.Notes)
-                    VerificationItem("Phone Verified: +91 98765xxxxx", Icons.Rounded.Phone)
-                }
-            }
+        DashboardHeader(title = "Worker Profile", onLogout = onLogout)
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("Worker profile settings coming soon")
         }
     }
 }
 
 @Composable
-fun VerificationItem(text: String, icon: ImageVector) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
-        Icon(icon, null, tint = SuccessGreen, modifier = Modifier.size(18.dp))
-        Spacer(modifier = Modifier.width(12.dp))
-        Text(text, fontSize = 14.sp, color = TextGrey)
-    }
-}
-
-@Composable
-fun DashboardHeader(
-    title: String,
-    onLogout: () -> Unit = {}
-) {
-    Surface(
-        color = PrimaryBlue,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.statusBarsPadding().padding(horizontal = 16.dp, vertical = 16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onLogout, modifier = Modifier.size(24.dp)) {
-                        Icon(Icons.AutoMirrored.Rounded.Logout, null, tint = Color.White, modifier = Modifier.size(20.dp))
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = {}) {
-                        Icon(Icons.Rounded.Notifications, null, tint = Color.White)
-                    }
-                    Box(
-                        modifier = Modifier.size(36.dp).clip(CircleShape).background(Color(0xFFEAB308)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Rounded.Person, null, tint = Color.White)
-                    }
-                }
+fun DashboardHeader(title: String, onLogout: () -> Unit) {
+    Surface(color = PrimaryBlue, modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.statusBarsPadding().padding(16.dp).fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            IconButton(onClick = onLogout) {
+                Icon(Icons.AutoMirrored.Rounded.Logout, null, tint = Color.White)
             }
         }
     }
@@ -404,21 +228,16 @@ fun StatCard(label: String, value: String, icon: ImageVector, color: Color, modi
         border = BorderStroke(1.dp, Border)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Box(
-                modifier = Modifier.size(36.dp).clip(CircleShape).background(color.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(icon, null, tint = color, modifier = Modifier.size(20.dp))
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(value, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextDark)
+            Icon(icon, null, tint = color)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(value, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = TextDark)
             Text(label, fontSize = 12.sp, color = TextGrey)
         }
     }
 }
 
 @Composable
-fun JobCard(booking: Booking, viewModel: ServiceWorkerViewModel) {
+fun JobCard(booking: BookingModel, viewModel: ServiceWorkerViewModel) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -428,13 +247,13 @@ fun JobCard(booking: Booking, viewModel: ServiceWorkerViewModel) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
-                    Text(booking.customerName, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextDark)
-                    Text(booking.serviceType, fontSize = 14.sp, color = TextGrey)
+                    Text(booking.serviceName, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextDark)
+                    Text("Date: ${booking.scheduledDate}", fontSize = 13.sp, color = TextGrey)
                 }
                 Surface(
                     color = when(booking.status.lowercase()) {
                         "pending" -> PendingOrange.copy(alpha = 0.1f)
-                        "active" -> ActiveBlue.copy(alpha = 0.1f)
+                        "accepted" -> ActiveBlue.copy(alpha = 0.1f)
                         else -> SuccessGreen.copy(alpha = 0.1f)
                     },
                     shape = RoundedCornerShape(20.dp)
@@ -446,7 +265,7 @@ fun JobCard(booking: Booking, viewModel: ServiceWorkerViewModel) {
                         fontWeight = FontWeight.Bold,
                         color = when(booking.status.lowercase()) {
                             "pending" -> PendingOrange
-                            "active" -> ActiveBlue
+                            "accepted" -> ActiveBlue
                             else -> SuccessGreen
                         }
                     )
@@ -454,46 +273,25 @@ fun JobCard(booking: Booking, viewModel: ServiceWorkerViewModel) {
             }
             
             Spacer(modifier = Modifier.height(12.dp))
-            
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.LocationOn, null, tint = PendingOrange, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(booking.address, fontSize = 13.sp, color = TextGrey)
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.Schedule, null, tint = TextGrey, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(booking.timeSlot, fontSize = 13.sp, color = TextGrey)
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
+            Text(booking.address, fontSize = 13.sp, color = TextGrey)
             
             if (booking.status.lowercase() == "pending") {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Button(
-                        onClick = { viewModel.updateBookingStatus(booking.bookingId, "active") },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Text("Accept")
-                    }
-                    OutlinedButton(
-                        onClick = { },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(10.dp),
-                        border = BorderStroke(1.dp, Border)
-                    ) {
-                        Text("Decline", color = TextDark)
-                    }
-                }
-            } else if (booking.status.lowercase() == "active") {
+                Spacer(modifier = Modifier.height(12.dp))
                 Button(
-                    onClick = { viewModel.updateBookingStatus(booking.bookingId, "completed") },
+                    onClick = { viewModel.acceptBooking(booking.bookingId) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Accept Booking")
+                }
+            } else if (booking.status.lowercase() == "accepted") {
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = { viewModel.completeBooking(booking.bookingId) },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
-                    shape = RoundedCornerShape(10.dp)
+                    shape = RoundedCornerShape(8.dp)
                 ) {
                     Text("Complete Job")
                 }
@@ -505,34 +303,20 @@ fun JobCard(booking: Booking, viewModel: ServiceWorkerViewModel) {
 @Composable
 fun MiniMapCard() {
     Surface(
-        modifier = Modifier.fillMaxWidth().height(180.dp),
+        modifier = Modifier.fillMaxWidth().height(150.dp),
         shape = RoundedCornerShape(16.dp),
-        color = Color(0xFFE5E7EB),
+        color = Color(0xFFF3F4F6),
         border = BorderStroke(1.dp, Border)
     ) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(
-                    modifier = Modifier.size(40.dp).clip(CircleShape).background(PrimaryBlue),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Rounded.LocationOn, null, tint = Color.White)
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("Customer: Sector 12", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                Text("You: Sector 10", fontSize = 11.sp, color = TextGrey)
-            }
+            Icon(Icons.Rounded.LocationOn, null, tint = PrimaryBlue, modifier = Modifier.size(32.dp))
         }
     }
 }
 
 @Composable
 fun BottomNavigationBar(selectedTab: Int, onTabSelected: (Int) -> Unit) {
-    NavigationBar(
-        containerColor = Surface,
-        contentColor = PrimaryBlue,
-        tonalElevation = 8.dp
-    ) {
+    NavigationBar(containerColor = Surface) {
         NavigationBarItem(
             icon = { Icon(Icons.Rounded.Home, null) },
             label = { Text("Home") },
@@ -540,7 +324,7 @@ fun BottomNavigationBar(selectedTab: Int, onTabSelected: (Int) -> Unit) {
             onClick = { onTabSelected(0) }
         )
         NavigationBarItem(
-            icon = { Icon(Icons.AutoMirrored.Rounded.Notes, null) },
+            icon = { Icon(Icons.Rounded.Assignment, null) },
             label = { Text("Tasks") },
             selected = selectedTab == 1,
             onClick = { onTabSelected(1) }
@@ -552,7 +336,7 @@ fun BottomNavigationBar(selectedTab: Int, onTabSelected: (Int) -> Unit) {
             onClick = { onTabSelected(2) }
         )
         NavigationBarItem(
-            icon = { Icon(Icons.Rounded.PersonOutline, null) },
+            icon = { Icon(Icons.Rounded.Person, null) },
             label = { Text("Profile") },
             selected = selectedTab == 3,
             onClick = { onTabSelected(3) }
@@ -562,19 +346,13 @@ fun BottomNavigationBar(selectedTab: Int, onTabSelected: (Int) -> Unit) {
 
 @Composable
 fun FloatingChatButton(onClick: () -> Unit) {
-    FloatingActionButton(
-        onClick = onClick,
-        containerColor = PendingOrange,
-        contentColor = Color.White,
-        shape = CircleShape
-    ) {
+    FloatingActionButton(onClick = onClick, containerColor = PendingOrange, contentColor = Color.White, shape = CircleShape) {
         Icon(Icons.AutoMirrored.Rounded.Chat, null)
     }
 }
 
 @Composable
 fun ChatWindow(onClose: () -> Unit) {
-    // Simplified Chat Overlay
     Box(
         modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)).clickable { onClose() },
         contentAlignment = Alignment.BottomEnd
@@ -585,54 +363,12 @@ fun ChatWindow(onClose: () -> Unit) {
             color = Surface
         ) {
             Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth().background(PrimaryBlue).padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("SAU Chatbot", color = Color.White, fontWeight = FontWeight.Bold)
-                    IconButton(onClick = onClose) {
-                        Icon(Icons.Rounded.Close, null, tint = Color.White)
-                    }
+                Row(modifier = Modifier.fillMaxWidth().background(PrimaryBlue).padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Text("Chat Support", color = Color.White, fontWeight = FontWeight.Bold)
+                    IconButton(onClick = onClose) { Icon(Icons.Rounded.Close, null, tint = Color.White) }
                 }
-                
-                Box(modifier = Modifier.weight(1f).padding(16.dp)) {
-                    Text("How can I help you today?", color = TextGrey)
-                }
-                
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    OutlinedTextField(
-                        value = "",
-                        onValueChange = {},
-                        modifier = Modifier.weight(1f),
-                        placeholder = { Text("Type message...") },
-                        shape = RoundedCornerShape(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    IconButton(onClick = {}, modifier = Modifier.background(PrimaryBlue, CircleShape)) {
-                        Icon(Icons.AutoMirrored.Rounded.Send, null, tint = Color.White)
-                    }
-                }
+                Box(modifier = Modifier.weight(1f).padding(16.dp)) { Text("Need assistance?", color = TextGrey) }
             }
         }
     }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun FlowRow(
-    modifier: Modifier = Modifier,
-    horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
-    verticalArrangement: Arrangement.Vertical = Arrangement.Top,
-    content: @Composable () -> Unit
-) {
-    androidx.compose.foundation.layout.FlowRow(
-        modifier = modifier,
-        horizontalArrangement = horizontalArrangement,
-        verticalArrangement = verticalArrangement,
-        content = { content() }
-    )
 }

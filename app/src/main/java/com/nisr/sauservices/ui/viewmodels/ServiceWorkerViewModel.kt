@@ -4,12 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nisr.sauservices.data.model.BookingModel
 import com.nisr.sauservices.data.repository.FirebaseRepository
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class ServiceWorkerViewModel : ViewModel() {
     private val repository = FirebaseRepository()
+    private val workerId = repository.getCurrentUserId() ?: ""
 
     private val _pendingBookings = MutableStateFlow<List<BookingModel>>(emptyList())
     val pendingBookings = _pendingBookings.asStateFlow()
@@ -17,27 +17,30 @@ class ServiceWorkerViewModel : ViewModel() {
     private val _acceptedBookings = MutableStateFlow<List<BookingModel>>(emptyList())
     val acceptedBookings = _acceptedBookings.asStateFlow()
 
+    private val _completedBookings = MutableStateFlow<List<BookingModel>>(emptyList())
+    val completedBookings = _completedBookings.asStateFlow()
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
     init {
-        observePendingBookings()
-        observeAcceptedBookings()
-    }
-
-    private fun observePendingBookings() {
-        viewModelScope.launch {
-            repository.getPendingBookings().collect { _pendingBookings.value = it }
+        if (workerId.isNotEmpty()) {
+            observeBookings()
         }
     }
 
-    private fun observeAcceptedBookings() {
+    private fun observeBookings() {
         viewModelScope.launch {
-            repository.getAcceptedBookings().collect { _acceptedBookings.value = it }
+            repository.listenToWorkerBookings(workerId).collect { allBookings ->
+                _pendingBookings.value = allBookings.filter { it.status == "pending" }
+                _acceptedBookings.value = allBookings.filter { it.status == "accepted" && it.workerId == workerId }
+                _completedBookings.value = allBookings.filter { it.status == "completed" && it.workerId == workerId }
+            }
         }
     }
 
-    fun acceptBooking(bookingId: String, workerId: String) {
+    fun acceptBooking(bookingId: String) {
+        if (workerId.isEmpty()) return
         viewModelScope.launch {
             _isLoading.value = true
             repository.updateBookingStatus(bookingId, "accepted", workerId)

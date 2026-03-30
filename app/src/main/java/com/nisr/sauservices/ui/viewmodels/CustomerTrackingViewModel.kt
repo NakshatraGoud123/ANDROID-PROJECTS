@@ -20,7 +20,7 @@ class CustomerTrackingViewModel : ViewModel() {
 
     fun trackOrder(orderId: String) {
         viewModelScope.launch {
-            repository.observeOrderTracking(orderId).collect { order ->
+            repository.listenToCustomerOrder(orderId).collect { order ->
                 _trackedOrder.value = order
                 order?.liveLocation?.let {
                     _deliveryLocation.value = LatLng(it.lat, it.lng)
