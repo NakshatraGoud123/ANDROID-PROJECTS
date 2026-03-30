@@ -67,6 +67,8 @@ dependencies {
     implementation(libs.firebase.database)
     implementation(libs.firebase.messaging)
     implementation(libs.play.services.auth)
+    implementation(libs.firebase.ai)
+    implementation(libs.firebase.database)
 
     // Retrofit & Networking
     implementation(libs.retrofit)
