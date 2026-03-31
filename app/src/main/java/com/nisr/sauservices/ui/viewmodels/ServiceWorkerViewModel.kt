@@ -31,7 +31,7 @@ class ServiceWorkerViewModel : ViewModel() {
 
     private fun observeBookings() {
         viewModelScope.launch {
-            repository.listenToWorkerBookings(workerId).collect { allBookings ->
+            repository.listenToBookings().collect { allBookings ->
                 _pendingBookings.value = allBookings.filter { it.status == "pending" }
                 _acceptedBookings.value = allBookings.filter { it.status == "accepted" && it.workerId == workerId }
                 _completedBookings.value = allBookings.filter { it.status == "completed" && it.workerId == workerId }
@@ -42,17 +42,13 @@ class ServiceWorkerViewModel : ViewModel() {
     fun acceptBooking(bookingId: String) {
         if (workerId.isEmpty()) return
         viewModelScope.launch {
-            _isLoading.value = true
             repository.updateBookingStatus(bookingId, "accepted", workerId)
-            _isLoading.value = false
         }
     }
 
     fun completeBooking(bookingId: String) {
         viewModelScope.launch {
-            _isLoading.value = true
-            repository.updateBookingStatus(bookingId, "completed")
-            _isLoading.value = false
+            repository.updateBookingStatus(bookingId, "completed", workerId)
         }
     }
 }

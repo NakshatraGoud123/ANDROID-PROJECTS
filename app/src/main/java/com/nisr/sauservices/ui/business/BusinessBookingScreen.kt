@@ -49,20 +49,26 @@ fun BusinessBookingScreen(navController: NavController, viewModel: BusinessViewM
         },
         bottomBar = {
             Button(
-                onClick = { navController.navigate(Screen.BusinessCheckout.route) },
-                enabled = viewModel.selectedDate.value.isNotEmpty() && viewModel.selectedTime.value.isNotEmpty(),
+                onClick = { navController.navigate(Screen.ResidentialBookingDetails.route) },
+                enabled = viewModel.selectedDate.value.isNotEmpty() && 
+                          viewModel.selectedTime.value.isNotEmpty() && 
+                          viewModel.customerAddress.value.isNotEmpty() && 
+                          viewModel.phoneNumber.value.length >= 10,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
                     .height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE0E0E0), disabledContainerColor = Color(0xFFE0E0E0)),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PinkPrimary,
+                    disabledContainerColor = Color(0xFFE0E0E0)
+                ),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
-                    "Proceed to Payment", 
+                    "Review Order", 
                     fontWeight = FontWeight.Bold, 
                     fontSize = 16.sp,
-                    color = if (viewModel.selectedDate.value.isNotEmpty() && viewModel.selectedTime.value.isNotEmpty()) Color.Black else Color.Gray
+                    color = Color.White
                 )
             }
         },
@@ -91,7 +97,7 @@ fun BusinessBookingScreen(navController: NavController, viewModel: BusinessViewM
                         modifier = Modifier.padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = Color(0xFFC2185B))
+                        Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = PinkPrimary)
                         Spacer(Modifier.width(16.dp))
                         Text(
                             text = if (viewModel.selectedDate.value.isEmpty()) "Choose a date" else viewModel.selectedDate.value,
@@ -115,8 +121,8 @@ fun BusinessBookingScreen(navController: NavController, viewModel: BusinessViewM
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(50.dp)
-                                        .background(Color.White, RoundedCornerShape(8.dp))
-                                        .border(1.dp, if (isSelected) Color(0xFFC2185B) else Color.LightGray, RoundedCornerShape(8.dp))
+                                        .background(if (isSelected) PinkPrimary.copy(alpha = 0.1f) else Color.White, RoundedCornerShape(8.dp))
+                                        .border(1.dp, if (isSelected) PinkPrimary else Color.LightGray, RoundedCornerShape(8.dp))
                                         .clickable { viewModel.selectedTime.value = slot }
                                         .padding(horizontal = 8.dp),
                                     contentAlignment = Alignment.Center
@@ -124,7 +130,8 @@ fun BusinessBookingScreen(navController: NavController, viewModel: BusinessViewM
                                     Text(
                                         text = slot,
                                         fontSize = 12.sp,
-                                        color = Color.Black,
+                                        color = if (isSelected) PinkPrimary else Color.Black,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                     )
                                 }
@@ -143,8 +150,12 @@ fun BusinessBookingScreen(navController: NavController, viewModel: BusinessViewM
                     onValueChange = { viewModel.customerAddress.value = it },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Enter your full address", fontSize = 14.sp) },
-                    leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null, tint = Color(0xFFC2185B)) },
-                    shape = RoundedCornerShape(12.dp)
+                    leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null, tint = PinkPrimary) },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = PinkPrimary,
+                        focusedLeadingIconColor = PinkPrimary
+                    )
                 )
             }
 
@@ -154,11 +165,15 @@ fun BusinessBookingScreen(navController: NavController, viewModel: BusinessViewM
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(
                     value = viewModel.phoneNumber.value,
-                    onValueChange = { viewModel.phoneNumber.value = it },
+                    onValueChange = { if (it.length <= 10) viewModel.phoneNumber.value = it },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Enter 10-digit mobile number", fontSize = 14.sp) },
-                    leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null, tint = Color(0xFFC2185B)) },
-                    shape = RoundedCornerShape(12.dp)
+                    leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null, tint = PinkPrimary) },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = PinkPrimary,
+                        focusedLeadingIconColor = PinkPrimary
+                    )
                 )
             }
         }

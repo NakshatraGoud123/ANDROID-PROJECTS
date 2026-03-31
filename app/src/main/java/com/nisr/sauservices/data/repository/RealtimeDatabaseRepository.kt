@@ -1,5 +1,6 @@
 package com.nisr.sauservices.data.repository
 
+import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -21,7 +22,8 @@ class RealtimeDatabaseRepository {
 
     suspend fun placeSupplyOrder(order: SupplyOrder): Result<String> = try {
         val userId = getCurrentUserId() ?: "anonymous"
-        val ref = database.getReference("orders").child(userId).push()
+        // Using a more specific path to avoid mixing types under "orders"
+        val ref = database.getReference("supply_orders").child(userId).push()
         val orderId = ref.key ?: throw Exception("Failed to get reference key")
         val finalOrder = order.copy(orderId = orderId, userId = userId)
         ref.setValue(finalOrder).await()
@@ -32,14 +34,15 @@ class RealtimeDatabaseRepository {
 
     suspend fun placeOrderDirectly(order: OrderModel): Result<String> = try {
         val userId = getCurrentUserId() ?: "anonymous"
-        val ref = database.getReference("orders").child(userId).push()
+        // Consistent with FirebaseRepository: flat structure
+        val ref = database.getReference("orders").push()
         val id = ref.key ?: throw Exception("Failed to get reference key")
-        val finalOrder = order.copy(orderId = id)
+        val finalOrder = order.copy(orderId = id, customerId = userId)
         ref.setValue(finalOrder).await()
         
         // Also store under /bookings if it has a schedule
         if (order.scheduleDate != null) {
-            database.getReference("bookings").child(userId).child(id).setValue(finalOrder).await()
+            database.getReference("bookings").child(id).setValue(finalOrder).await()
         }
 
         Result.success(id)
@@ -49,11 +52,16 @@ class RealtimeDatabaseRepository {
 
     fun observeUserActivity(): Flow<List<OrderModel>> = callbackFlow {
         val userId = getCurrentUserId() ?: "anonymous"
-        val ref = database.getReference("orders").child(userId)
+        // Now using query on flat structure
+        val ref = database.getReference("orders").orderByChild("customerId").equalTo(userId)
         
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val items = snapshot.children.mapNotNull { it.getValue(OrderModel::class.java) }
+                val items = snapshot.children.mapNotNull { child ->
+                    try {
+                        if (child.value is Map<*, *>) child.getValue(OrderModel::class.java) else null
+                    } catch (e: Exception) { null }
+                }
                 trySend(items)
             }
             override fun onCancelled(error: DatabaseError) {

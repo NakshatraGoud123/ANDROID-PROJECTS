@@ -32,7 +32,6 @@ fun BottomNavBar(
     
     val dbCartItems by cartViewModel.dbCartItems.collectAsState()
     
-    // Total badge count from all carts
     val cartCount = dbCartItems.sumOf { it.quantity } +
                     foodCartViewModel.cartItems.sumOf { it.quantity } +
                     residentialViewModel.cartItems.sumOf { it.quantity }
@@ -43,14 +42,14 @@ fun BottomNavBar(
     ) {
         val items = listOf(
             NavigationItem("Home", Screen.Home.route, Icons.Outlined.Home),
-            NavigationItem("Categories", Screen.Categories.route, Icons.Outlined.GridView),
-            NavigationItem("Bookings", Screen.Bookings.route, Icons.Outlined.EventNote),
-            NavigationItem("Tracking", Screen.OrderTracking.route, Icons.Outlined.LocationOn),
+            NavigationItem("Cart", Screen.HomeEssentialsCart.route, Icons.Outlined.ShoppingCart, cartCount),
+            NavigationItem("Orders", Screen.MyOrders.route, Icons.Outlined.ReceiptLong),
+            NavigationItem("Track", Screen.OrderTracking.route, Icons.Outlined.MyLocation),
             NavigationItem("Profile", Screen.Profile.route, Icons.Outlined.Person)
         )
 
         items.forEach { item ->
-            val isSelected = currentRoute == item.route
+            val isSelected = currentRoute == item.route || (item.route == Screen.OrderTracking.route && currentRoute?.startsWith("order_tracking") == true)
             
             NavigationBarItem(
                 selected = isSelected,
@@ -66,15 +65,13 @@ fun BottomNavBar(
                     }
                 },
                 icon = {
-                    if (item.badgeCount > 0) {
-                        BadgedBox(badge = { 
+                    BadgedBox(badge = { 
+                        if (item.badgeCount > 0) {
                             Badge(containerColor = PinkPrimary) { 
                                 Text(item.badgeCount.toString(), color = Color.White) 
                             } 
-                        }) {
-                            Icon(item.icon, null, modifier = Modifier.size(24.dp))
                         }
-                    } else {
+                    }) {
                         Icon(item.icon, null, modifier = Modifier.size(24.dp))
                     }
                 },

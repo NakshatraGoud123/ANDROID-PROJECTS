@@ -62,7 +62,11 @@ class CartRepository {
         
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val items = snapshot.children.mapNotNull { it.getValue(CartModel::class.java) }
+                val items = snapshot.children.mapNotNull { child ->
+                    try {
+                        if (child.value is Map<*, *>) child.getValue(CartModel::class.java) else null
+                    } catch (e: Exception) { null }
+                }
                 Log.d("CartRepository", "Cart snapshot changed: ${items.size} items found")
                 trySend(items)
             }
@@ -127,6 +131,7 @@ class CartRepository {
     // --- Staff Action Methods ---
 
     suspend fun updateOrderStatus(orderId: String, newStatus: String, staffId: String? = null): Result<Unit> = try {
+        if (orderId.isBlank()) throw Exception("OrderId is blank")
         val updates = mutableMapOf<String, Any?>("orderStatus" to newStatus)
         staffId?.let { updates["assignedDeliveryBoy"] = it }
 
@@ -137,6 +142,7 @@ class CartRepository {
     }
 
     suspend fun updateBookingStatus(bookingId: String, newStatus: String, workerId: String? = null): Result<Unit> = try {
+        if (bookingId.isBlank()) throw Exception("BookingId is blank")
         val updates = mutableMapOf<String, Any?>("status" to newStatus)
         workerId?.let { updates["workerId"] = it }
 
@@ -150,7 +156,11 @@ class CartRepository {
         val ref = database.getReference("orders")
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val orders = snapshot.children.mapNotNull { it.getValue(OrderModel::class.java) }
+                val orders = snapshot.children.mapNotNull { child ->
+                    try {
+                        if (child.value is Map<*, *>) child.getValue(OrderModel::class.java) else null
+                    } catch (e: Exception) { null }
+                }
                 trySend(orders)
             }
             override fun onCancelled(error: DatabaseError) { close(error.toException()) }
@@ -163,7 +173,11 @@ class CartRepository {
         val ref = database.getReference("bookings")
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val bookings = snapshot.children.mapNotNull { it.getValue(BookingModel::class.java) }
+                val bookings = snapshot.children.mapNotNull { child ->
+                    try {
+                        if (child.value is Map<*, *>) child.getValue(BookingModel::class.java) else null
+                    } catch (e: Exception) { null }
+                }
                 trySend(bookings)
             }
             override fun onCancelled(error: DatabaseError) { close(error.toException()) }

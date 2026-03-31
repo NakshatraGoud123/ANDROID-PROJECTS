@@ -9,12 +9,12 @@ import com.google.android.gms.maps.model.LatLng
 import com.nisr.sauservices.data.model.OrderModel
 import com.nisr.sauservices.data.repository.FirebaseRepository
 import com.nisr.sauservices.location.LocationService
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class DeliveryBoyViewModel : ViewModel() {
     private val repository = FirebaseRepository()
+    private val userId = repository.getCurrentUserId() ?: ""
 
     private val _assignedOrders = MutableStateFlow<List<OrderModel>>(emptyList())
     val assignedOrders = _assignedOrders.asStateFlow()
@@ -29,51 +29,30 @@ class DeliveryBoyViewModel : ViewModel() {
     val currentLocation = _currentLocation.asStateFlow()
 
     init {
-        observeOrders()
+        if (userId.isNotEmpty()) {
+            observeOrders()
+        }
     }
 
     private fun observeOrders() {
-        val userId = repository.getCurrentUserId() ?: return
         viewModelScope.launch {
             repository.listenToDeliveryBoyOrders(userId).collect {
                 _assignedOrders.value = it
             }
         }
         viewModelScope.launch {
-            repository.listenToAvailableOrders().collect {
-                _availableOrders.value = it
-            }
-        }
-    }
-
-    // For legacy Activity support
-    fun observeAssignedOrders() {
-        val userId = repository.getCurrentUserId() ?: return
-        viewModelScope.launch {
-            repository.listenToDeliveryBoyOrders(userId).collect {
-                _assignedOrders.value = it
+            repository.listenToOrders().collect { allOrders ->
+                _availableOrders.value = allOrders.filter { it.orderStatus == "accepted" }
             }
         }
     }
 
     fun updateLocation(lat: Double, lng: Double) {
         _currentLocation.value = LatLng(lat, lng)
-        val userId = repository.getCurrentUserId() ?: return
+        if (userId.isEmpty()) return
         viewModelScope.launch {
             repository.updateDeliveryLocation(userId, lat, lng)
         }
-    }
-
-    fun updateOrderStatus(orderId: String, status: String) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            repository.updateOrderStatus(orderId, status)
-            _isLoading.value = false
-        }
-    }
-
-    fun markDelivered(orderId: String) {
-        updateOrderStatus(orderId, "delivered")
     }
 
     fun startDelivery(context: Context, orderId: String) {
@@ -83,7 +62,13 @@ class DeliveryBoyViewModel : ViewModel() {
         }
     }
 
-    fun startLocationTracking(context: Context) {
+    fun markDelivered(orderId: String) {
+        viewModelScope.launch {
+            repository.updateOrderStatus(orderId, "delivered")
+        }
+    }
+
+    private fun startLocationTracking(context: Context) {
         val intent = Intent(context, LocationService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             context.startForegroundService(intent)

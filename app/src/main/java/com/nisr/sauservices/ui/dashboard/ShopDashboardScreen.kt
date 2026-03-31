@@ -132,7 +132,7 @@ fun SummaryCard(title: String, value: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun StatusBadge(status: String) {
+fun ShopStatusBadge(status: String) {
     val backgroundColor = when (status) {
         "Pending" -> Color(0xFFFFF3E0)
         "Accepted" -> Color(0xFFE8F5E9)
@@ -176,7 +176,7 @@ fun OrderListItem(order: Order, onStatusChange: (String) -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(text = "Order ID: ${order.orderId}", fontSize = 12.sp, color = Color.Gray)
-                StatusBadge(status)
+                ShopStatusBadge(status)
             }
             Text(text = order.customerName, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Text(text = "Total: ${order.amount}", fontSize = 14.sp, color = Color.DarkGray)

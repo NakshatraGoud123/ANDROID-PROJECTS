@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 
 class ShopkeeperViewModel : ViewModel() {
     private val repository = FirebaseRepository()
+    private val shopkeeperId = repository.getCurrentUserId() ?: ""
 
     private val _pendingOrders = MutableStateFlow<List<OrderModel>>(emptyList())
     val pendingOrders = _pendingOrders.asStateFlow()
@@ -22,6 +23,9 @@ class ShopkeeperViewModel : ViewModel() {
     private val _assignedOrders = MutableStateFlow<List<OrderModel>>(emptyList())
     val assignedOrders = _assignedOrders.asStateFlow()
 
+    private val _completedOrders = MutableStateFlow<List<OrderModel>>(emptyList())
+    val completedOrders = _completedOrders.asStateFlow()
+
     private val _deliveryBoys = MutableStateFlow<List<FirebaseUser>>(emptyList())
     val deliveryBoys = _deliveryBoys.asStateFlow()
 
@@ -29,16 +33,20 @@ class ShopkeeperViewModel : ViewModel() {
     val deliveryBoyLocation = _deliveryBoyLocation.asStateFlow()
 
     init {
-        observeAllOrders()
-        loadDeliveryBoys()
+        if (shopkeeperId.isNotEmpty()) {
+            observeOrders()
+            loadDeliveryBoys()
+        }
     }
 
-    private fun observeAllOrders() {
+    private fun observeOrders() {
         viewModelScope.launch {
             repository.listenToShopkeeperOrders().collect { allOrders ->
+                // Filtering based on status. In a real app, maybe filter by shopkeeperId too.
                 _pendingOrders.value = allOrders.filter { it.orderStatus == "pending" }
                 _acceptedOrders.value = allOrders.filter { it.orderStatus == "accepted" }
                 _assignedOrders.value = allOrders.filter { it.orderStatus == "assigned" || it.orderStatus == "out_for_delivery" }
+                _completedOrders.value = allOrders.filter { it.orderStatus == "delivered" }
             }
         }
     }
@@ -50,7 +58,7 @@ class ShopkeeperViewModel : ViewModel() {
     }
 
     fun acceptOrder(orderId: String) {
-        val shopkeeperId = repository.getCurrentUserId() ?: return
+        if (shopkeeperId.isEmpty()) return
         viewModelScope.launch {
             repository.acceptOrder(orderId, shopkeeperId)
         }
@@ -70,8 +78,8 @@ class ShopkeeperViewModel : ViewModel() {
 
     fun observeDeliveryBoyLocation(deliveryBoyId: String) {
         viewModelScope.launch {
-            repository.observeOrderTracking(deliveryBoyId).collect { order ->
-                order?.liveLocation?.let {
+            repository.listenToDeliveryLocations().collect { locations ->
+                locations[deliveryBoyId]?.let {
                     _deliveryBoyLocation.value = LatLng(it.lat, it.lng)
                 }
             }
