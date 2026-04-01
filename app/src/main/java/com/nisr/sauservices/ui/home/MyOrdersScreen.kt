@@ -1,6 +1,7 @@
 package com.nisr.sauservices.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -19,6 +20,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nisr.sauservices.data.model.OrderModel
 import com.nisr.sauservices.data.repository.RealtimeDatabaseRepository
+import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.theme.PinkPrimary
 import java.text.SimpleDateFormat
 import java.util.*
@@ -57,7 +59,9 @@ fun MyOrdersScreen(navController: NavController) {
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(orders.sortedByDescending { it.timestamp }) { order ->
-                    OrderCard(order)
+                    OrderCard(order, onClick = {
+                        navController.navigate(Screen.OrderTracking.createRoute(order.orderId))
+                    })
                 }
             }
         }
@@ -65,12 +69,14 @@ fun MyOrdersScreen(navController: NavController) {
 }
 
 @Composable
-fun OrderCard(order: OrderModel) {
+fun OrderCard(order: OrderModel, onClick: () -> Unit) {
     val sdf = remember { SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()) }
     val dateString = sdf.format(Date(order.timestamp))
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(2.dp)
@@ -86,15 +92,15 @@ fun OrderCard(order: OrderModel) {
                     Text(text = "ID: ${order.orderId}", fontSize = 12.sp, color = Color.Gray)
                 }
                 Surface(
-                    color = if (order.status == "success") Color(0xFFE8F5E9) else Color(0xFFFFF3E0),
+                    color = if (order.status == "success" || order.orderStatus == "delivered") Color(0xFFE8F5E9) else Color(0xFFFFF3E0),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
-                        text = order.status.uppercase(),
+                        text = (if (order.orderStatus.isNotEmpty()) order.orderStatus else order.status).uppercase(),
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (order.status == "success") Color(0xFF2E7D32) else Color(0xFFEF6C00)
+                        color = if (order.status == "success" || order.orderStatus == "delivered") Color(0xFF2E7D32) else Color(0xFFEF6C00)
                     )
                 }
             }
@@ -119,7 +125,7 @@ fun OrderCard(order: OrderModel) {
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
                 Text(text = dateString, fontSize = 12.sp, color = Color.Gray)
-                Text(text = "₹${order.amount}", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = PinkPrimary)
+                Text(text = "₹${order.totalPrice.coerceAtLeast(order.amount.toDouble())}", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = PinkPrimary)
             }
         }
     }

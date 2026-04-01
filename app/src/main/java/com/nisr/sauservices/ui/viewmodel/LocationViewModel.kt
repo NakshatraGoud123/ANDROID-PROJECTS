@@ -8,9 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
-import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
@@ -26,7 +24,8 @@ class LocationViewModel : ViewModel() {
         private set
 
     private var geocodeJob: Job? = null
-    private val database = FirebaseDatabase.getInstance().reference
+    private val dbUrl = "https://sau-services-default-rtdb.asia-southeast1.firebasedatabase.app/"
+    private val database = FirebaseDatabase.getInstance(dbUrl).reference
     private val auth = FirebaseAuth.getInstance()
 
     data class LocationUiState(
@@ -51,7 +50,6 @@ class LocationViewModel : ViewModel() {
     fun updateCenterLocation(latLng: LatLng, context: Context) {
         uiState = uiState.copy(centerLocation = latLng, isFetchingAddress = true)
         
-        // Debounce geocoding to avoid excessive API calls while dragging
         geocodeJob?.cancel()
         geocodeJob = viewModelScope.launch(Dispatchers.IO) {
             delay(500)
@@ -62,6 +60,7 @@ class LocationViewModel : ViewModel() {
     private fun reverseGeocode(latLng: LatLng, context: Context) {
         try {
             val geocoder = Geocoder(context, Locale.getDefault())
+            @Suppress("DEPRECATION")
             val addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
             if (!addresses.isNullOrEmpty()) {
                 val address = addresses[0]
@@ -83,8 +82,32 @@ class LocationViewModel : ViewModel() {
         }
     }
 
+    fun searchLocation(query: String, context: Context) {
+        if (query.isBlank()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val geocoder = Geocoder(context, Locale.getDefault())
+                @Suppress("DEPRECATION")
+                val addresses = geocoder.getFromLocationName(query, 1)
+                if (!addresses.isNullOrEmpty()) {
+                    val address = addresses[0]
+                    val latLng = LatLng(address.latitude, address.longitude)
+                    viewModelScope.launch(Dispatchers.Main) {
+                        updateCenterLocation(latLng, context)
+                    }
+                }
+            } catch (e: Exception) {
+                // Handle search error
+            }
+        }
+    }
+
     fun confirmLocation(onSuccess: () -> Unit) {
         val userId = auth.currentUser?.uid ?: return
+        
+        // Prevent saving invalid addresses
+        if (uiState.address == "Fetching address..." || uiState.isFetchingAddress) return
+
         val locationData = mapOf(
             "address" to uiState.address,
             "latitude" to uiState.centerLocation.latitude,
@@ -95,6 +118,9 @@ class LocationViewModel : ViewModel() {
         database.child("users").child(userId).child("selectedLocation").setValue(locationData)
             .addOnSuccessListener {
                 onSuccess()
+            }
+            .addOnFailureListener {
+                // Log error or handle failure
             }
     }
 }

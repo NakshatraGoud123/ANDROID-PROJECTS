@@ -3,6 +3,7 @@ package com.nisr.sauservices.data.repository
 import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
+import com.google.firebase.firestore.FirebaseFirestore
 import com.nisr.sauservices.data.model.*
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -12,6 +13,7 @@ import kotlinx.coroutines.tasks.await
 class FirebaseRepository {
     private val dbUrl = "https://sau-services-default-rtdb.asia-southeast1.firebasedatabase.app/"
     private val database = FirebaseDatabase.getInstance(dbUrl)
+    private val firestore = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
 
     fun getCurrentUserId(): String? = auth.currentUser?.uid
@@ -280,22 +282,68 @@ class FirebaseRepository {
 
     suspend fun registerUser(user: FirebaseUser): Result<Unit> = try {
         database.getReference("users").child(user.userId).setValue(user).await()
+        // Also save to Firestore for unified data
+        firestore.collection("users").document(user.userId).set(user).await()
         Result.success(Unit)
     } catch (e: Exception) { Result.failure(e) }
 
     suspend fun getUserProfile(userId: String): Result<FirebaseUser> = try {
+        // Try Realtime DB first
         val snapshot = database.getReference("users").child(userId).get().await()
-        val user = snapshot.getValue(FirebaseUser::class.java) ?: throw Exception("User not found")
-        Result.success(user)
+        var user = snapshot.getValue(FirebaseUser::class.java)
+        
+        if (user == null) {
+            // Try Firestore
+            val doc = firestore.collection("users").document(userId).get().await()
+            if (doc.exists()) {
+                user = FirebaseUser(
+                    userId = doc.id,
+                    uid = doc.id,
+                    name = doc.getString("fullName") ?: doc.getString("name") ?: "",
+                    email = doc.getString("email") ?: "",
+                    phone = doc.getString("phoneNumber") ?: doc.getString("phone") ?: "",
+                    role = doc.getString("role") ?: ""
+                )
+            }
+        }
+        
+        if (user != null) Result.success(user) else throw Exception("User not found")
     } catch (e: Exception) { Result.failure(e) }
 
     suspend fun deleteUser(userId: String): Result<Unit> = try {
         database.getReference("users").child(userId).removeValue().await()
+        firestore.collection("users").document(userId).delete().await()
         Result.success(Unit)
     } catch (e: Exception) { Result.failure(e) }
 
     suspend fun getDeliveryBoys(): List<FirebaseUser> = try {
-        val snapshot = database.getReference("users").orderByChild("role").equalTo("delivery").get().await()
-        snapshot.toModelList(FirebaseUser::class.java)
-    } catch (e: Exception) { emptyList() }
+        // Fetch from Firestore as primary for users
+        val snapshot = firestore.collection("users")
+            .whereIn("role", listOf("delivery", "DELIVERY"))
+            .get()
+            .await()
+        
+        val list = snapshot.documents.mapNotNull { doc ->
+            FirebaseUser(
+                userId = doc.id,
+                uid = doc.id,
+                name = doc.getString("fullName") ?: doc.getString("name") ?: "No Name",
+                email = doc.getString("email") ?: "",
+                phone = doc.getString("phoneNumber") ?: doc.getString("phone") ?: "No Phone",
+                role = "delivery"
+            )
+        }
+        
+        if (list.isEmpty()) {
+            // Fallback to RTDB
+            val rtdbSnapshot = database.getReference("users").get().await()
+            rtdbSnapshot.children.mapNotNull { it.getValue(FirebaseUser::class.java) }
+                .filter { it.role.equals("delivery", ignoreCase = true) }
+        } else {
+            list
+        }
+    } catch (e: Exception) { 
+        Log.e("FirebaseRepository", "Error fetching delivery boys", e)
+        emptyList() 
+    }
 }
