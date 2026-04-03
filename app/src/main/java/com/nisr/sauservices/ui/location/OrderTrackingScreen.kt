@@ -1,10 +1,13 @@
 package com.nisr.sauservices.ui.location
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.rounded.ElectricBike
 import androidx.compose.material.icons.rounded.MyLocation
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -12,8 +15,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -22,6 +25,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.*
 import com.google.maps.android.compose.*
 import com.nisr.sauservices.ui.viewmodel.CustomerTrackingViewModel
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,31 +36,29 @@ fun OrderTrackingScreen(
 ) {
     val order by viewModel.trackedOrder.collectAsState()
     val deliveryLocation by viewModel.deliveryLocation.collectAsState()
+    val context = LocalContext.current
+    
+    // Dummy Simulation States
+    var dummySearchQuery by remember { mutableStateOf("") }
+    var simulatedBikePos by remember { mutableStateOf(LatLng(20.5937, 78.9629)) }
     
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(LatLng(20.5937, 78.9629), 10f)
+        position = CameraPosition.fromLatLngZoom(simulatedBikePos, 12f)
+    }
+
+    // Bike Movement Animation (Dummy)
+    LaunchedEffect(Unit) {
+        while(true) {
+            delay(2000)
+            simulatedBikePos = LatLng(
+                simulatedBikePos.latitude + (Math.random() - 0.5) * 0.01,
+                simulatedBikePos.longitude + (Math.random() - 0.5) * 0.01
+            )
+        }
     }
 
     LaunchedEffect(orderId) {
         viewModel.trackOrder(orderId)
-    }
-
-    // Smart Camera Update: Fits both markers in view
-    LaunchedEffect(order?.customerLocation, deliveryLocation) {
-        val dest = order?.customerLocation?.let { if (it.lat != 0.0) LatLng(it.lat, it.lng) else null }
-        val partner = deliveryLocation?.let { if (it.latitude != 0.0) it else null }
-
-        if (dest != null && partner != null) {
-            val bounds = LatLngBounds.builder()
-                .include(dest)
-                .include(partner)
-                .build()
-            cameraPositionState.animate(CameraUpdateFactory.newLatLngBounds(bounds, 200), 1000)
-        } else if (dest != null) {
-            cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(dest, 15f), 1000)
-        } else if (partner != null) {
-            cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(partner, 15f), 1000)
-        }
     }
 
     Scaffold(
@@ -74,13 +76,7 @@ fun OrderTrackingScreen(
                     }
                 },
                 actions = {
-                    // Recenter Button
-                    IconButton(onClick = {
-                        val dest = order?.customerLocation?.let { LatLng(it.lat, it.lng) }
-                        if (dest != null) {
-                            cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(dest, 15f))
-                        }
-                    }) {
+                    IconButton(onClick = { }) {
                         Icon(Icons.Rounded.MyLocation, null)
                     }
                 },
@@ -92,118 +88,123 @@ fun OrderTrackingScreen(
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
                 cameraPositionState = cameraPositionState,
-                uiSettings = MapUiSettings(zoomControlsEnabled = false, myLocationButtonEnabled = false),
-                properties = MapProperties(isMyLocationEnabled = false)
+                uiSettings = MapUiSettings(zoomControlsEnabled = false)
             ) {
-                // Customer Marker (Destination)
+                // Animated Bike Marker (Dummy)
+                Marker(
+                    state = MarkerState(position = simulatedBikePos),
+                    title = "Delivery Partner",
+                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
+                )
+
+                // Actual Destination if available
                 order?.customerLocation?.let { loc ->
                     if (loc.lat != 0.0) {
                         Marker(
                             state = MarkerState(position = LatLng(loc.lat, loc.lng)),
-                            title = "Delivery Destination",
-                            snippet = order?.address,
+                            title = "Your Location",
                             icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
-                        )
-                    }
-                }
-
-                // Delivery Partner Marker (Live Moving)
-                deliveryLocation?.let { loc ->
-                    if (loc.latitude != 0.0) {
-                        Marker(
-                            state = MarkerState(position = loc),
-                            title = "Delivery Partner",
-                            icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
                         )
                     }
                 }
             }
 
-            // Status Card
+            // Dummy Search Bar for Demo
             Card(
                 modifier = Modifier
-                    .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .padding(16.dp),
-                shape = RoundedCornerShape(24.dp),
+                    .padding(16.dp)
+                    .align(Alignment.TopCenter),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(12.dp)
+                elevation = CardDefaults.cardElevation(4.dp)
             ) {
-                Column(modifier = Modifier.padding(24.dp)) {
-                    val status = order?.orderStatus ?: "processing"
-                    
+                TextField(
+                    value = dummySearchQuery,
+                    onValueChange = { dummySearchQuery = it },
+                    placeholder = { Text("Enter address to simulate...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = { Icon(Icons.Default.Search, null) },
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
+                    maxLines = 1
+                )
+            }
+
+            // Bottom Tracking Card (Matches your Screenshot)
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                color = Color.White,
+                shadowElevation = 20.dp
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 28.dp)) {
                     Text(
-                        text = when(status.lowercase()) {
-                            "pending" -> "Preparing your order"
-                            "accepted" -> "Order confirmed"
-                            "assigned" -> "Partner assigned"
-                            "out_for_delivery" -> "Partner is on the way"
-                            "arriving" -> "Almost there!"
-                            "delivered" -> "Delivered"
-                            else -> "Processing..."
-                        },
+                        text = "Processing...",
                         fontWeight = FontWeight.ExtraBold,
-                        fontSize = 20.sp,
-                        color = Color(0xFF1A1C1E)
+                        fontSize = 24.sp,
+                        color = Color.Black
                     )
-                    
                     Text(
-                        text = order?.address?.ifEmpty { "Address fetching..." } ?: "Fetching details...",
-                        fontSize = 14.sp,
+                        text = "Fetching details...",
+                        fontSize = 15.sp,
                         color = Color.Gray,
                         modifier = Modifier.padding(top = 4.dp)
                     )
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
                     
-                    val progress = when(status.lowercase()) {
-                        "pending" -> 0.1f
-                        "accepted" -> 0.3f
-                        "assigned" -> 0.5f
-                        "out_for_delivery" -> 0.7f
-                        "arriving" -> 0.9f
-                        "delivered" -> 1.0f
-                        else -> 0.05f
-                    }
-                    
-                    LinearProgressIndicator(
-                        progress = { progress },
+                    // Custom Progress Bar like in screenshot
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(10.dp)
-                            .clip(RoundedCornerShape(5.dp)),
-                        color = Color(0xFF0FA3A3),
-                        trackColor = Color(0xFFE0F2F2)
-                    )
+                            .clip(RoundedCornerShape(5.dp))
+                            .background(Color(0xFFE0F7F7))
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(0.4f) // Progress level
+                                .fillMaxHeight()
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(Color(0xFF00A8A8))
+                        )
+                        // Progress Dot
+                        Box(
+                            modifier = Modifier
+                                .size(12.dp)
+                                .align(Alignment.CenterStart)
+                                .offset(x = 130.dp) // Adjust dot position
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color(0xFF007A7A))
+                        )
+                    }
                     
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
                     
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (status.lowercase() != "delivered") {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(12.dp),
-                                strokeWidth = 2.dp,
-                                color = Color(0xFF0FA3A3)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                "Live Tracking Active",
-                                fontSize = 12.sp,
-                                color = Color(0xFF0FA3A3),
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        } else {
-                            Text(
-                                "Delivery Complete",
-                                fontSize = 12.sp,
-                                color = Color(0xFF4CAF50),
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Rounded.ElectricBike,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = Color(0xFF00A8A8)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "Live Tracking Active",
+                            fontSize = 13.sp,
+                            color = Color(0xFF00A8A8),
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }

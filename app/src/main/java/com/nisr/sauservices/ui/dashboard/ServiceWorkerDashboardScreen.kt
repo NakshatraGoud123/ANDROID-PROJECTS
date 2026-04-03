@@ -122,12 +122,12 @@ fun BookingList(
                 ) {
                     Column(Modifier.padding(16.dp)) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(booking.serviceName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text(booking.displayService, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                             Text(booking.status.uppercase(), color = ActiveBlue, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
                         Spacer(Modifier.height(4.dp))
-                        Text(booking.address, fontSize = 13.sp, color = TextGrey)
-                        Text("${booking.scheduledDate} at ${booking.scheduledTime}", fontSize = 12.sp, color = TextGrey)
+                        Text(booking.displayAddress, fontSize = 13.sp, color = TextGrey)
+                        Text("${booking.displayDate} at ${booking.displayTime}", fontSize = 12.sp, color = TextGrey)
                         
                         if (btnText != null && booking.status != "completed") {
                             Spacer(Modifier.height(12.dp))

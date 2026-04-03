@@ -21,11 +21,14 @@ class FirebaseRepository {
     private fun <T> DataSnapshot.toModelList(clazz: Class<T>): List<T> {
         return children.mapNotNull { snapshot ->
             try {
-                if (snapshot.value is Map<*, *>) {
-                    snapshot.getValue(clazz)
-                } else {
-                    null
-                }
+                val model = snapshot.getValue(clazz)
+                // Inject key if it's a model with an ID field
+                when (model) {
+                    is BookingModel -> model.copy(bookingId = snapshot.key ?: "")
+                    is OrderModel -> model.copy(orderId = snapshot.key ?: "")
+                    is FirebaseUser -> model.copy(userId = snapshot.key ?: "")
+                    else -> model
+                } as? T
             } catch (e: Exception) {
                 Log.e("FirebaseRepository", "Error parsing ${clazz.simpleName}", e)
                 null
@@ -200,7 +203,8 @@ class FirebaseRepository {
         val ref = database.getReference("orders").child(orderId)
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                trySend(snapshot.getValue(OrderModel::class.java))
+                val model = snapshot.getValue(OrderModel::class.java)
+                trySend(model?.copy(orderId = snapshot.key ?: ""))
             }
             override fun onCancelled(error: DatabaseError) { close(error.toException()) }
         }
@@ -244,11 +248,15 @@ class FirebaseRepository {
     } catch (e: Exception) { Result.failure(e) }
 
     suspend fun updateBookingStatus(bookingId: String, status: String, workerId: String? = null): Result<Unit> = try {
+        if (bookingId.isEmpty()) throw Exception("Booking ID is empty")
         val updates = mutableMapOf<String, Any>("status" to status)
         workerId?.let { updates["workerId"] = it }
         database.getReference("bookings").child(bookingId).updateChildren(updates).await()
         Result.success(Unit)
-    } catch (e: Exception) { Result.failure(e) }
+    } catch (e: Exception) { 
+        Log.e("FirebaseRepository", "Error updating booking $bookingId", e)
+        Result.failure(e) 
+    }
 
     suspend fun acceptBooking(bookingId: String, type: String, userId: String): Result<Unit> = try {
         updateBookingStatus(bookingId, "accepted", userId)

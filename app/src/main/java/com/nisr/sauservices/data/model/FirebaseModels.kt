@@ -1,6 +1,7 @@
 package com.nisr.sauservices.data.model
 
 import com.google.firebase.database.IgnoreExtraProperties
+import com.google.firebase.database.PropertyName
 
 data class OperationResult(
     val isSuccess: Boolean,
@@ -16,13 +17,31 @@ data class BookingModel(
     val customerId: String = "",
     val serviceId: String = "",
     val serviceName: String = "",
-    val scheduledDate: String = "",
-    val scheduledTime: String = "",
+    
+    @get:PropertyName("scheduledDate") @set:PropertyName("scheduledDate")
+    var scheduledDate: String = "",
+    
+    @get:PropertyName("scheduledTime") @set:PropertyName("scheduledTime")
+    var scheduledTime: String = "",
+    
     val status: String = "pending", // pending, accepted, completed
     val workerId: String = "",
     val timestamp: Long = System.currentTimeMillis(),
-    val address: String = ""
-)
+    val address: String = "",
+
+    // Fallback fields for compatibility with BookingRequest
+    val location: String = "",
+    val date: String = "",
+    val time: String = "",
+    val category: String = "",
+    val subcategory: String = ""
+) {
+    // Helper to get consistent values
+    val displayAddress: String get() = address.ifEmpty { location }.ifEmpty { "No address provided" }
+    val displayDate: String get() = scheduledDate.ifEmpty { date }.ifEmpty { "TBD" }
+    val displayTime: String get() = scheduledTime.ifEmpty { time }.ifEmpty { "" }
+    val displayService: String get() = serviceName.ifEmpty { subcategory }.ifEmpty { category }.ifEmpty { "Service Request" }
+}
 
 @IgnoreExtraProperties
 data class OrderModel(
@@ -33,7 +52,7 @@ data class OrderModel(
     val address: String = "",
     val customerLocation: LiveLocation = LiveLocation(),
     val paymentStatus: String = "pending",
-    val orderStatus: String = "pending", // pending, accepted, assigned, delivered, rejected
+    val orderStatus: String = "pending", // pending, accepted, assigned, out_for_delivery, delivered, rejected
     val assignedDeliveryBoy: String = "",
     val timestamp: Long = System.currentTimeMillis(),
     val liveLocation: LiveLocation = LiveLocation(),
@@ -47,7 +66,10 @@ data class OrderModel(
     val amount: Double = 0.0,
     val paymentMethod: String = "",
     val status: String = ""
-)
+) {
+    val displayStatus: String get() = orderStatus.ifEmpty { status }.ifEmpty { "pending" }
+    val displayAddress: String get() = address.ifEmpty { "Address not specified" }
+}
 
 @IgnoreExtraProperties
 data class LiveLocation(
