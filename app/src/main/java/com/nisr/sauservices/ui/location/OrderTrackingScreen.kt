@@ -1,9 +1,11 @@
 package com.nisr.sauservices.ui.location
 
-import androidx.compose.animation.core.*
+import android.location.Geocoder
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
@@ -17,48 +19,89 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.*
 import com.google.maps.android.compose.*
-import com.nisr.sauservices.ui.viewmodel.CustomerTrackingViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrderTrackingScreen(
     navController: NavController,
-    orderId: String,
-    viewModel: CustomerTrackingViewModel = viewModel()
+    orderId: String
 ) {
-    val order by viewModel.trackedOrder.collectAsState()
-    val deliveryLocation by viewModel.deliveryLocation.collectAsState()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val geocoder = remember { Geocoder(context, Locale.getDefault()) }
+
+    // Simulation States
+    var searchQuery by remember { mutableStateOf("") }
+    var statusTitle by remember { mutableStateOf("Processing...") }
+    var statusSubtitle by remember { mutableStateOf("Fetching order details...") }
+    var progress by remember { mutableFloatStateOf(0.2f) }
     
-    // Dummy Simulation States
-    var dummySearchQuery by remember { mutableStateOf("") }
-    var simulatedBikePos by remember { mutableStateOf(LatLng(20.5937, 78.9629)) }
+    // Initial Bike Position (Simulated)
+    var bikeLatLng by remember { mutableStateOf(LatLng(20.5937, 78.9629)) }
+    var destinationLatLng by remember { mutableStateOf<LatLng?>(null) }
     
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(simulatedBikePos, 12f)
+        position = CameraPosition.fromLatLngZoom(bikeLatLng, 15f)
     }
 
-    // Bike Movement Animation (Dummy)
-    LaunchedEffect(Unit) {
-        while(true) {
-            delay(2000)
-            simulatedBikePos = LatLng(
-                simulatedBikePos.latitude + (Math.random() - 0.5) * 0.01,
-                simulatedBikePos.longitude + (Math.random() - 0.5) * 0.01
-            )
+    // Marker States
+    val bikeMarkerState = rememberMarkerState(position = bikeLatLng)
+    val destMarkerState = rememberMarkerState()
+
+    // Sync marker state with bikeLatLng
+    LaunchedEffect(bikeLatLng) {
+        bikeMarkerState.position = bikeLatLng
+    }
+
+    // Real-time Map Update Function
+    fun searchAndMove(query: String) {
+        scope.launch {
+            try {
+                val addresses = withContext(Dispatchers.IO) {
+                    @Suppress("DEPRECATION")
+                    geocoder.getFromLocationName(query, 1)
+                }
+                if (!addresses.isNullOrEmpty()) {
+                    val location = LatLng(addresses[0].latitude, addresses[0].longitude)
+                    destinationLatLng = location
+                    destMarkerState.position = location
+                    statusTitle = "Out for Delivery"
+                    statusSubtitle = "Partner is moving towards ${addresses[0].getAddressLine(0)}"
+                    progress = 0.6f
+                    
+                    // Move Camera to new location
+                    cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(location, 15f))
+                    
+                    // Move bike to be near the destination for the demo
+                    bikeLatLng = LatLng(location.latitude - 0.005, location.longitude - 0.005)
+                }
+            } catch (e: Exception) {
+                statusSubtitle = "Location not found. Try again."
+            }
         }
     }
 
-    LaunchedEffect(orderId) {
-        viewModel.trackOrder(orderId)
+    // Continuous Animation: Subtle movement
+    LaunchedEffect(Unit) {
+        while(true) {
+            delay(2000)
+            bikeLatLng = LatLng(
+                bikeLatLng.latitude + (Math.random() - 0.5) * 0.0005,
+                bikeLatLng.longitude + (Math.random() - 0.5) * 0.0005
+            )
+        }
     }
 
     Scaffold(
@@ -76,8 +119,12 @@ fun OrderTrackingScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { }) {
-                        Icon(Icons.Rounded.MyLocation, null)
+                    IconButton(onClick = { 
+                        scope.launch {
+                            cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(bikeLatLng, 15f))
+                        }
+                    }) {
+                        Icon(Icons.Rounded.MyLocation, null, tint = Color(0xFF00A8A8))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
@@ -88,104 +135,110 @@ fun OrderTrackingScreen(
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
                 cameraPositionState = cameraPositionState,
-                uiSettings = MapUiSettings(zoomControlsEnabled = false)
+                properties = MapProperties(mapType = MapType.NORMAL),
+                uiSettings = MapUiSettings(zoomControlsEnabled = false, myLocationButtonEnabled = false)
             ) {
-                // Animated Bike Marker (Dummy)
+                // Moving Bike Marker
                 Marker(
-                    state = MarkerState(position = simulatedBikePos),
+                    state = bikeMarkerState,
                     title = "Delivery Partner",
                     icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
                 )
 
-                // Actual Destination if available
-                order?.customerLocation?.let { loc ->
-                    if (loc.lat != 0.0) {
-                        Marker(
-                            state = MarkerState(position = LatLng(loc.lat, loc.lng)),
-                            title = "Your Location",
-                            icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
-                        )
-                    }
+                // Real Destination Marker
+                destinationLatLng?.let {
+                    Marker(
+                        state = destMarkerState,
+                        title = "Delivery Point",
+                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
+                    )
                 }
             }
 
-            // Dummy Search Bar for Demo
+            // Real Interactive Search Bar
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
                     .align(Alignment.TopCenter),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(4.dp)
+                elevation = CardDefaults.cardElevation(8.dp),
+                shape = RoundedCornerShape(12.dp)
             ) {
                 TextField(
-                    value = dummySearchQuery,
-                    onValueChange = { dummySearchQuery = it },
-                    placeholder = { Text("Enter address to simulate...") },
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Enter destination for tracking...") },
                     modifier = Modifier.fillMaxWidth(),
-                    leadingIcon = { Icon(Icons.Default.Search, null) },
+                    leadingIcon = { Icon(Icons.Default.Search, null, tint = Color(0xFF00A8A8)) },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = {
+                        if (searchQuery.isNotEmpty()) {
+                            searchAndMove(searchQuery)
+                        }
+                    }),
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent
                     ),
-                    maxLines = 1
+                    singleLine = true
                 )
             }
 
-            // Bottom Tracking Card (Matches your Screenshot)
+            // Bottom Tracking Status (Matches Screenshot Layout)
             Surface(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth(),
-                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
                 color = Color.White,
-                shadowElevation = 20.dp
+                shadowElevation = 24.dp
             ) {
-                Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 28.dp)) {
+                Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 32.dp)) {
                     Text(
-                        text = "Processing...",
+                        text = statusTitle,
                         fontWeight = FontWeight.ExtraBold,
-                        fontSize = 24.sp,
+                        fontSize = 26.sp,
                         color = Color.Black
                     )
                     Text(
-                        text = "Fetching details...",
+                        text = statusSubtitle,
                         fontSize = 15.sp,
                         color = Color.Gray,
                         modifier = Modifier.padding(top = 4.dp)
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(28.dp))
                     
-                    // Custom Progress Bar like in screenshot
+                    // Custom Progress Bar
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(10.dp)
                             .clip(RoundedCornerShape(5.dp))
-                            .background(Color(0xFFE0F7F7))
+                            .background(Color(0xFFE0F2F2))
                     ) {
                         Box(
                             modifier = Modifier
-                                .fillMaxWidth(0.4f) // Progress level
+                                .fillMaxWidth(progress)
                                 .fillMaxHeight()
                                 .clip(RoundedCornerShape(5.dp))
                                 .background(Color(0xFF00A8A8))
                         )
-                        // Progress Dot
+                        // Progress Indicator Dot
                         Box(
                             modifier = Modifier
-                                .size(12.dp)
+                                .size(14.dp)
                                 .align(Alignment.CenterStart)
-                                .offset(x = 130.dp) // Adjust dot position
-                                .clip(RoundedCornerShape(6.dp))
+                                .offset(x = (280 * progress).dp)
+                                .clip(RoundedCornerShape(7.dp))
                                 .background(Color(0xFF007A7A))
                         )
                     }
                     
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
                     
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -195,13 +248,13 @@ fun OrderTrackingScreen(
                         Icon(
                             imageVector = Icons.Rounded.ElectricBike,
                             contentDescription = null,
-                            modifier = Modifier.size(16.dp),
+                            modifier = Modifier.size(20.dp),
                             tint = Color(0xFF00A8A8)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
                         Text(
                             "Live Tracking Active",
-                            fontSize = 13.sp,
+                            fontSize = 14.sp,
                             color = Color(0xFF00A8A8),
                             fontWeight = FontWeight.Bold
                         )

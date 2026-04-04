@@ -1,106 +1,99 @@
 package com.nisr.sauservices.data.repository
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import com.nisr.sauservices.data.model.*
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import com.nisr.sauservices.data.model.BookingModel
+import com.nisr.sauservices.data.model.OrderModel
+import com.nisr.sauservices.data.model.Delivery
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 
 class DashboardRepository {
+    private val dbUrl = "https://sau-services-default-rtdb.asia-southeast1.firebasedatabase.app/"
+    private val database = FirebaseDatabase.getInstance(dbUrl)
 
-    fun getOrders(): LiveData<List<Order>> {
-        val orders = MutableLiveData<List<Order>>()
-        orders.value = listOf(
-            Order(
-                orderId = "ORD001",
-                customerName = "Aarav Mehta",
-                customerPhone = "+91 98765 00001",
-                amount = "₹660",
-                status = "placed",
-                paymentMode = "COD",
-                items = listOf(
-                    OrderItem("Basmati Rice 5kg", 1, 380.0),
-                    OrderItem("Amul Butter 500g", 1, 280.0)
-                ),
-                createdAt = "2024-03-04 14:30"
-            ),
-            Order(
-                orderId = "ORD002",
-                customerName = "Priya Sharma",
-                customerPhone = "+91 98765 00002",
-                amount = "₹370",
-                status = "accepted",
-                paymentMode = "Prepaid",
-                items = listOf(
-                    OrderItem("Toor Dal 1kg", 2, 280.0),
-                    OrderItem("Fresh Paneer 200g", 1, 90.0)
-                ),
-                createdAt = "2024-03-04 14:45"
-            )
-        )
-        return orders
+    // --- SERVICE WORKER LOGIC ---
+
+    fun listenToAssignedBookings(workerId: String): Flow<List<BookingModel>> = callbackFlow {
+        val ref = database.getReference("workers").child(workerId).child("assignedBookings")
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val bookingIds = snapshot.children.mapNotNull { it.key }
+                fetchBookingsByIds(bookingIds) { trySend(it) }
+            }
+            override fun onCancelled(error: DatabaseError) { close(error.toException()) }
+        }
+        ref.addValueEventListener(listener)
+        awaitClose { ref.removeEventListener(listener) }
     }
 
-    fun getInventory(): LiveData<List<InventoryItem>> {
-        val inventory = MutableLiveData<List<InventoryItem>>()
-        inventory.value = listOf(
-            InventoryItem("1", "Basmati Rice 5kg", "Groceries", 380.0, 420.0, 45, "In Stock"),
-            InventoryItem("2", "Amul Butter 500g", "Dairy", 280.0, 290.0, 22, "In Stock"),
-            InventoryItem("3", "Toor Dal 1kg", "Groceries", 140.0, 160.0, 3, "Low Stock"),
-            InventoryItem("4", "Coca Cola 2L", "Beverages", 95.0, 100.0, 8, "Low Stock"),
-            InventoryItem("5", "Fresh Paneer 200g", "Dairy", 90.0, 100.0, 15, "In Stock"),
-            InventoryItem("6", "Paracetamol Strips", "Pharmacy", 35.0, 38.0, 60, "In Stock")
-        )
-        return inventory
+    private fun fetchBookingsByIds(ids: List<String>, onResult: (List<BookingModel>) -> Unit) {
+        val bookingsRef = database.getReference("service_bookings")
+        bookingsRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val list = snapshot.children.mapNotNull { it.getValue(BookingModel::class.java)?.copy(bookingId = it.key ?: "") }
+                    .filter { ids.contains(it.bookingId) }
+                    .sortedWith(compareBy({ it.scheduledDate }, { it.scheduledTime }))
+                onResult(list)
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        })
     }
 
-    fun getBookings(): LiveData<List<Booking>> {
-        val bookings = MutableLiveData<List<Booking>>()
-        bookings.value = listOf(
-            Booking(
-                bookingId = "B001",
-                customerName = "Aarav Mehta",
-                customerPhone = "+91 98765 00001",
-                serviceType = "AC Repair",
-                address = "42, MG Road, Sector 15",
-                timeSlot = "10:00 AM - 12:00 PM",
-                status = "placed",
-                price = "₹799",
-                description = "Split AC not cooling properly",
-                otp = "6743"
-            ),
-            Booking(
-                bookingId = "B002",
-                customerName = "Priya Sharma",
-                customerPhone = "+91 98765 00002",
-                serviceType = "Wiring Repair",
-                address = "78, Lakeview Apartments",
-                timeSlot = "2:00 PM - 4:00 PM",
-                status = "accepted",
-                price = "₹399",
-                description = "Kitchen wiring sparking",
-                otp = "2198"
-            )
-        )
-        return bookings
+    // --- SHOPKEEPER LOGIC ---
+
+    fun listenToShopOrders(shopId: String): Flow<List<OrderModel>> = callbackFlow {
+        val ref = database.getReference("shops").child(shopId).child("incomingOrders")
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val orderIds = snapshot.children.mapNotNull { it.key }
+                fetchOrdersByIds(orderIds) { trySend(it) }
+            }
+            override fun onCancelled(error: DatabaseError) { close(error.toException()) }
+        }
+        ref.addValueEventListener(listener)
+        awaitClose { ref.removeEventListener(listener) }
     }
 
-    fun getDeliveries(): LiveData<List<Delivery>> {
-        val deliveries = MutableLiveData<List<Delivery>>()
-        deliveries.value = listOf(
-            Delivery(
-                deliveryId = "D101",
-                customerName = "Priya Sharma",
-                pickupAddress = "78, Lakeview Apartments",
-                dropAddress = "FreshMart Express",
-                distance = "3.2 km",
-                status = "Assigned",
-                cartAddedTime = "04:45 PM",
-                items = "Toor Dal 1kg, Fresh Paneer 200g",
-                otp = "7193",
-                paymentMode = "Prepaid",
-                pickupShop = "FreshMart Express",
-                eta = "15 min"
-            )
-        )
-        return deliveries
+    private fun fetchOrdersByIds(ids: List<String>, onResult: (List<OrderModel>) -> Unit) {
+        val ordersRef = database.getReference("orders")
+        ordersRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val list = snapshot.children.mapNotNull { it.getValue(OrderModel::class.java)?.copy(orderId = it.key ?: "") }
+                    .filter { ids.contains(it.orderId) }
+                    .filter { it.category == "home_essentials" || it.category == "food_beverages" }
+                    .sortedByDescending { it.timestamp }
+                onResult(list)
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        })
+    }
+
+    // --- DELIVERY LOGIC ---
+
+    fun listenToAvailableDeliveries(): Flow<List<Delivery>> = callbackFlow {
+        val ref = database.getReference("deliveries")
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val list = snapshot.children.mapNotNull { it.getValue(Delivery::class.java)?.copy(deliveryId = it.key ?: "") }
+                trySend(list)
+            }
+            override fun onCancelled(error: DatabaseError) { close(error.toException()) }
+        }
+        ref.addValueEventListener(listener)
+        awaitClose { ref.removeEventListener(listener) }
+    }
+
+    // --- AUTOMATION LINKING ---
+
+    suspend fun linkBookingToWorker(workerId: String, bookingId: String) {
+        database.getReference("workers").child(workerId).child("assignedBookings").child(bookingId).setValue(true)
+    }
+
+    suspend fun linkOrderToShop(shopId: String, orderId: String) {
+        database.getReference("shops").child(shopId).child("incomingOrders").child(orderId).setValue(true)
     }
 }
