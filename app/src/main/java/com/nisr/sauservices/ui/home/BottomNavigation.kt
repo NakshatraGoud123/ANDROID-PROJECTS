@@ -5,44 +5,29 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.theme.PinkPrimary
-import com.nisr.sauservices.ui.viewmodel.CartViewModel
-import com.nisr.sauservices.ui.viewmodel.FoodCartViewModel
-import com.nisr.sauservices.ui.viewmodel.ResidentialViewModel
 
 @Composable
 fun BottomNavBar(
-    navController: NavController, 
-    cartViewModel: CartViewModel = viewModel(),
-    foodCartViewModel: FoodCartViewModel = viewModel(),
-    residentialViewModel: ResidentialViewModel = viewModel()
+    navController: NavController
 ) {
     val navBackStackEntry = navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry.value?.destination?.route
     
-    val dbCartItems by cartViewModel.dbCartItems.collectAsState()
-    
-    val cartCount = dbCartItems.sumOf { it.quantity } +
-                    foodCartViewModel.cartItems.sumOf { it.quantity } +
-                    residentialViewModel.cartItems.sumOf { it.quantity }
-
     NavigationBar(
         containerColor = Color.White,
         tonalElevation = 8.dp
     ) {
         val items = listOf(
             NavigationItem("Home", Screen.Home.route, Icons.Outlined.Home),
-            NavigationItem("Cart", Screen.HomeEssentialsCart.route, Icons.Outlined.ShoppingCart, cartCount),
+            NavigationItem("Categories", Screen.Categories.route, Icons.Outlined.Category),
             NavigationItem("Orders", Screen.MyOrders.route, Icons.Outlined.ReceiptLong),
             NavigationItem("Track", Screen.OrderTracking.route, Icons.Outlined.MyLocation),
             NavigationItem("Profile", Screen.Profile.route, Icons.Outlined.Person)
@@ -65,15 +50,7 @@ fun BottomNavBar(
                     }
                 },
                 icon = {
-                    BadgedBox(badge = { 
-                        if (item.badgeCount > 0) {
-                            Badge(containerColor = PinkPrimary) { 
-                                Text(item.badgeCount.toString(), color = Color.White) 
-                            } 
-                        }
-                    }) {
-                        Icon(item.icon, null, modifier = Modifier.size(24.dp))
-                    }
+                    Icon(item.icon, null, modifier = Modifier.size(24.dp))
                 },
                 label = { Text(item.title, fontSize = 10.sp) },
                 colors = NavigationBarItemDefaults.colors(

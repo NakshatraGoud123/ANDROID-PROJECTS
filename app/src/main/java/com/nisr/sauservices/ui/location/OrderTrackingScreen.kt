@@ -8,6 +8,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.rounded.ElectricBike
 import androidx.compose.material.icons.rounded.MyLocation
@@ -197,11 +198,13 @@ fun OrderTrackingScreen(
                 shadowElevation = 24.dp
             ) {
                 Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 32.dp)) {
+                    val isCompleted = statusTitle == "Service Completed" || statusTitle == "Delivered"
+                    
                     Text(
                         text = statusTitle,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 26.sp,
-                        color = Color.Black
+                        color = if (isCompleted) Color(0xFF2E7D32) else Color.Black
                     )
                     Text(
                         text = statusSubtitle,
@@ -232,7 +235,7 @@ fun OrderTrackingScreen(
                             modifier = Modifier
                                 .size(14.dp)
                                 .align(Alignment.CenterStart)
-                                .offset(x = (280 * progress).dp)
+                                .offset(x = (280 * progress).dp) 
                                 .clip(RoundedCornerShape(7.dp))
                                 .background(Color(0xFF007A7A))
                         )
@@ -245,19 +248,35 @@ fun OrderTrackingScreen(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Rounded.ElectricBike,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp),
-                            tint = Color(0xFF00A8A8)
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            "Live Tracking Active",
-                            fontSize = 14.sp,
-                            color = Color(0xFF00A8A8),
-                            fontWeight = FontWeight.Bold
-                        )
+                        if (!isCompleted) {
+                            Icon(
+                                imageVector = Icons.Rounded.ElectricBike,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = Color(0xFF00A8A8)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                "Live Tracking Active",
+                                fontSize = 14.sp,
+                                color = Color(0xFF00A8A8),
+                                fontWeight = FontWeight.Bold
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = Color(0xFF2E7D32)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                "Job Successfully Completed",
+                                fontSize = 14.sp,
+                                color = Color(0xFF2E7D32),
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }

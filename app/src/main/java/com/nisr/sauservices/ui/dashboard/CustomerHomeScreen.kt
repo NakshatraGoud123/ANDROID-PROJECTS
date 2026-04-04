@@ -15,15 +15,11 @@ import com.nisr.sauservices.ui.education.EducationBottomSheet
 import com.nisr.sauservices.ui.business.BusinessBottomSheet
 import com.nisr.sauservices.ui.lifestyle.LifestyleBottomSheet
 import com.nisr.sauservices.ui.tech.TechBottomSheet
-import com.nisr.sauservices.ui.viewmodel.BookingsViewModel
-import com.nisr.sauservices.ui.viewmodel.ResidentialViewModel
 
 @Composable
 fun CustomerHomeScreen(
     navController: NavController, 
-    sessionManager: SessionManager,
-    bookingsViewModel: BookingsViewModel,
-    residentialViewModel: ResidentialViewModel
+    sessionManager: SessionManager
 ) {
     var showEduSheet by remember { mutableStateOf(false) }
     var showBizSheet by remember { mutableStateOf(false) }
@@ -32,7 +28,7 @@ fun CustomerHomeScreen(
 
     Scaffold(
         topBar = { TopAppBarUI(navController, sessionManager) },
-        bottomBar = { BottomNavBar(navController, residentialViewModel = residentialViewModel) },
+        bottomBar = { BottomNavBar(navController) },
         containerColor = Color.White
     ) { padding ->
         Column(
