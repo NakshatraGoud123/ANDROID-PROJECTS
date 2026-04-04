@@ -42,7 +42,7 @@ fun CustomerHomeScreen(
             
             SearchBarUI(navController)
 
-            QuickServicesRow()
+            QuickServicesRow(navController)
 
             Spacer(Modifier.height(24.dp))
             

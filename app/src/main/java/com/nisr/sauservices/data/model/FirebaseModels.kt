@@ -83,8 +83,14 @@ data class FirebaseUser(
     val userId: String = "",
     val uid: String = "",
     val name: String = "",
+    val fullName: String = "", // Fallback
     val email: String = "",
     val phone: String = "",
-    val role: String = "",
+    val phoneNumber: String = "", // Fallback
+    val role: String = "customer",
     val status: String = "active"
-)
+) {
+    val displayName: String get() = name.ifEmpty { fullName }.ifEmpty { "Anonymous User" }
+    val displayEmail: String get() = email.ifEmpty { "No email provided" }
+    val displayPhone: String get() = phone.ifEmpty { phoneNumber }.ifEmpty { "No phone" }
+}

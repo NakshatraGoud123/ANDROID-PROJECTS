@@ -50,7 +50,7 @@ fun HomeScreen(navController: NavController){
             SearchBarUI(navController)
 
             Spacer(Modifier.height(16.dp))
-            QuickServicesRow()
+            QuickServicesRow(navController)
 
             Spacer(Modifier.height(20.dp))
             // Pass a callback to trigger the bottom sheet for "Home Essentials"

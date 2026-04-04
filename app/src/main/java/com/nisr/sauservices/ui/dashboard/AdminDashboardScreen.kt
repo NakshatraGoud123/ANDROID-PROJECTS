@@ -101,21 +101,28 @@ fun AdminDashboardScreen(
 
 @Composable
 fun UserManagementList(users: List<FirebaseUser>, onDelete: (String) -> Unit) {
-    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        items(users) { user ->
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Surface),
-                border = BorderStroke(1.dp, Border)
-            ) {
-                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(user.name, fontWeight = FontWeight.Bold)
-                        Text(user.role.uppercase(), fontSize = 11.sp, color = AdminPrimary, fontWeight = FontWeight.Bold)
-                        Text(user.email, fontSize = 12.sp, color = Color.Gray)
-                    }
-                    IconButton(onClick = { onDelete(user.userId) }) {
-                        Icon(Icons.Rounded.Delete, null, tint = Color.Red)
+    if (users.isEmpty()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("No users found", color = Color.Gray)
+        }
+    } else {
+        LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(users) { user ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Surface),
+                    border = BorderStroke(1.dp, Border)
+                ) {
+                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(user.displayName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text(user.role.uppercase(), fontSize = 11.sp, color = AdminPrimary, fontWeight = FontWeight.Bold)
+                            Text(user.displayEmail, fontSize = 12.sp, color = Color.Gray)
+                            Text(user.displayPhone, fontSize = 12.sp, color = Color.Gray)
+                        }
+                        IconButton(onClick = { onDelete(user.userId) }) {
+                            Icon(Icons.Rounded.Delete, null, tint = Color.Red)
+                        }
                     }
                 }
             }
@@ -125,20 +132,27 @@ fun UserManagementList(users: List<FirebaseUser>, onDelete: (String) -> Unit) {
 
 @Composable
 fun AdminOrderList(orders: List<OrderModel>) {
-    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        items(orders) { order ->
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Surface),
-                border = BorderStroke(1.dp, Border)
-            ) {
-                Column(Modifier.padding(16.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Order #${order.orderId.takeLast(6)}", fontWeight = FontWeight.Bold)
-                        Text(order.orderStatus.uppercase(), color = AdminPrimary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+    if (orders.isEmpty()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("No orders found", color = Color.Gray)
+        }
+    } else {
+        LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            items(orders) { order ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Surface),
+                    border = BorderStroke(1.dp, Border)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Order #${order.orderId.takeLast(6).uppercase()}", fontWeight = FontWeight.Bold)
+                            Text(order.displayStatus.uppercase(), color = AdminPrimary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text("Total: ₹${order.totalPrice}", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        Text("Address: ${order.displayAddress}", fontSize = 12.sp, color = Color.Gray, maxLines = 2)
                     }
-                    Text("Total: ₹${order.totalPrice}", fontSize = 14.sp)
-                    Text("Address: ${order.address}", fontSize = 12.sp, color = Color.Gray, maxLines = 1)
                 }
             }
         }
@@ -147,20 +161,28 @@ fun AdminOrderList(orders: List<OrderModel>) {
 
 @Composable
 fun AdminBookingList(bookings: List<BookingModel>) {
-    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        items(bookings) { booking ->
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Surface),
-                border = BorderStroke(1.dp, Border)
-            ) {
-                Column(Modifier.padding(16.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(booking.serviceName, fontWeight = FontWeight.Bold)
-                        Text(booking.status.uppercase(), color = Color(0xFF22C55E), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+    if (bookings.isEmpty()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("No bookings found", color = Color.Gray)
+        }
+    } else {
+        LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            items(bookings) { booking ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Surface),
+                    border = BorderStroke(1.dp, Border)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(booking.displayService, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text(booking.status.uppercase(), color = Color(0xFF22C55E), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text("Scheduled: ${booking.displayDate} at ${booking.displayTime}", fontSize = 14.sp)
+                        Text("Address: ${booking.displayAddress}", fontSize = 12.sp, color = Color.Gray)
+                        Text("Client ID: ${booking.customerId.takeLast(6).uppercase()}", fontSize = 11.sp, color = Color.LightGray)
                     }
-                    Text("Date: ${booking.scheduledDate}", fontSize = 14.sp)
-                    Text("Client ID: ${booking.customerId.takeLast(6)}", fontSize = 12.sp, color = Color.Gray)
                 }
             }
         }
@@ -185,7 +207,27 @@ fun AdminAnalyticsScreen(users: List<FirebaseUser>, orders: List<OrderModel>, bo
         
         Spacer(Modifier.height(32.dp))
         Text("Recent Activity", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-        // More charts or list could go here
+        Spacer(Modifier.height(12.dp))
+        
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Surface),
+            border = BorderStroke(1.dp, Border)
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Text("Last 5 Bookings", fontWeight = FontWeight.Bold, color = AdminPrimary)
+                bookings.takeLast(5).reversed().forEach { booking ->
+                    Row(
+                        Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(booking.displayService, fontSize = 13.sp)
+                        Text(booking.status, fontSize = 12.sp, color = Color.Gray)
+                    }
+                    HorizontalDivider(color = Border)
+                }
+            }
+        }
     }
 }
 

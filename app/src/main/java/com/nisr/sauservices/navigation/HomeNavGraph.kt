@@ -14,6 +14,7 @@ import com.nisr.sauservices.ui.home.*
 import com.nisr.sauservices.ui.pls.*
 import com.nisr.sauservices.ui.viewmodel.BookingsViewModel
 import com.nisr.sauservices.ui.viewmodel.ResidentialViewModel
+import com.nisr.sauservices.ui.viewmodels.AdminViewModel
 import com.nisr.sauservices.ui.viewmodels.ServiceWorkerViewModel
 import com.nisr.sauservices.ui.viewmodels.ShopkeeperViewModel
 import com.nisr.sauservices.ui.viewmodels.PropertyLifestyleViewModel
@@ -28,7 +29,7 @@ fun NavGraphBuilder.homeNavGraph(
     composable(Routes.HOME) {
         val role = sessionManager.getUserRole()
         if (role == "customer" && sessionManager.isLoggedIn()) {
-            CustomerHomeScreen(navController, sessionManager, bookingsViewModel, residentialViewModel)
+            CustomerHomeScreen(navController, sessionManager)
         } else {
             LaunchedEffect(Unit) {
                 navController.navigate(RouteHelper.login("customer")) {
@@ -110,7 +111,9 @@ fun NavGraphBuilder.homeNavGraph(
     }
 
     // Admin Panel
-    composable(Routes.ADMIN_DASHBOARD) { AdminDashboardScreen(navController, viewModel()) }
+    composable(Routes.ADMIN_DASHBOARD) { 
+        AdminDashboardScreen(navController, sessionManager, viewModel<AdminViewModel>()) 
+    }
     composable(Routes.ADMIN_BOOKINGS) { AdminBookingsScreen(navController, viewModel()) }
     composable(Routes.ADMIN_SERVICES) { AdminServicesScreen(navController, viewModel()) }
 

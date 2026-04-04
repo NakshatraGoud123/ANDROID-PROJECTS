@@ -1,12 +1,12 @@
 package com.nisr.sauservices.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -19,19 +19,21 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.theme.PinkPrimary
 
-data class ServiceItem(val name: String, val icon: ImageVector)
+data class ServiceItem(val name: String, val icon: ImageVector, val categoryId: String)
 
 @Composable
-fun QuickServicesRow() {
+fun QuickServicesRow(navController: NavController) {
 
     val list = listOf(
-        ServiceItem("Electrician", Icons.Outlined.ElectricBolt),
-        ServiceItem("Plumber", Icons.Outlined.Build),
-        ServiceItem("AC Repair", Icons.Outlined.Air),
-        ServiceItem("Cleaning", Icons.Outlined.CleaningServices),
-        ServiceItem("Salon", Icons.Outlined.ContentCut)
+        ServiceItem("Electrician", Icons.Outlined.ElectricBolt, "electrician"),
+        ServiceItem("Plumber", Icons.Outlined.Build, "plumber"),
+        ServiceItem("AC Repair", Icons.Outlined.Air, "ac_repair"),
+        ServiceItem("Cleaning", Icons.Outlined.CleaningServices, "home_cleaning"),
+        ServiceItem("Salon", Icons.Outlined.ContentCut, "mens_categories")
     )
 
     LazyRow(
@@ -43,7 +45,15 @@ fun QuickServicesRow() {
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.width(70.dp)
+                modifier = Modifier
+                    .width(70.dp)
+                    .clickable {
+                        if (item.categoryId == "mens_categories") {
+                            navController.navigate(Screen.MensCategories.route)
+                        } else {
+                            navController.navigate(Screen.ResidentialSubcategories.createRoute(item.categoryId))
+                        }
+                    }
             ) {
 
                 Box(
