@@ -72,4 +72,16 @@ class AdminViewModel : ViewModel() {
             repository.deleteUser(uid)
         }
     }
+
+    fun deleteOrder(orderId: String) {
+        viewModelScope.launch {
+            repository.deleteOrder(orderId)
+        }
+    }
+
+    fun deleteBooking(bookingId: String) {
+        viewModelScope.launch {
+            repository.deleteBooking(bookingId)
+        }
+    }
 }

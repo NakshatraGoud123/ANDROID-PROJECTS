@@ -21,7 +21,10 @@ import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.theme.PinkPrimary
 
 @Composable
-fun BookingSuccessScreen(navController: NavController) {
+fun BookingSuccessScreen(
+    navController: NavController,
+    message: String = "Your service booking has been confirmed. Our professional will reach out to you shortly."
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -58,7 +61,7 @@ fun BookingSuccessScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Your service booking has been confirmed. Our professional will reach out to you shortly.",
+            text = message,
             fontSize = 16.sp,
             color = Color.Gray,
             textAlign = TextAlign.Center,

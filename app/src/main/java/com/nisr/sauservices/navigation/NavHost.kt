@@ -25,6 +25,8 @@ import com.nisr.sauservices.ui.tech.*
 import com.nisr.sauservices.ui.mens.*
 import com.nisr.sauservices.ui.womens.*
 import com.nisr.sauservices.ui.healthcare.*
+import com.nisr.sauservices.ui.mechanic.*
+import com.nisr.sauservices.ui.mobility.*
 import com.nisr.sauservices.ui.onboarding.OnboardingScreen
 import com.nisr.sauservices.ui.profile.*
 import com.nisr.sauservices.ui.location.LocationPickerScreen
@@ -50,6 +52,8 @@ fun AppNavHost(navController: NavHostController) {
     val profileViewModel: ProfileViewModel = viewModel()
     val bookingsViewModel: BookingsViewModel = viewModel()
     val locationViewModel: LocationViewModel = viewModel()
+    val mechanicViewModel: MechanicViewModel = viewModel()
+    val mobilityViewModel: MobilityViewModel = viewModel()
     
     // New Module ViewModels
     val newBookingsViewModel: NewBookingsViewModel = viewModel()
@@ -373,6 +377,28 @@ fun AppNavHost(navController: NavHostController) {
         ) { backStackEntry ->
             val sub = backStackEntry.arguments?.getString("subcategory") ?: ""
             HealthcareServiceListScreen(navController, sub, healthViewModel)
+        }
+
+        // --- MECHANIC SERVICES ---
+        composable(Screen.MechanicMain.route) { 
+            MechanicSubcategoryScreen(navController, "Mechanic Services", mechanicViewModel) 
+        }
+        composable(
+            route = Screen.MechanicSubcategories.route,
+            arguments = listOf(navArgument("category") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val cat = backStackEntry.arguments?.getString("category") ?: ""
+            MechanicSubcategoryScreen(navController, cat, mechanicViewModel)
+        }
+        composable(Screen.MechanicBooking.route) { MechanicBookingScreen(navController, mechanicViewModel) }
+        composable(Screen.MechanicSuccess.route) { 
+            BookingSuccessScreen(navController, "Your mechanic booking is confirmed!") 
+        }
+
+        // --- MOBILITY SERVICES ---
+        composable(Screen.MobilityMain.route) { MobilityMainScreen(navController, mobilityViewModel) }
+        composable(Screen.MobilitySuccess.route) { 
+            BookingSuccessScreen(navController, "Your ride is booked! Driver is on the way.")
         }
     }
 }

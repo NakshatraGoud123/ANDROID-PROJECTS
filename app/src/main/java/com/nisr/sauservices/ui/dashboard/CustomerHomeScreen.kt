@@ -15,6 +15,8 @@ import com.nisr.sauservices.ui.education.EducationBottomSheet
 import com.nisr.sauservices.ui.business.BusinessBottomSheet
 import com.nisr.sauservices.ui.lifestyle.LifestyleBottomSheet
 import com.nisr.sauservices.ui.tech.TechBottomSheet
+import com.nisr.sauservices.ui.mechanic.MechanicBottomSheet
+import com.nisr.sauservices.ui.mobility.MobilityBottomSheet
 
 @Composable
 fun CustomerHomeScreen(
@@ -25,6 +27,8 @@ fun CustomerHomeScreen(
     var showBizSheet by remember { mutableStateOf(false) }
     var showLifeSheet by remember { mutableStateOf(false) }
     var showTechSheet by remember { mutableStateOf(false) }
+    var showMechanicSheet by remember { mutableStateOf(false) }
+    var showMobilitySheet by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = { TopAppBarUI(navController, sessionManager) },
@@ -51,7 +55,9 @@ fun CustomerHomeScreen(
                 onEducationClick = { showEduSheet = true },
                 onBusinessClick = { showBizSheet = true },
                 onLifestyleClick = { showLifeSheet = true },
-                onTechClick = { showTechSheet = true }
+                onTechClick = { showTechSheet = true },
+                onMechanicClick = { showMechanicSheet = true },
+                onMobilityClick = { showMobilitySheet = true }
             )
 
             Spacer(Modifier.height(24.dp))
@@ -93,6 +99,20 @@ fun CustomerHomeScreen(
         TechBottomSheet(
             navController = navController,
             onDismiss = { showTechSheet = false }
+        )
+    }
+
+    if (showMechanicSheet) {
+        MechanicBottomSheet(
+            navController = navController,
+            onDismiss = { showMechanicSheet = false }
+        )
+    }
+
+    if (showMobilitySheet) {
+        MobilityBottomSheet(
+            navController = navController,
+            onDismiss = { showMobilitySheet = false }
         )
     }
 }

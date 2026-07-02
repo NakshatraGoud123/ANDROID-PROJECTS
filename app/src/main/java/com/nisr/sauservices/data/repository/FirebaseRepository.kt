@@ -324,6 +324,16 @@ class FirebaseRepository {
         Result.success(Unit)
     } catch (e: Exception) { Result.failure(e) }
 
+    suspend fun deleteOrder(orderId: String): Result<Unit> = try {
+        database.getReference("orders").child(orderId).removeValue().await()
+        Result.success(Unit)
+    } catch (e: Exception) { Result.failure(e) }
+
+    suspend fun deleteBooking(bookingId: String): Result<Unit> = try {
+        database.getReference("bookings").child(bookingId).removeValue().await()
+        Result.success(Unit)
+    } catch (e: Exception) { Result.failure(e) }
+
     suspend fun getDeliveryBoys(): List<FirebaseUser> = try {
         // Fetch from Firestore as primary for users
         val snapshot = firestore.collection("users")

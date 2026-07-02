@@ -32,11 +32,15 @@ fun CategoriesGrid(
     onEducationClick: () -> Unit = {},
     onBusinessClick: () -> Unit = {},
     onLifestyleClick: () -> Unit = {},
-    onTechClick: () -> Unit = {}
+    onTechClick: () -> Unit = {},
+    onMechanicClick: () -> Unit = {},
+    onMobilityClick: () -> Unit = {}
 ) {
     val allCategories = listOf(
         CategoryItem("Essential Supplies", Icons.Outlined.ShoppingBag, Screen.EssentialSupplies.route),
         CategoryItem("Bookings", Icons.Outlined.ConfirmationNumber, Screen.BookingsModule.route),
+        CategoryItem("Mechanic Services", Icons.Outlined.Build),
+        CategoryItem("Mobility Services", Icons.Outlined.DirectionsCar),
         CategoryItem("Residential Services", Icons.Outlined.Home, Screen.ResidentialCategories.route),
         CategoryItem("Property & Lifestyle", Icons.Outlined.Cabin, Routes.PLS_MAIN),
         CategoryItem("Home Essentials", Icons.Outlined.Star),
@@ -83,6 +87,8 @@ fun CategoriesGrid(
                                 "More Services" -> navController.navigate(Screen.Categories.route)
                                 "Essential Supplies" -> navController.navigate(Screen.EssentialSupplies.route)
                                 "Bookings" -> navController.navigate(Screen.BookingsModule.route)
+                                "Mechanic Services" -> onMechanicClick()
+                                "Mobility Services" -> onMobilityClick()
                                 "Home Essentials" -> onHomeEssentialsClick()
                                 "Residential Services" -> navController.navigate(item.route)
                                 "Property & Lifestyle" -> navController.navigate(Routes.PLS_MAIN)

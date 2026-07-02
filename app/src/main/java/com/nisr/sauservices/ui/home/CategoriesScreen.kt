@@ -21,6 +21,8 @@ import com.nisr.sauservices.ui.education.EducationBottomSheet
 import com.nisr.sauservices.ui.business.BusinessBottomSheet
 import com.nisr.sauservices.ui.lifestyle.LifestyleBottomSheet
 import com.nisr.sauservices.ui.tech.TechBottomSheet
+import com.nisr.sauservices.ui.mechanic.MechanicBottomSheet
+import com.nisr.sauservices.ui.mobility.MobilityBottomSheet
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,6 +35,8 @@ fun CategoriesScreen(navController: NavController) {
     var showBizSheet by remember { mutableStateOf(false) }
     var showLifeSheet by remember { mutableStateOf(false) }
     var showTechSheet by remember { mutableStateOf(false) }
+    var showMechanicSheet by remember { mutableStateOf(false) }
+    var showMobilitySheet by remember { mutableStateOf(false) }
 
     if (showHomeEssentialsSheet) {
         ModalBottomSheet(
@@ -81,6 +85,12 @@ fun CategoriesScreen(navController: NavController) {
                 },
                 onTechClick = {
                     showTechSheet = true
+                },
+                onMechanicClick = {
+                    showMechanicSheet = true
+                },
+                onMobilityClick = {
+                    showMobilitySheet = true
                 }
             )
         }
@@ -111,6 +121,20 @@ fun CategoriesScreen(navController: NavController) {
         TechBottomSheet(
             navController = navController,
             onDismiss = { showTechSheet = false }
+        )
+    }
+
+    if (showMechanicSheet) {
+        MechanicBottomSheet(
+            navController = navController,
+            onDismiss = { showMechanicSheet = false }
+        )
+    }
+
+    if (showMobilitySheet) {
+        MobilityBottomSheet(
+            navController = navController,
+            onDismiss = { showMobilitySheet = false }
         )
     }
 }

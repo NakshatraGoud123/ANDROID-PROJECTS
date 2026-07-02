@@ -175,4 +175,19 @@ sealed class Screen(val route: String) {
     object HealthcareOrderSummary : Screen("health_order_summary")
     object HealthcareOrderTracking : Screen("health_order_tracking")
     object HealthcareSuccess : Screen("health_success")
+
+    // Mechanic Services
+    object MechanicMain : Screen("mechanic_main")
+    object MechanicSubcategories : Screen("mechanic_subcategories/{category}") {
+        fun createRoute(category: String) = "mechanic_subcategories/$category"
+    }
+    object MechanicBooking : Screen("mechanic_booking")
+    object MechanicSuccess : Screen("mechanic_success")
+
+    // Mobility Services
+    object MobilityMain : Screen("mobility_main")
+    object MobilityServiceTypes : Screen("mobility_types")
+    object MobilityBooking : Screen("mobility_booking")
+    object MobilityRideTracking : Screen("mobility_tracking")
+    object MobilitySuccess : Screen("mobility_success")
 }
