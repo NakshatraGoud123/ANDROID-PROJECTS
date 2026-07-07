@@ -13,7 +13,6 @@ import com.nisr.sauservices.data.local.SessionManager
 import com.nisr.sauservices.data.repository.UserRepository
 import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.auth.*
-import com.nisr.sauservices.ui.dashboard.*
 import com.nisr.sauservices.ui.essentials.*
 import com.nisr.sauservices.ui.home.*
 import com.nisr.sauservices.ui.viewmodel.*
@@ -111,7 +110,15 @@ fun AppNavHost(navController: NavHostController) {
 
         // --- ONBOARDING & AUTH ---
         composable(Screen.Onboarding.route) { OnboardingScreen(navController) }
-        composable(Screen.RoleSelection.route) { RoleSelectionScreen(navController) }
+        
+        // Role selection is removed, redirected to Login as customer
+        composable(Screen.RoleSelection.route) { 
+            LaunchedEffect(Unit) {
+                navController.navigate(Screen.Login.createRoute("customer")) {
+                    popUpTo(Screen.RoleSelection.route) { inclusive = true }
+                }
+            }
+        }
         
         composable(
             route = Screen.AuthOptions.route,
@@ -139,15 +146,6 @@ fun AppNavHost(navController: NavHostController) {
         
         composable(Screen.Register.route) { CustomerSignUpScreen(navController) }
         composable(Screen.ForgotPassword.route) { ForgotPasswordScreen(navController) }
-        
-        // --- DASHBOARDS ---
-        composable(Screen.ShopkeeperRegister.route) { ShopkeeperRegisterScreen(navController, userRepository) }
-        composable(Screen.ServiceWorkerRegister.route) { ServiceWorkerRegisterScreen(navController, userRepository) }
-        composable(Screen.DeliveryPartnerRegister.route) { DeliveryPartnerRegisterScreen(navController, userRepository) }
-        
-        composable(Screen.ShopkeeperDashboard.route) { ShopkeeperDashboardScreen(navController, sessionManager, viewModel()) }
-        composable(Screen.ServiceWorkerDashboard.route) { ServiceWorkerDashboardScreen(navController, sessionManager, viewModel()) }
-        composable(Screen.DeliveryDashboard.route) { DeliveryDashboardScreen(navController, sessionManager, viewModel()) }
 
         // Integrate HomeNavGraph (Includes Customer Home and PLS)
         homeNavGraph(

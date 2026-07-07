@@ -1,4 +1,3 @@
-
 package com.nisr.sauservices.ui.auth
 
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -51,7 +50,7 @@ private val TextDark = Color(0xFF1A1C1E)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SignInScreen(navController: NavController, role: String, authViewModel: AuthViewModel = viewModel()) {
+fun SignInScreen(navController: NavController, role: String = "customer", authViewModel: AuthViewModel = viewModel()) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -69,51 +68,23 @@ fun SignInScreen(navController: NavController, role: String, authViewModel: Auth
             val account = task.getResult(ApiException::class.java)
             account.idToken?.let { idToken ->
                 val credential = GoogleAuthProvider.getCredential(idToken, null)
-                authViewModel.signInWithGoogle(credential, role)
+                authViewModel.signInWithGoogle(credential, "customer")
             }
         } catch (e: ApiException) {
             // Handle error
         }
     }
 
-    val isShopkeeper = role == "shopkeeper"
-    val isWorker = role == "service_worker"
-    val isDelivery = role == "delivery"
-    val isCustomer = role == "customer"
-    
-    val headerTitle = when {
-        isShopkeeper -> "Shop Login"
-        isWorker -> "Worker Login"
-        isDelivery -> "Driver Login"
-        else -> "Welcome Back"
-    }
-    
-    val headerSubtitle = when {
-        isShopkeeper -> "Access your shop dashboard"
-        isWorker -> "Sign in to find work opportunities"
-        isDelivery -> "Access your delivery dashboard"
-        else -> "Sign in to browse and order services"
-    }
-    
-    val headerIcon = when {
-        isShopkeeper -> Icons.Rounded.Storefront
-        isWorker -> Icons.Rounded.Engineering
-        isDelivery -> Icons.Rounded.LocalShipping
-        else -> Icons.Rounded.Login
-    }
+    val headerTitle = "Welcome Back"
+    val headerSubtitle = "Sign in to browse and order services"
+    val headerIcon = Icons.Rounded.Login
 
     LaunchedEffect(authState) {
         if (authState is AuthState.Success) {
             sessionManager.saveLoginState(true)
-            sessionManager.saveUserRole(role)
+            sessionManager.saveUserRole("customer")
             
-            val route = when {
-                isShopkeeper -> Screen.ShopkeeperDashboard.route
-                isWorker -> Screen.ServiceWorkerDashboard.route
-                isDelivery -> Screen.DeliveryDashboard.route
-                else -> Screen.Home.route
-            }
-            navController.navigate(route) {
+            navController.navigate(Screen.Home.route) {
                 popUpTo(Screen.Login.route) { inclusive = true }
             }
             authViewModel.resetState()
@@ -381,7 +352,7 @@ fun SignInScreen(navController: NavController, role: String, authViewModel: Auth
                     .align(Alignment.CenterHorizontally)
                     .clickable { 
                         authViewModel.resetState()
-                        navController.navigate(Screen.SignUp.createRoute(role)) 
+                        navController.navigate(Screen.SignUp.route)
                     }
                     .padding(bottom = 24.dp)
             )

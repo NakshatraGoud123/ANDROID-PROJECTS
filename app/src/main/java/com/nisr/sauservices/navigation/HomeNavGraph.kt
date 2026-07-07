@@ -9,16 +9,12 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.nisr.sauservices.data.local.SessionManager
-import com.nisr.sauservices.ui.dashboard.*
 import com.nisr.sauservices.ui.home.*
 import com.nisr.sauservices.ui.pls.*
+import com.nisr.sauservices.ui.dashboard.CustomerHomeScreen
 import com.nisr.sauservices.ui.viewmodel.BookingsViewModel
 import com.nisr.sauservices.ui.viewmodel.ResidentialViewModel
-import com.nisr.sauservices.ui.viewmodels.AdminViewModel
-import com.nisr.sauservices.ui.viewmodels.ServiceWorkerViewModel
-import com.nisr.sauservices.ui.viewmodels.ShopkeeperViewModel
 import com.nisr.sauservices.ui.viewmodels.PropertyLifestyleViewModel
-import com.nisr.sauservices.ui.viewmodels.DeliveryBoyViewModel
 
 fun NavGraphBuilder.homeNavGraph(
     navController: NavController,
@@ -27,8 +23,8 @@ fun NavGraphBuilder.homeNavGraph(
     residentialViewModel: ResidentialViewModel
 ) {
     composable(Routes.HOME) {
-        val role = sessionManager.getUserRole()
-        if (role == "customer" && sessionManager.isLoggedIn()) {
+        // App is now customer only, but we check if logged in
+        if (sessionManager.isLoggedIn()) {
             CustomerHomeScreen(navController, sessionManager)
         } else {
             LaunchedEffect(Unit) {
@@ -51,16 +47,7 @@ fun NavGraphBuilder.homeNavGraph(
         SearchResultsScreen(navController, query, residentialViewModel)
     }
     
-    // Partner Dashboards
-    composable(Routes.SHOPKEEPER_DASHBOARD) { ShopkeeperDashboardScreen(navController, sessionManager, viewModel<ShopkeeperViewModel>()) }
-    composable(Routes.SERVICE_WORKER_DASHBOARD) { ServiceWorkerDashboardScreen(navController, sessionManager, viewModel<ServiceWorkerViewModel>()) }
-    composable(Routes.DELIVERY_DASHBOARD) { 
-        DeliveryDashboardScreen(
-            navController, 
-            sessionManager, 
-            viewModel<DeliveryBoyViewModel>()
-        ) 
-    }
+    // Partner Dashboards removed as the app is now customer-only
 
     // Property & Lifestyle Services (PLS)
     composable(Routes.PLS_MAIN) { PLSMainScreen(navController) }
@@ -110,14 +97,5 @@ fun NavGraphBuilder.homeNavGraph(
         PLSSuccessScreen(navController, plsViewModel)
     }
 
-    // Admin Panel
-    composable(Routes.ADMIN_DASHBOARD) { 
-        AdminDashboardScreen(navController, sessionManager, viewModel<AdminViewModel>()) 
-    }
-    composable(Routes.ADMIN_BOOKINGS) { AdminBookingsScreen(navController, viewModel()) }
-    composable(Routes.ADMIN_SERVICES) { AdminServicesScreen(navController, viewModel()) }
-
-    // Worker Side
-    composable(Routes.WORKER_DASHBOARD) { WorkerDashboardScreen(navController, viewModel()) }
-    composable(Routes.WORKER_JOBS) { WorkerJobsScreen(navController, viewModel()) }
+    // Admin Panel and Worker Side removed as the app is now customer-only
 }
