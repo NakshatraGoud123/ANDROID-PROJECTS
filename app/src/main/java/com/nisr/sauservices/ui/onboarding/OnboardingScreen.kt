@@ -32,14 +32,8 @@ fun OnboardingScreen(navController: NavController) {
 
     LaunchedEffect(Unit) {
         if (sessionManager.isLoggedIn()) {
-            val role = sessionManager.getUserRole()
-            val route = when (role) {
-                "shopkeeper" -> Screen.ShopkeeperDashboard.route
-                "service_worker" -> Screen.ServiceWorkerDashboard.route
-                "delivery" -> Screen.DeliveryDashboard.route
-                else -> Screen.Home.route
-            }
-            navController.navigate(route) {
+            // App is now only for customers, so always navigate to Home
+            navController.navigate(Screen.Home.route) {
                 popUpTo(Screen.Onboarding.route) { inclusive = true }
             }
         }
@@ -64,7 +58,8 @@ fun OnboardingScreen(navController: NavController) {
             ) {
                 TextButton(
                     onClick = { 
-                        navController.navigate(Screen.RoleSelection.route) {
+                        // Navigate directly to Login as a customer
+                        navController.navigate(Screen.Login.createRoute("customer")) {
                             popUpTo(Screen.Onboarding.route) { inclusive = true }
                         }
                     }
@@ -112,7 +107,8 @@ fun OnboardingScreen(navController: NavController) {
                                 pagerState.animateScrollToPage(pagerState.currentPage + 1)
                             }
                         } else {
-                            navController.navigate(Screen.RoleSelection.route) {
+                            // Navigate directly to Login as a customer
+                            navController.navigate(Screen.Login.createRoute("customer")) {
                                 popUpTo(Screen.Onboarding.route) { inclusive = true }
                             }
                         }

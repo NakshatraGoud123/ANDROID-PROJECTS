@@ -1,15 +1,12 @@
-
 package com.nisr.sauservices.ui.auth
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -55,7 +52,7 @@ private val TextDark = Color(0xFF1A1C1E)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SignUpScreen(navController: NavController, role: String, authViewModel: AuthViewModel = viewModel()) {
+fun SignUpScreen(navController: NavController, role: String = "customer", authViewModel: AuthViewModel = viewModel()) {
     var fullName by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -74,59 +71,24 @@ fun SignUpScreen(navController: NavController, role: String, authViewModel: Auth
             val account = task.getResult(ApiException::class.java)
             account.idToken?.let { idToken ->
                 val credential = GoogleAuthProvider.getCredential(idToken, null)
-                authViewModel.signInWithGoogle(credential, role)
+                authViewModel.signInWithGoogle(credential, "customer")
             }
         } catch (e: ApiException) {
             // Handle error
         }
     }
 
-    // Role specific fields
-    var shopName by remember { mutableStateOf("") }
-    var shopAddress by remember { mutableStateOf("") }
-    var shopCategory by remember { mutableStateOf("") }
-    
-    var skillType by remember { mutableStateOf("") }
-    var experience by remember { mutableStateOf("") }
-
-    var vehicleType by remember { mutableStateOf("") }
-
-    val isShopkeeper = role == "shopkeeper"
-    val isWorker = role == "service_worker"
-    val isDelivery = role == "delivery"
-    
-    val headerTitle = when {
-        isShopkeeper -> "Register Shop"
-        isWorker -> "Join as Worker"
-        isDelivery -> "Become a Driver"
-        else -> "Create Account"
-    }
-    val headerSubtitle = when {
-        isShopkeeper -> "Set up your shop and start selling"
-        isWorker -> "Create your profile and find work"
-        isDelivery -> "Register and start delivering"
-        else -> "Start ordering services in minutes"
-    }
-    val headerIcon = when {
-        isShopkeeper -> Icons.Rounded.Storefront
-        isWorker -> Icons.Rounded.Engineering
-        isDelivery -> Icons.Rounded.LocalShipping
-        else -> Icons.Rounded.PersonAdd
-    }
+    val headerTitle = "Create Account"
+    val headerSubtitle = "Start ordering services in minutes"
+    val headerIcon = Icons.Rounded.PersonAdd
 
     LaunchedEffect(authState) {
         if (authState is AuthState.Success) {
             sessionManager.saveLoginState(true)
-            sessionManager.saveUserRole(role)
+            sessionManager.saveUserRole("customer")
             
-            val route = when {
-                isShopkeeper -> Screen.ShopkeeperDashboard.route
-                isWorker -> Screen.ServiceWorkerDashboard.route
-                isDelivery -> Screen.DeliveryDashboard.route
-                else -> Screen.Home.route
-            }
-            navController.navigate(route) {
-                popUpTo(Screen.RoleSelection.route) { inclusive = true }
+            navController.navigate(Screen.Home.route) {
+                popUpTo(Screen.Login.route) { inclusive = true }
             }
             authViewModel.resetState()
         }
@@ -212,27 +174,12 @@ fun SignUpScreen(navController: NavController, role: String, authViewModel: Auth
                         )
                     }
 
-                    if (isShopkeeper) {
-                        SignUpField(value = shopName, onValueChange = { shopName = it }, placeholder = "Shop Name", icon = Icons.Rounded.Store)
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
-
                     SignUpField(
                         value = fullName,
                         onValueChange = { fullName = it },
-                        placeholder = when {
-                            isShopkeeper -> "Owner Name"
-                            else -> "Full Name"
-                        },
+                        placeholder = "Full Name",
                         icon = Icons.Rounded.Person
                     )
-
-                    if (isWorker) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        SignUpField(value = skillType, onValueChange = { skillType = it }, placeholder = "Skill Type", icon = Icons.Rounded.Work)
-                        Spacer(modifier = Modifier.height(16.dp))
-                        SignUpField(value = experience, onValueChange = { experience = it }, placeholder = "Experience (Years)", icon = Icons.Rounded.History, keyboardType = KeyboardType.Number)
-                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -253,19 +200,6 @@ fun SignUpScreen(navController: NavController, role: String, authViewModel: Auth
                         icon = Icons.Rounded.AlternateEmail,
                         keyboardType = KeyboardType.Email
                     )
-
-                    if (isShopkeeper) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        SignUpField(value = shopAddress, onValueChange = { shopAddress = it }, placeholder = "Shop Address", icon = Icons.Rounded.LocationOn)
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        SignUpField(value = shopCategory, onValueChange = { shopCategory = it }, placeholder = "Shop Category", icon = Icons.Rounded.Category)
-                    }
-
-                    if (isDelivery) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        SignUpField(value = vehicleType, onValueChange = { vehicleType = it }, placeholder = "Vehicle Type", icon = Icons.Rounded.DirectionsCar)
-                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -298,26 +232,13 @@ fun SignUpScreen(navController: NavController, role: String, authViewModel: Auth
                     Button(
                         onClick = { 
                             if (email.isNotBlank() && password.isNotBlank()) {
-                                val userData = mutableMapOf<String, Any>(
+                                val userData = mapOf<String, Any>(
                                     "fullName" to fullName,
                                     "phoneNumber" to phoneNumber,
                                     "email" to email,
-                                    "role" to role
+                                    "role" to "customer"
                                 )
                                 
-                                if (isShopkeeper) {
-                                    userData["shopName"] = shopName
-                                    userData["shopAddress"] = shopAddress
-                                    userData["shopCategory"] = shopCategory
-                                }
-                                if (isWorker) {
-                                    userData["skillType"] = skillType
-                                    userData["experience"] = experience
-                                }
-                                if (isDelivery) {
-                                    userData["vehicleType"] = vehicleType
-                                }
-
                                 authViewModel.signUp(email, password, userData)
                             }
                         },

@@ -1,4 +1,3 @@
-
 package com.nisr.sauservices.ui.auth
 
 import androidx.compose.foundation.background
@@ -18,7 +17,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -32,7 +30,7 @@ private val TextGrey = Color(0xFF717171)
 private val TextDark = Color(0xFF1A1C1E)
 
 @Composable
-fun AuthOptionsScreen(navController: NavController, role: String) {
+fun AuthOptionsScreen(navController: NavController, role: String = "customer") {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -53,18 +51,16 @@ fun AuthOptionsScreen(navController: NavController, role: String) {
             }
 
             Spacer(modifier = Modifier.height(32.dp))
-
-            val roleTitle = role.replaceFirstChar { it.uppercase() }
             
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "Welcome $roleTitle",
+                    text = "Welcome to SAU",
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextDark
                 )
                 Text(
-                    text = "How would you like to continue?",
+                    text = "Sign in or create an account to continue",
                     fontSize = 16.sp,
                     color = TextGrey,
                     modifier = Modifier.padding(top = 8.dp)
@@ -77,7 +73,7 @@ fun AuthOptionsScreen(navController: NavController, role: String) {
                 title = "Sign In",
                 description = "Already have an account",
                 icon = Icons.Rounded.Email,
-                onClick = { navController.navigate(Screen.Login.createRoute(role)) }
+                onClick = { navController.navigate(Screen.Login.createRoute("customer")) }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -86,7 +82,7 @@ fun AuthOptionsScreen(navController: NavController, role: String) {
                 title = "Create Account",
                 description = "New to SAU Services? Join us",
                 icon = Icons.Rounded.PersonAdd,
-                onClick = { navController.navigate(Screen.SignUp.createRoute(role)) }
+                onClick = { navController.navigate(Screen.SignUp.route) }
             )
         }
     }
